@@ -39,6 +39,12 @@ sudo 5gms-application-server
 ```
 ~/rt-5gms-application-function/install/bin/open5gs-msafd
 ```
+
+5️⃣ Allow root permission on configuration files:
+
+```
+sudo chmod 777 /var/cache/rt-5gms/m1-client/provisioning_sessions.json
+```
  
 ## 🚀 Running
 
