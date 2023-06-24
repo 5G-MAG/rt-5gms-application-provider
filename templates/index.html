@@ -8,12 +8,19 @@
     <img src="{{ url_for('static', filename='images/5gmag.png') }}" alt="5GMAG Logo" class="logo">
     <h1>M1 Client Tool</h1>
   </div>
-  
-  <h2>RT Application Function</h2>
-  <button onclick="createNewSession()">Create new provisioning session</button>
-  <button onclick="listAllSessions()">Show active provisioning session(s)</button>
-  <p id="active_sessions">Total provisioning sessions: {{ active_sessions }}</p>
+
+  <h3><p id="active_sessions">Total provisioning sessions: {{ active_sessions }}</p></h3>
+  <button onclick="createNewSession()">Create new provisioning session</button><br>
+  <button onclick="listAllSessions()">Show active provisioning session(s)</button><br>
+  <button onclick="provSessionWithContentHosting()">Create Provisioning Session with Content Hosting Configuration</button><br>
+  <button onclick="checkProvSessionDetails()">Check the Provisioning Session details</button>
+
   <p id="session_list"></p>
+  <form id="deleteSessionForm">
+    <label for="prov-session-id">Enter provisioning session id: </label>
+    <input type="text" id="prov-session-id" name="prov-session-id">
+    <button type="submit">Delete Session</button>
+  </form>
   
   <script>
   
@@ -35,8 +42,36 @@
     const data = await response.json();
     return data.count;
   }
-  
-  </script>
-  
+
+  async function provSessionWithContentHosting(){
+    const response = await fetch('/new_prov_session_with_content_hosting_configuration', { method: 'POST' });
+    const data = await response.json();
+    alert(data.message);
+  }
+
+  function checkProvSessionDetails() {
+    window.open('/get_prov_session_details', '_blank');
+  }
+
+  document.getElementById('deleteSessionForm').addEventListener('submit', async function(event) {
+    event.preventDefault();
+
+    const formData = new FormData(this);
+    const response = await fetch('/delete_provisioning_session', {
+        method: 'POST',
+        body: formData
+    });
+
+    const data = await response.json();
+    alert(data.message);
+
+    // Update the count of active sessions
+    document.getElementById('active_sessions').textContent = 'Total provisioning sessions: ' + await getSessionCount();
+    document.getElementById('prov-sessions-with-content-hosting').innerHTML = data.provisioning_sessions.join('<br>');
+
+});
+
+
+  </script>  
   </body>
 </html>
