@@ -20,7 +20,7 @@ pip install flask
 ```
 
 3️⃣ Next, you must have installed above-mentioned RT Application Function. Please follow the guide in order to it properly:
-- [Application Function](https://github.com/5G-MAG/rt-5gms-application-function/wiki/Testing-as-a-Local-User) (**recommended installation as local user**)
+- [Application Function](https://github.com/5G-MAG/rt-5gms-application-function/wiki/Testing-as-a-Local-User) (**installation as local user**)
 
 Be aware which versions are required for correct setup (time sensitive!). 
 
