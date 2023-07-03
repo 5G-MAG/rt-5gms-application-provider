@@ -3,23 +3,42 @@ body {
     color: #333;
     background-color: #f7f7f7;
     line-height: 1.6;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100vh;
 }
 
 .container {
     max-width: 800px;
     margin: 0 auto;
     padding: 20px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
 }
 
 .header {
     display: flex;
+    flex-direction: column;
     align-items: center;
+    justify-content: center;
+    margin-top: 2em;
+}
+
+.header img {
+    order: -1;
 }
 
 .header .logo {
-    margin-right: 10px;
+    margin-bottom: 10px;
 }
 
+.buttons {
+    margin-top: 2em;
+}
 
 h1, h2, h3, h4, h5, h6 {
     color: #333;
@@ -54,20 +73,21 @@ button:hover {
     height: auto;
 }
 
-#deleteSessionForm {
-    display: flex;
-    flex-direction: column;
-    align-items: start;
-    width: 300px;
-}
-
-#deleteSessionForm label {
-    margin-bottom: 5px;
-}
-
-#deleteSessionForm input[type="text"] {
-    padding: 10px;
-    border: 1px solid #ccc;
-    border-radius: 5px;
+#session_table {
+    border-collapse: collapse;
     width: 100%;
+    margin-top: 2em;
+}
+
+#session_table td, #session_table th {
+    border: 1px solid #ddd;
+    padding: 8px;
+}
+
+#session_table th {
+    padding-top: 12px;
+    padding-bottom: 12px;
+    text-align: left;
+    background-color: #0099e5;
+    color: white;
 }

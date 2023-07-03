@@ -1,14 +1,18 @@
 from flask import Flask, render_template, jsonify, request
 import subprocess
 import os
+import re
+
+home_dir = os.path.expanduser('~')
+file_path = os.path.join(home_dir, 'rt-5gms-application-function/examples/ContentHostingConfiguration_Llama-Drama_pull-ingest.json')
 
 app = Flask(__name__)
 
 @app.route('/')
 def index():
-    return render_template('index.html', active_sessions=get_sessions_count().json['count'])
+    return render_template('index.html')
 
-
+# Create new Provisioning Session
 @app.route('/new_provisioning_session', methods=['POST'])
 def new_provisioning_session():
     provSession = subprocess.run([os.path.expanduser('~/rt-5gms-application-function/install/bin/m1-session'),
@@ -20,64 +24,17 @@ def new_provisioning_session():
                                           capture_output=True,
                                           text=True)
     retrieveprovSession = provSession.stdout.strip()
-    return jsonify(message=f'✅ {retrieveprovSession}!'), 200
+    session_id = re.search(r'\b[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\b', retrieveprovSession)
+    if session_id is not None:
+        return jsonify(session_id=session_id.group(0), message=f'✅ {retrieveprovSession}!'), 200
+    else:
+        return jsonify(message='Failed to extract session ID.'), 500
+    
 
-@app.route('/new_prov_session_with_content_hosting_configuration', methods=['POST'])
-def new_prov_session_with_content_hosting_configuration():
-    provSessionWithCHC = subprocess.run([os.path.expanduser('~/rt-5gms-application-function/install/bin/m1-session'),
-                             "new-stream",
-                             "-e",
-                             "MyAppId",
-                             "-a",
-                             "MyASPId",
-                             "-n",
-                             'Big Buck Bunny',
-                             'https://ftp.itec.aau.at/datasets/DASHDataset2014/BigBuckBunny/4sec/',
-                             'BigBuckBunny_4s_onDemand_2014_05_09.mpd'],
-                             capture_output=True,
-                             text=True)
-    retrieveProvSessionWithCHC = provSessionWithCHC.stdout.strip() 
-    return jsonify(message=f'✅{retrieveProvSessionWithCHC}!'), 200
-
-
-@app.route('/get_prov_session_details', methods=['GET'])
-def get_prov_session_details():
-    prov_session_details = subprocess.run(
-        [os.path.expanduser('~/rt-5gms-application-function/install/bin/m1-session'),
-         "list",
-         "-v"],
-        capture_output=True,
-        text=True
-    )
-    prov_session_output = prov_session_details.stdout.strip()
-
-    return jsonify({"details": prov_session_output}), 200
-
-
-                                            
-
-@app.route('/get_provisioning_sessions', methods=['GET'])
-def get_provisioning_sessions():
-    result = subprocess.run([os.path.expanduser('~/rt-5gms-application-function/install/bin/m1-session'),
-                             "list"],
-                             capture_output=True,
-                             text=True)
-    session_list = result.stdout.split('\n')
-    return jsonify(provisioning_sessions=session_list)
-
-@app.route('/get_sessions_count', methods=['GET'])
-def get_sessions_count():
-    result = subprocess.run([os.path.expanduser('~/rt-5gms-application-function/install/bin/m1-session'),
-                             "list"],
-                             capture_output=True,
-                             text=True)
-    session_list = result.stdout.split('\n')
-    session_count = len([x for x in session_list if x])
-    return jsonify(count=session_count)
-
-@app.route('/delete_provisioning_session', methods=['POST'])
-def delete_provisioning_session():
-    session_id = request.form.get('prov-session-id', None)
+# Delete particular Provisioining Session
+@app.route('/delete_provisioning_session_by_id', methods=['POST'])
+def delete_provisioning_session_by_id():
+    session_id = request.json.get('prov-session-id', None)
 
     if not session_id:
         return jsonify(message="Please enter a session ID."), 400
@@ -95,7 +52,45 @@ def delete_provisioning_session():
                     "del-stream",
                     "-p",
                     session_id])
-    return jsonify(message=f"Session {session_id} has been deleted."), 200
+    return jsonify(message=f"✅ Session {session_id} has been deleted."), 200
+
+
+# Create Hosting Configuration from JSON file
+@app.route('/create_chc_from_json', methods=['POST'])
+def create_chc_from_json():
+    print("Received POST request:", request.json)  # Debug statement
+    provisioning_session_id = request.json.get('prov-session-id', None)
+    print("Parsed session ID:", provisioning_session_id)  # Debug statement
+
+    if not provisioning_session_id:
+        return jsonify(message="Please enter a session ID."), 400
+    
+    result = subprocess.run([os.path.join(home_dir, 'rt-5gms-application-function/install/bin/m1-session'),
+                            "set-stream",
+                            "-p",
+                            provisioning_session_id,
+                            file_path],
+                            capture_output=True,
+                            text=True)
+    print("Command output:", result.stdout, "Command error:", result.stderr)  # Debug statement
+
+    if result.returncode == 0:
+        return jsonify(message=f"✅ CHC created from JSON for session {provisioning_session_id}."), 200
+    else:
+        return jsonify(message=f"Failed to create CHC from JSON for session {provisioning_session_id}. Error: {result.stderr}"), 500
+
+
+# Check details for provisioning session
+# Get all Provisioning Sessions details
+@app.route('/get_all_provisioning_sessions_details', methods=['GET'])
+def get_all_provisioning_sessions_details():
+    result = subprocess.run([os.path.expanduser('~/rt-5gms-application-function/install/bin/m1-session'),
+                             "list",
+                             "-v"],
+                             capture_output=True,
+                             text=True)
+    return jsonify(details=result.stdout), 200
+
 
 
 if __name__ == '__main__':

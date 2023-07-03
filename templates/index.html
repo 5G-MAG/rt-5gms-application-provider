@@ -4,74 +4,112 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
   </head>
   <body>
+    <div class="container">
   <div class="header">
     <img src="{{ url_for('static', filename='images/5gmag.png') }}" alt="5GMAG Logo" class="logo">
     <h1>M1 Client Tool</h1>
   </div>
 
-  <h3><p id="active_sessions">Total provisioning sessions: {{ active_sessions }}</p></h3>
-  <button onclick="createNewSession()">Create new provisioning session</button><br>
-  <button onclick="listAllSessions()">Show active provisioning session(s)</button><br>
-  <button onclick="provSessionWithContentHosting()">Create Provisioning Session with Content Hosting Configuration</button><br>
-  <button onclick="checkProvSessionDetails()">Check the Provisioning Session details</button>
+  <div class="buttons">
+    <button onclick="createNewSession()">Create Provisioning Session</button>
+  </div>
 
-  <p id="session_list"></p>
-  <form id="deleteSessionForm">
-    <label for="prov-session-id">Enter provisioning session id: </label>
-    <input type="text" id="prov-session-id" name="prov-session-id">
-    <button type="submit">Delete Session</button>
-  </form>
-  
+  <table id="session_table">
+    <thead>
+      <tr>
+        <th>Provisioning Session ID</th>
+        <th>Remove Provisioning Session</th>
+        <th>CHC from JSON</th>
+        <th>Check the session details</th>
+      </tr>
+    </thead>
+    <tbody>
+    </tbody>
+  </table>
+
   <script>
-  
   async function createNewSession() {
     const response = await fetch('/new_provisioning_session', { method: 'POST' });
     const data = await response.json();
     alert(data.message);
-    document.getElementById('active_sessions').textContent = 'Total provisioning sessions: ' + await getSessionCount();
-  }
-
-  async function listAllSessions() {
-    const response = await fetch('/get_provisioning_sessions');
-    const data = await response.json();
-    document.getElementById('session_list').innerHTML = data.provisioning_sessions.join('<br>');
-  }
+    let session_table = document.getElementById('session_table');
+    let row = session_table.insertRow(-1);
+    let cell1 = row.insertCell(0);
+    let cell2 = row.insertCell(1);
+    let cell3 = row.insertCell(2);
+    let cell4 = row.insertCell(3);
+    cell1.innerHTML = data.session_id;
+    cell2.innerHTML = `<button onclick="deleteProvisioningSession('${data.session_id}')">Delete</button>`;
+    cell3.innerHTML = `<button onclick="createChcFromJson('${data.session_id}')">Create CHC from JSON</button>`;
+    cell4.innerHTML = `<button onclick="getProvisioningSessionDetails()">Check session details</button>`;
     
-  async function getSessionCount() {
-    const response = await fetch('/get_sessions_count');
-    const data = await response.json();
-    return data.count;
-  }
+    // Add the new session id to the localStorage
+    localStorage.setItem(data.session_id, true);
+}
+    
+    async function deleteProvisioningSession(session_id) {
+        const response = await fetch('/delete_provisioning_session_by_id', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ 'prov-session-id': session_id })
+        });
 
-  async function provSessionWithContentHosting(){
-    const response = await fetch('/new_prov_session_with_content_hosting_configuration', { method: 'POST' });
-    const data = await response.json();
-    alert(data.message);
-  }
+        const data = await response.json();
+        alert(data.message);
 
-  function checkProvSessionDetails() {
-    window.open('/get_prov_session_details', '_blank');
-  }
+        let session_table = document.getElementById('session_table');
+        for(let i = 1; i < session_table.rows.length; i++){
+          if(session_table.rows[i].cells[0].innerHTML === session_id){
+            session_table.deleteRow(i);
+          }
+        }
 
-  document.getElementById('deleteSessionForm').addEventListener('submit', async function(event) {
-    event.preventDefault();
+        // Remove the deleted session id from the localStorage
+        localStorage.removeItem(session_id);
+    }
 
-    const formData = new FormData(this);
-    const response = await fetch('/delete_provisioning_session', {
+    async function createChcFromJson(session_id) {
+      const response = await fetch('/create_chc_from_json', {
         method: 'POST',
-        body: formData
-    });
-
-    const data = await response.json();
-    alert(data.message);
-
-    // Update the count of active sessions
-    document.getElementById('active_sessions').textContent = 'Total provisioning sessions: ' + await getSessionCount();
-    document.getElementById('prov-sessions-with-content-hosting').innerHTML = data.provisioning_sessions.join('<br>');
-
-});
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          'prov-session-id': session_id})
+        });
+        const data = await response.json();
+        alert(data.message);
+      }
 
 
-  </script>  
+    async function getProvisioningSessionDetails() {
+      const response = await fetch('/get_all_provisioning_sessions_details');
+      const data = await response.json();
+      // Open a new window and write the details to it
+      let detailsWindow = window.open("", "_blank");
+      detailsWindow.document.write("<pre>" + data.details + "</pre>");
+    }
+
+
+    // On page load, add all the session ids from sessionStorage to the table
+    window.onload = function() {
+      let session_table = document.getElementById('session_table');
+      for (let i = 0; i < localStorage.length; i++) {
+        let session_id = localStorage.key(i);
+        let row = session_table.insertRow(-1);
+        let cell1 = row.insertCell(0);
+        let cell2 = row.insertCell(1);
+        let cell3 = row.insertCell(2);
+        let cell4 = row.insertCell(3);
+        cell1.innerHTML = session_id;
+        cell2.innerHTML = `<button onclick="deleteProvisioningSession('${session_id}')">Delete</button>`;
+        cell3.innerHTML = `<button onclick="createChcFromJson('${session_id}')">Create CHC from JSON</button>`;
+        cell4.innerHTML = `<button onclick="getProvisioningSessionDetails()">Check session details</button>`;
+      }
+    }
+    </script>
+  </div>  
   </body>
 </html>
