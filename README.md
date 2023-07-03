@@ -1,5 +1,5 @@
 # 5GMS Application Function Management UI
-M1 Client tool user interface has been built as graphical extension for 5GMS reference tool (RT) [**Application Function** (AF)](https://github.com/5G-MAG/rt-5gms-application-function) which represents network component that operates in accordance with another RT [**Application Server** (AS)](https://github.com/5G-MAG/rt-5gms-application-server), enriching entire [**5GMAGs**](https://github.com/5G-MAG) platform with network functionalities such are provisioning session, content hosting configuration, consumetrics reporting etc. The user interface represent graphical layer on top of existing M1 interface (which establish communication between 5GMs application provider and AF), and it operates as [M1 CLI testing tool](https://github.com/5G-MAG/rt-5gms-application-function/wiki/Testing-the-M1-Interface-on-v1.3.0) but in user-friendy way.
+M1 Client tool user interface has been built as graphical extension for 5GMS reference tool (RT) [**Application Function** (AF)](https://github.com/5G-MAG/rt-5gms-application-function) which represents network component that operates in accordance with another RT [**Application Server** (AS)](https://github.com/5G-MAG/rt-5gms-application-server), enriching entire [**5GMAGs**](https://github.com/5G-MAG) platform with network functionalities such are provisioning session, content hosting configuration, consumetrics reporting etc. The user interface represent graphical layer on top of existing M1 interface (endpoint which establishes communication between 5GMs application provider and AF), and it operates as [M1 CLI testing tool](https://github.com/5G-MAG/rt-5gms-application-function/wiki/Testing-the-M1-Interface-on-v1.3.0) but in user-friendy way.
 
 
 ## 📜 Licensing and authorization
@@ -19,8 +19,8 @@ git clone https://github.com/stojkovicv/5gms-m1-user-interface.git
 pip install flask
 ```
 
-3️⃣ Next, you must have installed above-mentioned RT. Please follow those guides in order to install components properly:
-- [Application Function](https://github.com/5G-MAG/rt-5gms-application-function/wiki/Testing-as-a-Local-User) (recommended installation as local user)
+3️⃣ Next, you must have installed above-mentioned RT Application Function. Please follow the guide in order to it properly:
+- [Application Function](https://github.com/5G-MAG/rt-5gms-application-function/wiki/Testing-as-a-Local-User) (**recommended installation as local user**)
 
 Be aware which versions are required for correct setup (time sensitive!). 
 
@@ -46,7 +46,7 @@ Run the application:
 python3 m1-user-interface.py
 ```
 
-Although application is self-explanatory, complete actions's results can be followed in running terminals.
+Although application is self-explanatory, complete actions results can be followed in running terminals.
 
 
 ## Development
