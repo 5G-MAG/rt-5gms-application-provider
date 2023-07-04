@@ -11,7 +11,8 @@
   </div>
 
   <div class="buttons">
-    <button onclick="createNewSession()">Create Provisioning Session</button>
+    <button onclick="createNewSession()">Create Provisioning Session</button><br>
+    <button onclick="createNewSessionWithCHCMultiple()">Create Provisioning Session with CHC containing multiple entry points</button>
   </div>
 
   <table id="session_table">
@@ -21,6 +22,8 @@
         <th>Remove Provisioning Session</th>
         <th>CHC from JSON</th>
         <th>Check the session details</th>
+        <th>Create Server Certificate</th>
+        <th>Show Certificate Details</th>
       </tr>
     </thead>
     <tbody>
@@ -38,13 +41,17 @@
     let cell2 = row.insertCell(1);
     let cell3 = row.insertCell(2);
     let cell4 = row.insertCell(3);
+    let cell5 = row.insertCell(4);
+    let cell6 = row.insertCell(5);
     cell1.innerHTML = data.session_id;
     cell2.innerHTML = `<button onclick="deleteProvisioningSession('${data.session_id}')">Delete</button>`;
     cell3.innerHTML = `<button onclick="createChcFromJson('${data.session_id}')">Create CHC from JSON</button>`;
     cell4.innerHTML = `<button onclick="getProvisioningSessionDetails()">Check session details</button>`;
+    cell5.innerHTML = `<button onclick="createNewCertificate('${data.session_id}')">Create Server Certificate</button>`;
+    cell6.innerHTML = data.certificate_id ? `<button onclick="showCertificateDetails('${data.session_id}', '${data.certificate_id}')">Show Certificate Details</button>` : 'Not yet created';
 
-    // Adds the new session id to the localStorage
-    localStorage.setItem(data.session_id, true);
+    localStorage.setItem(data.session_id, JSON.stringify({ session_id: data.session_id, certificate_id: data.certificate_id ? data.certificate_id : 'Not yet created' }));
+
 }
 
     async function deleteProvisioningSession(session_id) {
@@ -65,9 +72,9 @@
             session_table.deleteRow(i);
           }
         }
-
         // Removes deleted session id from the localStorage
         localStorage.removeItem(session_id);
+        localStorage.removeItem(session_id + "-cert");
     }
 
     async function createChcFromJson(session_id) {
@@ -91,23 +98,99 @@
       detailsWindow.document.write("<pre>" + data.details + "</pre>");
     }
 
-
-    // Add all the session ids from sessionStorage to the table
-    window.onload = function() {
+    async function createNewSessionWithCHCMultiple() {
+      const response = await fetch('/chc_multiple_entry_points', { method: 'POST' });
+      const data = await response.json();
+      alert(data.message);
       let session_table = document.getElementById('session_table');
-      for (let i = 0; i < localStorage.length; i++) {
-        let session_id = localStorage.key(i);
-        let row = session_table.insertRow(-1);
-        let cell1 = row.insertCell(0);
-        let cell2 = row.insertCell(1);
-        let cell3 = row.insertCell(2);
-        let cell4 = row.insertCell(3);
-        cell1.innerHTML = session_id;
-        cell2.innerHTML = `<button onclick="deleteProvisioningSession('${session_id}')">Delete</button>`;
-        cell3.innerHTML = `<button onclick="createChcFromJson('${session_id}')">Create CHC from JSON</button>`;
-        cell4.innerHTML = `<button onclick="getProvisioningSessionDetails()">Check session details</button>`;
+      let row = session_table.insertRow(-1);
+      let cell1 = row.insertCell(0);
+      let cell2 = row.insertCell(1);
+      let cell3 = row.insertCell(2);
+      let cell4 = row.insertCell(3);
+      let cell5 = row.insertCell(4);
+      let cell6 = row.insertCell(5);
+      cell1.innerHTML = data.session_id;
+      cell2.innerHTML = `<button onclick="deleteProvisioningSession('${data.session_id}')">Delete</button>`;
+      cell3.innerHTML = `<button onclick="createChcFromJson('${data.session_id}')">Create CHC from JSON</button>`;
+      cell4.innerHTML = `<button onclick="getProvisioningSessionDetails()">Check session details</button>`;
+      cell5.innerHTML = `<button onclick="createNewCertificate('${data.session_id}')">Create Server Certificate</button>`;
+      cell6.innerHTML = data.certificate_id ? `<button onclick="showCertificateDetails('${data.session_id}', '${data.certificate_id}')">Show Certificate Details</button>` : 'Not yet created';
+
+
+      localStorage.setItem(data.session_id, JSON.stringify({ session_id: data.session_id, certificate_id: data.certificate_id ? data.certificate_id : 'Not yet created' }));
+  }
+  
+  async function createNewCertificate(session_id) {
+    const response = await fetch('/new_certificate', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ 'prov-session-id': session_id })
+    });
+    const data = await response.json();
+    alert(data.message);
+    if (data.certificate_id) {
+      let session_table = document.getElementById('session_table');
+      for(let i = 1; i < session_table.rows.length; i++){
+        if(session_table.rows[i].cells[0].innerHTML === session_id){
+          session_table.rows[i].cells[5].innerHTML = `<button onclick="showCertificateDetails('${session_id}', '${data.certificate_id}')">Show Certificate Details</button>`;
+          let session_data = JSON.parse(localStorage.getItem(session_id));
+          if (!session_data) {
+            session_data = { session_id: session_id, certificate_ids: [] };
+          }
+          session_data.certificate_ids.push(data.certificate_id);
+          localStorage.setItem(session_id, JSON.stringify(session_data));
+        }
       }
     }
+}
+
+
+  async function showCertificateDetails(session_id, certificate_id) {
+    const response = await fetch('/show_certificate', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ 'prov-session-id': session_id, 'certificate-id': certificate_id })
+    });
+    const data = await response.json();
+    let detailsWindow = window.open("", "_blank");
+    detailsWindow.document.write("<pre>" + data.details + "</pre>");
+  }
+  
+  window.onload = function() {
+    let session_table = document.getElementById('session_table');
+
+    if(localStorage.length > 0) {
+      localStorage.clear();
+    }
+
+    for (let i = 0; i < localStorage.length; i++) {
+      let session_id = localStorage.key(i);
+      let session_data = JSON.parse(localStorage.getItem(session_id));
+      let row = session_table.insertRow(-1);
+      let cell1 = row.insertCell(0);
+      let cell2 = row.insertCell(1);
+      let cell3 = row.insertCell(2);
+      let cell4 = row.insertCell(3);
+      let cell5 = row.insertCell(4);
+      let cell6 = row.insertCell(5);
+      cell1.innerHTML = session_id;
+      cell2.innerHTML = `<button onclick="deleteProvisioningSession('${session_id}')">Delete</button>`;
+      cell3.innerHTML = `<button onclick="createChcFromJson('${session_id}')">Create CHC from JSON</button>`;
+      cell4.innerHTML = `<button onclick="getProvisioningSessionDetails()">Check session details</button>`;
+      cell5.innerHTML = `<button onclick="createNewCertificate('${session_id}')">Create Server Certificate</button>`;
+      if (session_data.certificate_id && session_data.certificate_id !== 'Not yet created') {
+        cell6.innerHTML = `<button onclick="showCertificateDetails('${session_id}', '${session_data.certificate_id}')">Show Certificate Details</button>`;
+      } else {
+        cell6.innerHTML = `<button disabled>Not yet created</button>`;
+      }
+    }
+}
+
     </script>
   </div>
   </body>
