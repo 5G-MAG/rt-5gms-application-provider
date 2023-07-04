@@ -42,11 +42,11 @@
     cell2.innerHTML = `<button onclick="deleteProvisioningSession('${data.session_id}')">Delete</button>`;
     cell3.innerHTML = `<button onclick="createChcFromJson('${data.session_id}')">Create CHC from JSON</button>`;
     cell4.innerHTML = `<button onclick="getProvisioningSessionDetails()">Check session details</button>`;
-    
+
     // Adds the new session id to the localStorage
     localStorage.setItem(data.session_id, true);
 }
-    
+
     async function deleteProvisioningSession(session_id) {
         const response = await fetch('/delete_provisioning_session_by_id', {
             method: 'POST',
@@ -109,6 +109,6 @@
       }
     }
     </script>
-  </div>  
+  </div>
   </body>
 </html>

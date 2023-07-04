@@ -29,7 +29,7 @@ def new_provisioning_session():
         return jsonify(session_id=session_id.group(0), message=f'✅ {retrieveprovSession}!'), 200
     else:
         return jsonify(message='Failed to extract session ID.'), 500
-    
+
 
 # Delete particular Provisioining Session
 @app.route('/delete_provisioning_session_by_id', methods=['POST'])
@@ -64,7 +64,7 @@ def create_chc_from_json():
 
     if not provisioning_session_id:
         return jsonify(message="Please enter a session ID."), 400
-    
+
     result = subprocess.run([os.path.join(home_dir, 'rt-5gms-application-function/install/bin/m1-session'),
                             "set-stream",
                             "-p",
