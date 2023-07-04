@@ -80,8 +80,7 @@ def create_chc_from_json():
         return jsonify(message=f"Failed to create CHC from JSON for session {provisioning_session_id}. Error: {result.stderr}"), 500
 
 
-# Check details for provisioning session
-# Get all Provisioning Sessions details
+# Checks details for provisioning session
 @app.route('/get_all_provisioning_sessions_details', methods=['GET'])
 def get_all_provisioning_sessions_details():
     result = subprocess.run([os.path.expanduser('~/rt-5gms-application-function/install/bin/m1-session'),

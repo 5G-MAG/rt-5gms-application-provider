@@ -43,7 +43,7 @@
     cell3.innerHTML = `<button onclick="createChcFromJson('${data.session_id}')">Create CHC from JSON</button>`;
     cell4.innerHTML = `<button onclick="getProvisioningSessionDetails()">Check session details</button>`;
     
-    // Add the new session id to the localStorage
+    // Adds the new session id to the localStorage
     localStorage.setItem(data.session_id, true);
 }
     
@@ -66,7 +66,7 @@
           }
         }
 
-        // Remove the deleted session id from the localStorage
+        // Removes deleted session id from the localStorage
         localStorage.removeItem(session_id);
     }
 
@@ -87,13 +87,12 @@
     async function getProvisioningSessionDetails() {
       const response = await fetch('/get_all_provisioning_sessions_details');
       const data = await response.json();
-      // Open a new window and write the details to it
       let detailsWindow = window.open("", "_blank");
       detailsWindow.document.write("<pre>" + data.details + "</pre>");
     }
 
 
-    // On page load, add all the session ids from sessionStorage to the table
+    // Add all the session ids from sessionStorage to the table
     window.onload = function() {
       let session_table = document.getElementById('session_table');
       for (let i = 0; i < localStorage.length; i++) {
