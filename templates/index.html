@@ -140,7 +140,7 @@
           if (!session_data) {
             session_data = { session_id: session_id, certificate_ids: [] };
           }
-          session_data.certificate_ids.push(data.certificate_id);
+          session_data.certificate_id = data.certificate_id;
           localStorage.setItem(session_id, JSON.stringify(session_data));
         }
       }
@@ -180,7 +180,7 @@
       if (session_data.certificate_id && session_data.certificate_id !== 'Not yet created') {
         cell6.innerHTML = `<button onclick="showCertificateDetails('${session_id}', '${session_data.certificate_id}')">Show Certificate Details</button>`;
       } else {
-        cell6.innerHTML = `<button disabled>Not yet created</button>`;
+        cell6.innerHTML = 'Not yet created';
       }
     }
 }
