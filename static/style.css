@@ -1,13 +1,26 @@
 body {
     font-family: 'Roboto', sans-serif;
     color: #333;
-    background: #2596be    ;
+    background: #2596be;
     line-height: 1.6;
     padding-top: 2em;
+    font-family: 'Poppins ExtraLight', sans-serif;
+
 }
 
-.container {
+/*.container {
     max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    overflow-x: auto;
+}*/
+
+.container {
+    max-width: 100%;
     margin: 0 auto;
     padding: 20px;
     display: flex;
@@ -17,7 +30,8 @@ body {
     overflow-x: auto;
 }
 
-.header {
+
+/*.header {
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -26,7 +40,23 @@ body {
     top: 0;
     z-index: 1;
     margin-top: 2em;
+    background-color: white;
+    padding: 20px 0;
+}*/
+
+.header {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    z-index: 1;
+    margin-top: 2em;
+    background-color: #fff; 
+    padding: 20px 0; 
+    width: 100%;
 }
+
+
 
 .header img {
     order: -1;
@@ -37,6 +67,7 @@ body {
 }
 
 .buttons {
+    font-family: 'Poppins ExtraLight', sans-serif;
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -70,6 +101,7 @@ button {
     transition-duration: 0.4s;
     cursor: pointer;
     font-weight: bold;
+    font-family: 'Poppins ExtraLight', sans-serif;
 
 }
 
@@ -85,7 +117,7 @@ button:hover {
 
 #session_table {
     border-collapse: collapse;
-    width: 100%;
+    width: 1100px;
     max-width: 1500px;
     margin: 0 auto;
     margin-top: 2em;
@@ -107,4 +139,13 @@ button:hover {
     position: sticky;
     top: 0;
     z-index: 2;
+}
+
+
+@font-face {
+    font-family: 'Poppins ExtraLight';
+    src: url('fonts/Poppins-ExtraLight.ttf') format('truetype');
+    font-weight: 200;
+    font-style: normal;
+    font-display: swap;
 }
