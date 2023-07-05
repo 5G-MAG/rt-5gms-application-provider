@@ -24,6 +24,7 @@
         <th>Check the session details</th>
         <th>Create Server Certificate</th>
         <th>Show Certificate Details</th>
+        <th>Show Content Protocols</th>
       </tr>
     </thead>
     <tbody>
@@ -43,14 +44,22 @@
     let cell4 = row.insertCell(3);
     let cell5 = row.insertCell(4);
     let cell6 = row.insertCell(5);
+    let cell7 = row.insertCell(6);
     cell1.innerHTML = data.session_id;
     cell2.innerHTML = `<button onclick="deleteProvisioningSession('${data.session_id}')">Delete</button>`;
     cell3.innerHTML = `<button onclick="createChcFromJson('${data.session_id}')">Create CHC from JSON</button>`;
     cell4.innerHTML = `<button onclick="getProvisioningSessionDetails()">Check session details</button>`;
     cell5.innerHTML = `<button onclick="createNewCertificate('${data.session_id}')">Create Server Certificate</button>`;
     cell6.innerHTML = data.certificate_id ? `<button onclick="showCertificateDetails('${data.session_id}', '${data.certificate_id}')">Show Certificate Details</button>` : 'Not yet created';
+    cell7.innerHTML = `<button onclick="listContentProtocols('${data.session_id}')">List Content Protocols</button>`;
 
-    localStorage.setItem(data.session_id, JSON.stringify({ session_id: data.session_id, certificate_id: data.certificate_id ? data.certificate_id : 'Not yet created' }));
+    localStorage.setItem(
+      data.session_id,
+      JSON.stringify({
+        session_id: data.session_id,
+        certificate_id: data.certificate_id ? data.certificate_id : 'Not yet created',
+        protocol_list_created: true
+      }));
 
 }
 
@@ -110,16 +119,24 @@
       let cell4 = row.insertCell(3);
       let cell5 = row.insertCell(4);
       let cell6 = row.insertCell(5);
+      let cell7 = row.insertCell(6);
       cell1.innerHTML = data.session_id;
       cell2.innerHTML = `<button onclick="deleteProvisioningSession('${data.session_id}')">Delete</button>`;
       cell3.innerHTML = `<button onclick="createChcFromJson('${data.session_id}')">Create CHC from JSON</button>`;
       cell4.innerHTML = `<button onclick="getProvisioningSessionDetails()">Check session details</button>`;
       cell5.innerHTML = `<button onclick="createNewCertificate('${data.session_id}')">Create Server Certificate</button>`;
       cell6.innerHTML = data.certificate_id ? `<button onclick="showCertificateDetails('${data.session_id}', '${data.certificate_id}')">Show Certificate Details</button>` : 'Not yet created';
+      cell7.innerHTML = `<button onclick="listContentProtocols('${data.session_id}')">List Content Protocols</button>`;
 
 
-      localStorage.setItem(data.session_id, JSON.stringify({ session_id: data.session_id, certificate_id: data.certificate_id ? data.certificate_id : 'Not yet created' }));
-  }
+      localStorage.setItem(
+        data.session_id,
+        JSON.stringify({
+          session_id: data.session_id,
+          certificate_id: data.certificate_id ? data.certificate_id : 'Not yet created',
+          protocol_list_created: true
+         }));  
+      }
   
   async function createNewCertificate(session_id) {
     const response = await fetch('/new_certificate', {
@@ -158,10 +175,25 @@
     let detailsWindow = window.open("", "_blank");
     detailsWindow.document.write("<pre>" + data.details + "</pre>");
   }
+
+  async function listContentProtocols(session_id) {
+    const response = await fetch('/get_protocol_list', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ 'prov-session-id': session_id })
+    });
+    const data = await response.json();
+    let detailsWindow = window.open("", "_blank");
+    detailsWindow.document.write("<pre>" + data.details + "</pre>");
+  }
+
   
   window.onload = function() {
-    let session_table = document.getElementById('session_table');
 
+    let session_table = document.getElementById('session_table');
+    
     for (let i = 0; i < localStorage.length; i++) {
       let session_id = localStorage.key(i);
       let session_data = JSON.parse(localStorage.getItem(session_id));
@@ -172,6 +204,7 @@
       let cell4 = row.insertCell(3);
       let cell5 = row.insertCell(4);
       let cell6 = row.insertCell(5);
+      let cell7 = row.insertCell(6);
       cell1.innerHTML = session_id;
       cell2.innerHTML = `<button onclick="deleteProvisioningSession('${session_id}')">Delete</button>`;
       cell3.innerHTML = `<button onclick="createChcFromJson('${session_id}')">Create CHC from JSON</button>`;
@@ -182,6 +215,12 @@
       } else {
         cell6.innerHTML = 'Not yet created';
       }
+      if (session_data.protocol_list_created) {
+        cell7.innerHTML = `<button onclick="listContentProtocols('${session_id}')">List Content Protocols</button>`;
+      } else {
+        cell7.innerHTML = 'Not yet created';
+      }
+      
     }
 }
 
