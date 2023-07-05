@@ -25,6 +25,7 @@
         <th>Create Server Certificate</th>
         <th>Show Certificate Details</th>
         <th>Show Content Protocols</th>
+        <th>Create CHC without Certificate</th>
       </tr>
     </thead>
     <tbody>
@@ -45,6 +46,7 @@
     let cell5 = row.insertCell(4);
     let cell6 = row.insertCell(5);
     let cell7 = row.insertCell(6);
+    let cell8 = row.insertCell(7);
     cell1.innerHTML = data.session_id;
     cell2.innerHTML = `<button onclick="deleteProvisioningSession('${data.session_id}')">Delete</button>`;
     cell3.innerHTML = `<button onclick="createChcFromJson('${data.session_id}')">Create CHC from JSON</button>`;
@@ -52,6 +54,7 @@
     cell5.innerHTML = `<button onclick="createNewCertificate('${data.session_id}')">Create Server Certificate</button>`;
     cell6.innerHTML = data.certificate_id ? `<button onclick="showCertificateDetails('${data.session_id}', '${data.certificate_id}')">Show Certificate Details</button>` : 'Not yet created';
     cell7.innerHTML = `<button onclick="listContentProtocols('${data.session_id}')">List Content Protocols</button>`;
+    cell8.innerHTML = `<button onclick="getChcWithoutCertificate('${data.session_id}')">Get CHC without Certificate</button>`;
 
     localStorage.setItem(
       data.session_id,
@@ -120,6 +123,7 @@
       let cell5 = row.insertCell(4);
       let cell6 = row.insertCell(5);
       let cell7 = row.insertCell(6);
+      let cell8 = row.insertCell(7);
       cell1.innerHTML = data.session_id;
       cell2.innerHTML = `<button onclick="deleteProvisioningSession('${data.session_id}')">Delete</button>`;
       cell3.innerHTML = `<button onclick="createChcFromJson('${data.session_id}')">Create CHC from JSON</button>`;
@@ -127,7 +131,7 @@
       cell5.innerHTML = `<button onclick="createNewCertificate('${data.session_id}')">Create Server Certificate</button>`;
       cell6.innerHTML = data.certificate_id ? `<button onclick="showCertificateDetails('${data.session_id}', '${data.certificate_id}')">Show Certificate Details</button>` : 'Not yet created';
       cell7.innerHTML = `<button onclick="listContentProtocols('${data.session_id}')">List Content Protocols</button>`;
-
+      cell8.innerHTML = `<button onclick="getChcWithoutCertificate('${data.session_id}')">Get CHC without Certificate</button>`;
 
       localStorage.setItem(
         data.session_id,
@@ -189,6 +193,40 @@
     detailsWindow.document.write("<pre>" + data.details + "</pre>");
   }
 
+  async function getChcWithoutCertificate(session_id) {
+    const response = await fetch('/get_chc_without_certificate', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ 'prov-session-id': session_id })
+    });
+    const data = await response.json();
+    alert(data.message); 
+  }
+
+  async function createChcWithCertificate(session_id, certificate_id) {
+    const response = await fetch('/create_chc_with_certificate', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+            'prov-session-id': session_id,
+            'certificate-id': certificate_id
+        })
+    });
+
+    if (!response.ok) {
+        alert("Failed to create CHC with certificate");
+        return;
+    }
+
+    const data = await response.json();
+
+    const newWindow = window.open("", "_blank");
+    alert(data.message);
+}
   
   window.onload = function() {
 
@@ -205,6 +243,7 @@
       let cell5 = row.insertCell(4);
       let cell6 = row.insertCell(5);
       let cell7 = row.insertCell(6);
+      let cell8 = row.insertCell(7);
       cell1.innerHTML = session_id;
       cell2.innerHTML = `<button onclick="deleteProvisioningSession('${session_id}')">Delete</button>`;
       cell3.innerHTML = `<button onclick="createChcFromJson('${session_id}')">Create CHC from JSON</button>`;
@@ -220,9 +259,9 @@
       } else {
         cell7.innerHTML = 'Not yet created';
       }
-      
+      cell8.innerHTML = `<button onclick="getChcWithoutCertificate('${session_id}')">Get CHC without Certificate</button>`;      
     }
-}
+  }
 
     </script>
   </div>

@@ -2,6 +2,8 @@ from flask import Flask, render_template, jsonify, request
 import subprocess
 import os
 import re
+from string import Template
+
 
 home_dir = os.path.expanduser('~')
 file_path = os.path.join(home_dir, 'rt-5gms-application-function/examples/ContentHostingConfiguration_Llama-Drama_pull-ingest.json')
@@ -182,6 +184,29 @@ def get_protocol_list():
         return jsonify(details=result.stdout), 200
     else:
         return jsonify(message=f"Failed to get protocols for session {session_id}. Error: {result.stderr}"), 500
+    
+# Content Hosting Configuration without certificate
+@app.route('/get_chc_without_certificate', methods=['POST'])
+def get_chc_without_certificate():
+    provisioning_session_id = request.json.get('prov-session-id', None)
+
+    if not provisioning_session_id:
+        return jsonify(message="Please enter a session ID."), 400
+
+    file_path = os.path.join(home_dir, 'rt-5gms-application-function/examples/ContentHostingConfiguration_Big-Buck-Bunny_pull-ingest.json')
+
+    result = subprocess.run([os.path.join(home_dir, 'rt-5gms-application-function/install/bin/m1-session'),
+                            "set-stream",
+                            "-p",
+                            provisioning_session_id,
+                            file_path],
+                            capture_output=True,
+                            text=True)
+    if result.returncode == 0:
+        return jsonify(message=f"✅ Stream set from Big-Buck-Bunny JSON for session {provisioning_session_id}."), 200
+    else:
+        return jsonify(message=f"Failed to set stream from Big-Buck-Bunny JSON for session {provisioning_session_id}. Error: {result.stderr}"), 500
+
 
 
 if __name__ == '__main__':

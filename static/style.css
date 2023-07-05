@@ -1,13 +1,13 @@
 body {
     font-family: 'Roboto', sans-serif;
     color: #333;
-    background-color: #f7f7f7;
+    background: #2596be    ;
     line-height: 1.6;
     padding-top: 2em;
 }
 
 .container {
-    max-width: 800px;
+    max-width: 1200px;
     margin: 0 auto;
     padding: 20px;
     display: flex;
@@ -24,7 +24,6 @@ body {
     justify-content: center;
     position: sticky;
     top: 0;
-    background: #f7f7f7;
     z-index: 1;
     margin-top: 2em;
 }
@@ -58,7 +57,7 @@ a {
 button {
     white-space: normal;
     text-align: center;
-    background-color: #0099e5;
+    background-color: #0073ad;
     border: none;
     border-radius: 12px;
     color: white;
@@ -70,6 +69,8 @@ button {
     margin: 4px 2px;
     transition-duration: 0.4s;
     cursor: pointer;
+    font-weight: bold;
+
 }
 
 button:hover {
@@ -85,19 +86,23 @@ button:hover {
 #session_table {
     border-collapse: collapse;
     width: 100%;
+    max-width: 1500px;
+    margin: 0 auto;
     margin-top: 2em;
 }
 
 #session_table td, #session_table th {
     border: 1px solid #ddd;
     padding: 8px;
+    color: white;
+    text-align: center;
 }
 
 #session_table th {
     padding-top: 12px;
     padding-bottom: 12px;
-    text-align: left;
-    background-color: #0099e5;
+    text-align: center;
+    background-color: #0073ad;
     color: white;
     position: sticky;
     top: 0;
