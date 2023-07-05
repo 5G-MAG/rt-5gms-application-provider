@@ -161,6 +161,27 @@ def show_certificate():
         return jsonify(details=result.stdout), 200
     else:
         return jsonify(message=f"Failed to show certificate for session {session_id}. Error: {result.stderr}"), 500
+    
+
+# Get the Content Protocols available
+@app.route('/get_protocol_list', methods=['POST'])
+def get_protocol_list():
+    session_id = request.json.get('prov-session-id', None)
+
+    if not session_id:
+        return jsonify(message="Please enter a session ID."), 400
+
+    result = subprocess.run([os.path.expanduser('~/rt-5gms-application-function/install/bin/m1-session'),
+                             "protocols",
+                             "-p",
+                             session_id],
+                             capture_output=True,
+                             text=True)
+
+    if result.returncode == 0:
+        return jsonify(details=result.stdout), 200
+    else:
+        return jsonify(message=f"Failed to get protocols for session {session_id}. Error: {result.stderr}"), 500
 
 
 if __name__ == '__main__':

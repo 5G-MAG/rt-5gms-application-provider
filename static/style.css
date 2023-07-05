@@ -3,11 +3,7 @@ body {
     color: #333;
     background-color: #f7f7f7;
     line-height: 1.6;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    height: 100vh;
+    padding-top: 2em;
 }
 
 .container {
@@ -18,6 +14,7 @@ body {
     flex-direction: column;
     align-items: center;
     justify-content: center;
+    overflow-x: auto;
 }
 
 .header {
@@ -25,6 +22,10 @@ body {
     flex-direction: column;
     align-items: center;
     justify-content: center;
+    position: sticky;
+    top: 0;
+    background: #f7f7f7;
+    z-index: 1;
     margin-top: 2em;
 }
 
@@ -37,8 +38,14 @@ body {
 }
 
 .buttons {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
     margin-top: 2em;
+    width: 100%;
 }
+
 
 h1, h2, h3, h4, h5, h6 {
     color: #333;
@@ -49,6 +56,8 @@ a {
 }
 
 button {
+    white-space: normal;
+    text-align: center;
     background-color: #0099e5;
     border: none;
     border-radius: 12px;
@@ -90,4 +99,7 @@ button:hover {
     text-align: left;
     background-color: #0099e5;
     color: white;
+    position: sticky;
+    top: 0;
+    z-index: 2;
 }

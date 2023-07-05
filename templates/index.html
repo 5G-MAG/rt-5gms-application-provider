@@ -146,8 +146,6 @@
       }
     }
 }
-
-
   async function showCertificateDetails(session_id, certificate_id) {
     const response = await fetch('/show_certificate', {
       method: 'POST',
@@ -163,10 +161,6 @@
   
   window.onload = function() {
     let session_table = document.getElementById('session_table');
-
-    if(localStorage.length > 0) {
-      localStorage.clear();
-    }
 
     for (let i = 0; i < localStorage.length; i++) {
       let session_id = localStorage.key(i);
