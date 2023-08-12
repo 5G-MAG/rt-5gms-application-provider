@@ -28,7 +28,7 @@ def new_provisioning_session():
     retrieveprovSession = provSession.stdout.strip()
     session_id = re.search(r'\b[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\b', retrieveprovSession)
     if session_id is not None:
-        return jsonify(session_id=session_id.group(0), message=f'✅ {retrieveprovSession}!'), 200
+        return jsonify(session_id=session_id.group(0), message=f'{retrieveprovSession}!'), 200
     else:
         return jsonify(message='Failed to extract session ID.'), 500
 
@@ -54,7 +54,7 @@ def delete_provisioning_session_by_id():
                     "del-stream",
                     "-p",
                     session_id])
-    return jsonify(message=f"✅ Session {session_id} has been deleted."), 200
+    return jsonify(message=f"Session {session_id} has been deleted."), 200
 
 
 # Create Hosting Configuration from JSON file
@@ -76,7 +76,7 @@ def create_chc_from_json():
                             text=True)
     print("Command output:", result.stdout, "Command error:", result.stderr)
     if result.returncode == 0:
-        return jsonify(message=f"✅ CHC created from JSON for session {provisioning_session_id}."), 200
+        return jsonify(message=f"Content Hosting Configuration successfully created from Lama Drama JSON for session {provisioning_session_id}."), 200
     else:
         return jsonify(message=f"Failed to create CHC from JSON for session {provisioning_session_id}. Error: {result.stderr}"), 500
 
@@ -112,7 +112,7 @@ def chc_multiple_entry_points():
     retrieveprovSession = sessionMEP.stdout.strip()
     session_id = re.search(r'\b[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\b', retrieveprovSession)
     if session_id is not None:
-        return jsonify(session_id=session_id.group(0), message=f'✅ {retrieveprovSession}!'), 200
+        return jsonify(session_id=session_id.group(0), message=f'{retrieveprovSession}!'), 200
     else:
         return jsonify(message='Failed to extract session ID.'), 500
     
@@ -137,7 +137,7 @@ def new_certificate():
         certificate_id = certificate_id.group(1)
     
     if result.returncode == 0:
-        return jsonify(message=f"✅ New certificate created for session {session_id}.", certificate_id=certificate_id), 200
+        return jsonify(message=f"New certificate created for session {session_id}, with certificate ID: {certificate_id}.", certificate_id=certificate_id), 200
     else:
         return jsonify(message=f"Failed to create a new certificate for session {session_id}. Error: {result.stderr}"), 500
 
@@ -203,7 +203,7 @@ def get_chc_without_certificate():
                             capture_output=True,
                             text=True)
     if result.returncode == 0:
-        return jsonify(message=f"✅ Stream set from Big-Buck-Bunny JSON for session {provisioning_session_id}."), 200
+        return jsonify(message=f"Stream set from Big-Buck-Bunny JSON for session {provisioning_session_id}."), 200
     else:
         return jsonify(message=f"Failed to set stream from Big-Buck-Bunny JSON for session {provisioning_session_id}. Error: {result.stderr}"), 500
 
