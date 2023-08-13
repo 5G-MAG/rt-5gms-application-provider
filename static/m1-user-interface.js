@@ -39,31 +39,46 @@ async function createNewSession() {
 }
 
 async function deleteProvisioningSession(session_id) {
-  const response = await fetch('/delete_provisioning_session_by_id', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify({ 'prov-session-id': session_id })
+  const result = await Swal.fire({
+    title: 'Delete Provisioning Session?',
+    text: "Are you sure? You won't be able to revert this.",
+    icon: 'warning',
+    showCancelButton: true,
+    confirmButtonText: 'Yes',
+    cancelButtonText: 'No'
   });
-  const data = await response.json();
-  //alert(data.message);
-  Swal.fire({
-    title: 'M1 Application Provider says:',
-    text: data.message,
-    icon: 'success',
-    confirmButtonText: 'OK'
-  });
-  let session_table = document.getElementById('session_table');
-  for(let i = 1; i < session_table.rows.length; i++){
-    if(session_table.rows[i].cells[0].innerHTML === session_id){
-      session_table.deleteRow(i);
+  
+  // If the user clicks "Yes, delete it!", result.value will be true
+  if (result.value) {
+    const response = await fetch('/delete_provisioning_session_by_id', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ 'prov-session-id': session_id })
+    });
+    const data = await response.json();
+    
+    Swal.fire({
+      title: 'M1 Application Provider says:',
+      text: data.message,
+      icon: 'success',
+      confirmButtonText: 'OK'
+    });
+
+    let session_table = document.getElementById('session_table');
+    for (let i = 1; i < session_table.rows.length; i++) {
+      if (session_table.rows[i].cells[0].innerHTML === session_id) {
+        session_table.deleteRow(i);
+      }
     }
+    
+    // Removes deleted session id from the localStorage
+    localStorage.removeItem(session_id);
+    localStorage.removeItem(session_id + "-cert");
   }
-  // Removes deleted session id from the localStorage
-  localStorage.removeItem(session_id);
-  localStorage.removeItem(session_id + "-cert");
 }
+
 
 async function createChcFromJson(session_id) {
   const response = await fetch('/create_chc_from_json', {
