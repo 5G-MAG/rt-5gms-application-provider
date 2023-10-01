@@ -208,6 +208,29 @@ def get_chc_without_certificate():
         return jsonify(message=f"Failed to set stream from Big-Buck-Bunny JSON for session {provisioning_session_id}. Error: {result.stderr}"), 500
     
 
+# Set consumption reporting
+@app.route('/set_consumption_reporting', methods=['POST'])
+def set_consumption_reporting():
+    provisioning_session_id = request.json.get('prov-session-id', None)
+
+    if not provisioning_session_id:
+        return jsonify(message="Please enter a session ID."), 400
+
+    result = subprocess.run([os.path.join(home_dir, 'rt-5gms-application-function/install/bin/m1-session'),
+                            "set-consumption-reporting",
+                            "-p",
+                            provisioning_session_id,
+                            "-i 10",
+                            "-s 1",
+                            "-l -A"],
+                            capture_output=True,
+                            text=True)
+    if result.returncode == 0:
+        return jsonify(message=f"Consumption reporting activated for session {provisioning_session_id}."), 200
+    else:
+        return jsonify(message=f"Failed to activate consumption reporting for session {provisioning_session_id}. Error: {result.stderr}"), 500
+    
+
 
 
 if __name__ == '__main__':
