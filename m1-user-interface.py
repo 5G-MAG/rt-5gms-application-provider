@@ -220,9 +220,12 @@ def set_consumption_reporting():
                             "set-consumption-reporting",
                             "-p",
                             provisioning_session_id,
-                            "-i 10",
-                            "-s 1",
-                            "-l -A"],
+                            '-i',
+                            '10',
+                            '-s',
+                            '1',
+                            '-l',
+                            '-A'],
                             capture_output=True,
                             text=True)
     if result.returncode == 0:
