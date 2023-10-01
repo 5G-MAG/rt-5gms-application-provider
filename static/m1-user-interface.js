@@ -29,6 +29,7 @@ async function createNewSession() {
   let cell7 = row.insertCell(6);
   let cell8 = row.insertCell(7);
   let cell9 = row.insertCell(8);
+
   cell1.innerHTML = data.session_id;
   cell2.innerHTML = `<button onclick="deleteProvisioningSession('${data.session_id}')">Delete</button>`;
   cell3.innerHTML = `<button onclick="createChcFromJson('${data.session_id}')">Create</button>`;
@@ -37,7 +38,10 @@ async function createNewSession() {
   cell6.innerHTML = data.certificate_id ? `<button onclick="showCertificateDetails('${data.session_id}', '${data.certificate_id}')">Show</button>` : 'Not yet created';
   cell7.innerHTML = `<button onclick="listContentProtocols('${data.session_id}')">Show</button>`;
   cell8.innerHTML = `<button onclick="getChcWithoutCertificate('${data.session_id}')">Create</button>`;
-  cell9.innerHTML = `<button onclick="setConsumptionReporting('${data.session_id}')">Set</button>`;
+  cell9.innerHTML = `
+  <button onclick="setConsumptionReporting('${data.session_id}')">Set</button>
+  <button onclick="showConsumptionReporting('${data.session_id}')">Show</button>
+  <button onclick="deleteConsumptionReporting('${data.session_id}')">Delete</button>`;
 
   localStorage.setItem(
     data.session_id,
@@ -148,6 +152,7 @@ let cell6 = row.insertCell(5);
 let cell7 = row.insertCell(6);
 let cell8 = row.insertCell(7);
 let cell9 = row.insertCell(8);
+
 cell1.innerHTML = data.session_id;
 cell2.innerHTML = `<button onclick="deleteProvisioningSession('${data.session_id}')">Delete</button>`;
 cell3.innerHTML = `<button onclick="createChcFromJson('${data.session_id}')">Create</button>`;
@@ -156,7 +161,10 @@ cell5.innerHTML = `<button onclick="createNewCertificate('${data.session_id}')">
 cell6.innerHTML = data.certificate_id ? `<button onclick="showCertificateDetails('${data.session_id}', '${data.certificate_id}')">Show</button>` : 'Not yet created';
 cell7.innerHTML = `<button onclick="listContentProtocols('${data.session_id}')">Show</button>`;
 cell8.innerHTML = `<button onclick="getChcWithoutCertificate('${data.session_id}')">Create</button>`;
-cell9.innerHTML = `<button onclick="setConsumptionReporting('${session_id}')">Set</button>`;
+cell9.innerHTML = `
+<button onclick="setConsumptionReporting('${data.session_id}')">Set</button>
+<button onclick="showConsumptionReporting('${data.session_id}')">Show</button>
+<button onclick="deleteConsumptionReporting('${data.session_id}')">Delete</button>`;
 
 localStorage.setItem(
   data.session_id,
@@ -284,6 +292,42 @@ async function setConsumptionReporting(session_id) {
   }); 
   }
 
+  async function showConsumptionReporting(session_id) {
+    const response = await fetch('/show_consumption_reporting', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ 'prov-session-id': session_id })
+    });
+    const data = await response.json();
+    //alert(data.message);
+    Swal.fire({
+      title: 'Application Provider says:',
+      text: data.message,
+      icon: 'success',
+      confirmButtonText: 'OK'
+    }); 
+    }
+
+  async function deleteConsumptionReporting(session_id) {
+    const response = await fetch('/delete_consumption_reporting', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ 'prov-session-id': session_id })
+    });
+    const data = await response.json();
+    //alert(data.message);
+    Swal.fire({
+      title: 'Application Provider says:',
+      text: data.message,
+      icon: 'success',
+      confirmButtonText: 'OK'
+    }); 
+    }
+
 window.onload = function() {
 let session_table = document.getElementById('session_table');
 for (let i = 0; i < localStorage.length; i++) {
@@ -299,6 +343,7 @@ for (let i = 0; i < localStorage.length; i++) {
   let cell7 = row.insertCell(6);
   let cell8 = row.insertCell(7);
   let cell9 = row.insertCell(8);
+
   cell1.innerHTML = session_id;
   cell2.innerHTML = `<button onclick="deleteProvisioningSession('${session_id}')">Delete</button>`;
   cell3.innerHTML = `<button onclick="createChcFromJson('${session_id}')">Create</button>`;
@@ -315,7 +360,10 @@ for (let i = 0; i < localStorage.length; i++) {
     cell7.innerHTML = 'Not yet created';
   }
   cell8.innerHTML = `<button onclick="getChcWithoutCertificate('${session_id}')">Create</button>`;
-  cell9.innerHTML = `<button onclick="setConsumptionReporting('${session_id}')">Set</button>`;      
+  cell9.innerHTML = `
+  <button onclick="setConsumptionReporting('${data.session_id}')">Set</button>
+  <button onclick="showConsumptionReporting('${data.session_id}')">Show</button>
+  <button onclick="deleteConsumptionReporting('${data.session_id}')">Delete</button>`;
 }
 }
 
