@@ -247,11 +247,11 @@ def show_consumption_reporting():
                             provisioning_session_id],
                             capture_output=True,
                             text=True)
+
     if result.returncode == 0:
-        return jsonify(message=f"Consumption reporting activated for session {provisioning_session_id}."), 200
+        return jsonify(message=f"Consumption reporting activated for session {provisioning_session_id}", details=result.stdout), 200
     else:
         return jsonify(message=f"Failed to activate consumption reporting for session {provisioning_session_id}. Error: {result.stderr}"), 500
-    
 
 
 # Delete consmption reporting

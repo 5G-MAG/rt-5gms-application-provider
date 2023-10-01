@@ -377,11 +377,9 @@ for (let i = 0; i < localStorage.length; i++) {
     cell7.innerHTML = 'Not yet created';
   }
   cell8.innerHTML = `<button onclick="getChcWithoutCertificate('${session_id}')">Create</button>`;
-  cell9.innerHTML = `
-  <button onclick="setConsumptionReporting('${data.session_id}')">Set</button>
-  <button onclick="showConsumptionReporting('${data.session_id}')">Show</button>
-  <button onclick="deleteConsumptionReporting('${data.session_id}')">Delete</button>`;
+    cell9.innerHTML = `
+      <button onclick="setConsumptionReporting('${session_id}')">Set</button>
+      <button onclick="showConsumptionReporting('${session_id}')">Show</button>
+      <button onclick="deleteConsumptionReporting('${session_id}')">Delete</button>`;
 }
 }
-
-  
