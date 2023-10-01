@@ -21,12 +21,12 @@ async function createNewSession() {
     let cell8 = row.insertCell(7);
     cell1.innerHTML = data.session_id;
     cell2.innerHTML = `<button onclick="deleteProvisioningSession('${data.session_id}')">Delete</button>`;
-    cell3.innerHTML = `<button onclick="createChcFromJson('${data.session_id}')">Create Content Hosting Configuration from JSON</button>`;
-    cell4.innerHTML = `<button onclick="getProvisioningSessionDetails()">Check session details</button>`;
-    cell5.innerHTML = `<button onclick="createNewCertificate('${data.session_id}')">Create Server Certificate</button>`;
-    cell6.innerHTML = data.certificate_id ? `<button onclick="showCertificateDetails('${data.session_id}', '${data.certificate_id}')">Show Certificate Details</button>` : 'Not yet created';
-    cell7.innerHTML = `<button onclick="listContentProtocols('${data.session_id}')">List Content Protocols</button>`;
-    cell8.innerHTML = `<button onclick="getChcWithoutCertificate('${data.session_id}')">Get Content Hosting Configuration without Certificate</button>`;
+    cell3.innerHTML = `<button onclick="createChcFromJson('${data.session_id}')">Create</button>`;
+    cell4.innerHTML = `<button onclick="getProvisioningSessionDetails()">Show</button>`;
+    cell5.innerHTML = `<button onclick="createNewCertificate('${data.session_id}')">Create</button>`;
+    cell6.innerHTML = data.certificate_id ? `<button onclick="showCertificateDetails('${data.session_id}', '${data.certificate_id}')">Show</button>` : 'Not yet created';
+    cell7.innerHTML = `<button onclick="listContentProtocols('${data.session_id}')">Show</button>`;
+    cell8.innerHTML = `<button onclick="getChcWithoutCertificate('${data.session_id}')">Create</button>`;
 
     localStorage.setItem(
       data.session_id,
@@ -129,12 +129,12 @@ async function createNewSessionWithCHCMultiple() {
   let cell8 = row.insertCell(7);
   cell1.innerHTML = data.session_id;
   cell2.innerHTML = `<button onclick="deleteProvisioningSession('${data.session_id}')">Delete</button>`;
-  cell3.innerHTML = `<button onclick="createChcFromJson('${data.session_id}')">Create Content Hosting Configuration from JSON</button>`;
-  cell4.innerHTML = `<button onclick="getProvisioningSessionDetails()">Check session details</button>`;
-  cell5.innerHTML = `<button onclick="createNewCertificate('${data.session_id}')">Create Server Certificate</button>`;
-  cell6.innerHTML = data.certificate_id ? `<button onclick="showCertificateDetails('${data.session_id}', '${data.certificate_id}')">Show Certificate Details</button>` : 'Not yet created';
-  cell7.innerHTML = `<button onclick="listContentProtocols('${data.session_id}')">List Content Protocols</button>`;
-  cell8.innerHTML = `<button onclick="getChcWithoutCertificate('${data.session_id}')">Get Content Hosting Configuration without Certificate</button>`;
+  cell3.innerHTML = `<button onclick="createChcFromJson('${data.session_id}')">Create</button>`;
+  cell4.innerHTML = `<button onclick="getProvisioningSessionDetails()">Show</button>`;
+  cell5.innerHTML = `<button onclick="createNewCertificate('${data.session_id}')">Create</button>`;
+  cell6.innerHTML = data.certificate_id ? `<button onclick="showCertificateDetails('${data.session_id}', '${data.certificate_id}')">Show</button>` : 'Not yet created';
+  cell7.innerHTML = `<button onclick="listContentProtocols('${data.session_id}')">Show</button>`;
+  cell8.innerHTML = `<button onclick="getChcWithoutCertificate('${data.session_id}')">Create</button>`;
 
   localStorage.setItem(
     data.session_id,
@@ -260,20 +260,20 @@ window.onload = function() {
     let cell8 = row.insertCell(7);
     cell1.innerHTML = session_id;
     cell2.innerHTML = `<button onclick="deleteProvisioningSession('${session_id}')">Delete</button>`;
-    cell3.innerHTML = `<button onclick="createChcFromJson('${session_id}')">Create Content Hosting Configuration from JSON</button>`;
-    cell4.innerHTML = `<button onclick="getProvisioningSessionDetails()">Check session details</button>`;
-    cell5.innerHTML = `<button onclick="createNewCertificate('${session_id}')">Create Server Certificate</button>`;
+    cell3.innerHTML = `<button onclick="createChcFromJson('${session_id}')">Create</button>`;
+    cell4.innerHTML = `<button onclick="getProvisioningSessionDetails()">Show</button>`;
+    cell5.innerHTML = `<button onclick="createNewCertificate('${session_id}')">Create</button>`;
     if (session_data.certificate_id && session_data.certificate_id !== 'Not yet created') {
-      cell6.innerHTML = `<button onclick="showCertificateDetails('${session_id}', '${session_data.certificate_id}')">Show Certificate Details</button>`;
+      cell6.innerHTML = `<button onclick="showCertificateDetails('${session_id}', '${session_data.certificate_id}')">Show</button>`;
     } else {
       cell6.innerHTML = 'Not yet created';
     }
     if (session_data.protocol_list_created) {
-      cell7.innerHTML = `<button onclick="listContentProtocols('${session_id}')">List Content Protocols</button>`;
+      cell7.innerHTML = `<button onclick="listContentProtocols('${session_id}')">Show</button>`;
     } else {
       cell7.innerHTML = 'Not yet created';
     }
-    cell8.innerHTML = `<button onclick="getChcWithoutCertificate('${session_id}')">Get Content Hosting Configuration without Certificate</button>`;      
+    cell8.innerHTML = `<button onclick="getChcWithoutCertificate('${session_id}')">Create</button>`;      
   }
 }
 

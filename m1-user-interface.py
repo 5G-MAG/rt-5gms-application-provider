@@ -206,6 +206,7 @@ def get_chc_without_certificate():
         return jsonify(message=f"Stream set from Big-Buck-Bunny JSON for session {provisioning_session_id}."), 200
     else:
         return jsonify(message=f"Failed to set stream from Big-Buck-Bunny JSON for session {provisioning_session_id}. Error: {result.stderr}"), 500
+    
 
 
 
