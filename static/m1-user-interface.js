@@ -63,7 +63,6 @@ const result = await Swal.fire({
   cancelButtonText: 'No'
 });
 
-// If the user clicks "Yes, delete it!", result.value will be true
 if (result.value) {
   const response = await fetch('/delete_provisioning_session_by_id', {
     method: 'POST',
@@ -301,32 +300,50 @@ async function setConsumptionReporting(session_id) {
       body: JSON.stringify({ 'prov-session-id': session_id })
     });
     const data = await response.json();
-    //alert(data.message);
-    Swal.fire({
-      title: 'Application Provider says:',
-      text: data.message,
-      icon: 'success',
-      confirmButtonText: 'OK'
-    }); 
+    let detailsWindow = window.open("", "_blank");
+    detailsWindow.document.write("<pre>" + data.details + "</pre>");
     }
 
-  async function deleteConsumptionReporting(session_id) {
-    const response = await fetch('/delete_consumption_reporting', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({ 'prov-session-id': session_id })
-    });
-    const data = await response.json();
-    //alert(data.message);
-    Swal.fire({
-      title: 'Application Provider says:',
-      text: data.message,
-      icon: 'success',
-      confirmButtonText: 'OK'
-    }); 
+    async function deleteConsumptionReporting(session_id) {
+      const result = await Swal.fire({
+        title: 'Delete Consumption Reporting?',
+        text: "Are you sure? You won't be able to revert this.",
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonText: 'Yes',
+        cancelButtonText: 'No'
+      });
+    
+      if (result.isConfirmed) {
+        const response = await fetch('/delete_consumption_reporting', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ 'prov-session-id': session_id })
+        });
+    
+        const data = await response.json();
+        //alert(data.message);
+    
+        if (response.ok) {
+          Swal.fire({
+            title: 'Application Provider says:',
+            text: data.message,
+            icon: 'success',
+            confirmButtonText: 'OK'
+          });
+        } else {
+          Swal.fire({
+            title: 'Application Provider says:',
+            text: data.message,
+            icon: 'error',
+            confirmButtonText: 'OK'
+          });
+        }
+      }
     }
+    
 
 window.onload = function() {
 let session_table = document.getElementById('session_table');
