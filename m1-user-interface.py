@@ -230,6 +230,45 @@ def set_consumption_reporting():
     else:
         return jsonify(message=f"Failed to activate consumption reporting for session {provisioning_session_id}. Error: {result.stderr}"), 500
     
+# Show consumption reporting
+@app.route('/show_consumption_reporting', methods=['POST'])
+def show_consumption_reporting():
+    provisioning_session_id = request.json.get('prov-session-id', None)
+
+    if not provisioning_session_id:
+        return jsonify(message="Please enter a session ID."), 400
+
+    result = subprocess.run([os.path.join(home_dir, 'rt-5gms-application-function/install/bin/m1-session'),
+                            "show-consumption-reporting",
+                            "-p",
+                            provisioning_session_id],
+                            capture_output=True,
+                            text=True)
+    if result.returncode == 0:
+        return jsonify(message=f"Consumption reporting activated for session {provisioning_session_id}."), 200
+    else:
+        return jsonify(message=f"Failed to activate consumption reporting for session {provisioning_session_id}. Error: {result.stderr}"), 500
+    
+
+
+# Delete consmption reporting
+@app.route('/delete_consumption_reporting', methods=['POST'])
+def delete_consumption_reporting():
+    provisioning_session_id = request.json.get('prov-session-id', None)
+
+    if not provisioning_session_id:
+        return jsonify(message="Please enter a session ID."), 400
+
+    result = subprocess.run([os.path.join(home_dir, 'rt-5gms-application-function/install/bin/m1-session'),
+                            "del-consumption-reporting",
+                            "-p",
+                            provisioning_session_id],
+                            capture_output=True,
+                            text=True)
+    if result.returncode == 0:
+        return jsonify(message=f"Consumption reporting deleted for session {provisioning_session_id}."), 200
+    else:
+        return jsonify(message=f"Failed to delete consumption reporting for session {provisioning_session_id}. Error: {result.stderr}"), 500
 
 
 
