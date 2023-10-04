@@ -10,13 +10,18 @@
 
   <div class="header">
     <img src="{{ url_for('static', filename='images/5gmag.png') }}" alt="5GMAG Logo" class="logo">
-    <h1>M1 Client Tool</h1>
+    <h1>5G Media Streaming Management UI</h1>
   </div>
 
   <div class="container">
   <div class="buttons">
     <button onclick="createNewSession()">Create Provisioning Session</button><br>
-    <button onclick="createNewSessionWithCHCMultiple()">Create Provisioning Session with Content Hosting Configuration containing multiple entry points</button>
+    <button onclick="createNewSessionWithCHCMultiple()">
+      Create Provisioning Session with<br>
+      Content Hosting Configuration<br>
+      containing multiple entry points
+    </button>
+    <!--<button onclick="createNewSessionWithCHCMultiple()">Create Provisioning Session with Content Hosting Configuration containing multiple entry points</button>-->
   </div>
 
   <table id="session_table">
