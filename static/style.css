@@ -145,13 +145,25 @@ button:hover {
 /* Information Button Style */
 
 #infoBtn {
-    position: fixed;
+    font-family: 'Courier New', Courier, monospace;
+    font-weight: bold;
+    margin-top: 90px;
+    position: relative;
+    color: white;
+    border: 1px solid white;
     bottom: 20px;
     left: 50%;
     transform: translateX(-50%);
-    z-index: 1000; /* Ensure it appears above other elements */
+    z-index: 1000;
+    border-radius: 50%; 
+    background-color: #2596be;
+    box-shadow: 0px 0px 5px rgba(0,0,0,0.3);
+    width: 50px;
+    height: 50px;
+    text-align: center;
+
   }
-  
+
 .modal {
     display: none;
     position: fixed;
@@ -172,11 +184,11 @@ button:hover {
     box-shadow: 0 4px 8px 0 rgba(0,0,0,0.2);
     animation-name: animatetop;
     animation-duration: 0.4s;
-    transition: top 0.5s ease-out;
+    transition: opacity 0.4s ease-out;
+    opacity: 1;
   }
 
   .modal-hiding .modal-content {
-    top: -300px;
     opacity: 0;
   }
   
@@ -198,5 +210,17 @@ button:hover {
     color: #000;
     text-decoration: none;
     cursor: pointer;
+  }
+  
+  .icon-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-wrap: wrap;
+    height: 100%;
+  }
+  
+  .icon-container img {
+    margin: 8px;
   }
   
