@@ -115,34 +115,7 @@ button:hover {
     z-index: 2;
 }
 
-
-@font-face {
-    font-family: 'Poppins ExtraLight';
-    src: url('fonts/Poppins-ExtraLight.ttf') format('truetype');
-    font-weight: 200;
-    font-style: normal;
-    font-display: swap;
-}
-
-
-@font-face {
-    font-family: 'Poppins Bold';
-    src: url('fonts/Poppins-Bold.ttf') format('truetype');
-    font-weight: 200;
-    font-style: normal;
-    font-display: swap;
-}
-
-@font-face {
-    font-family: 'Poppins Semibold';
-    src: url('fonts/Poppins-SemiBold.ttf') format('truetype');
-    font-weight: 200;
-    font-style: normal;
-    font-display: swap;
-}
-
-
-/* Information Button Style */
+/* INFORMATION WINDOW */
 
 #infoBtn {
     font-family: 'Courier New', Courier, monospace;
@@ -175,7 +148,6 @@ button:hover {
     background-color: rgba(0,0,0,0.4);
   }
   
-  /* Modal Content */
   .modal-content {
     background-color: #fefefe;
     margin: 15% auto;
@@ -205,7 +177,6 @@ button:hover {
     to {top: 0; opacity: 1}
   }
   
-  /* Close button */
   .close {
     color: black;
     float: right;
@@ -230,5 +201,29 @@ button:hover {
   
   .icon-container img {
     margin: 12px;
-  }
-  
+  }  
+
+  @font-face {
+    font-family: 'Poppins ExtraLight';
+    src: url('fonts/Poppins-ExtraLight.ttf') format('truetype');
+    font-weight: 200;
+    font-style: normal;
+    font-display: swap;
+}
+
+
+@font-face {
+    font-family: 'Poppins Bold';
+    src: url('fonts/Poppins-Bold.ttf') format('truetype');
+    font-weight: 200;
+    font-style: normal;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: 'Poppins Semibold';
+    src: url('fonts/Poppins-SemiBold.ttf') format('truetype');
+    font-weight: 200;
+    font-style: normal;
+    font-display: swap;
+}

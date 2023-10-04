@@ -58,39 +58,33 @@
     </div>
   </div>
   <script>
-  // Open modal
-  // Get the modal
-  var modal = document.getElementById('infoModal');
+    var modal = document.getElementById('infoModal');
+    var btn = document.getElementById('infoBtn');
+    var span = document.getElementsByClassName("close")[0];
 
-  // Get the button that opens the modal
-  var btn = document.getElementById('infoBtn');
+    // open modal
+    btn.onclick = function() {
+      modal.style.display = "block";
+      modal.classList.remove("modal-hiding");
+    }
 
-  // Get the <span> element that closes the modal
-  var span = document.getElementsByClassName("close")[0];
-
-  // Open the modal
-  btn.onclick = function() {
-    modal.style.display = "block";
-    modal.classList.remove("modal-hiding");
-  }
-
-  // Close the modal
-  span.onclick = function() {
-    modal.classList.add('modal-hiding');
-    setTimeout(function() {
-      modal.style.display = "none";
-    }, 400);
-  }
-
-  // Close the modal when clicking outside of it
-  window.onclick = function(event) {
-    if (event.target === modal) {
+    // close modal
+    span.onclick = function() {
       modal.classList.add('modal-hiding');
       setTimeout(function() {
         modal.style.display = "none";
       }, 400);
     }
-  }
+
+    // closing modal when clicking outside of it
+    window.onclick = function(event) {
+      if (event.target === modal) {
+        modal.classList.add('modal-hiding');
+        setTimeout(function() {
+          modal.style.display = "none";
+        }, 400);
+      }
+    }
   </script>
 
   </body>
