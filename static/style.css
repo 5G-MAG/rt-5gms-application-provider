@@ -167,7 +167,7 @@ button:hover {
 .modal {
     display: none;
     position: fixed;
-    z-index: 1;
+    z-index: 9999;
     left: 0;
     top: 0;
     width: 100%;
@@ -187,6 +187,14 @@ button:hover {
     transition: opacity 0.4s ease-out;
     opacity: 1;
   }
+
+  .modal-content p {
+    padding: 5%;
+    text-align: justify;
+    hyphens: auto; 
+    font-family: 'Poppins Semibold', sans-serif;
+  }
+  
 
   .modal-hiding .modal-content {
     opacity: 0;
@@ -221,6 +229,6 @@ button:hover {
   }
   
   .icon-container img {
-    margin: 8px;
+    margin: 12px;
   }
   
