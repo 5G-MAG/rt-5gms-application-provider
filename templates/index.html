@@ -21,7 +21,6 @@
       Content Hosting Configuration<br>
       containing multiple entry points
     </button>
-    <!--<button onclick="createNewSessionWithCHCMultiple()">Create Provisioning Session with Content Hosting Configuration containing multiple entry points</button>-->
   </div>
 
   <table id="session_table">
@@ -42,5 +41,55 @@
     </tbody>
   </table>
   </div>
+
+  <button id="infoBtn">i</button>
+  <div id="infoModal" class="modal">
+    <div class="modal-content">
+      <span class="close">&times;</span>
+      <p>Some text and information...</p>
+      <div class="icon-container">
+        <img src="icon1.png" alt="Icon 1">
+        <img src="icon2.png" alt="Icon 2">
+        <img src="icon3.png" alt="Icon 3">
+        <img src="icon4.png" alt="Icon 4">
+      </div>
+    </div>
+  </div>
+  <script>
+  // Open modal
+  // Get the modal
+  var modal = document.getElementById('infoModal');
+
+  // Get the button that opens the modal
+  var btn = document.getElementById('infoBtn');
+
+  // Get the <span> element that closes the modal
+  var span = document.getElementsByClassName("close")[0];
+
+  // Open the modal
+  btn.onclick = function() {
+    modal.style.display = "block";
+    modal.classList.remove("modal-hiding");
+  }
+
+  // Close the modal
+  span.onclick = function() {
+  modal.classList.add('modal-hiding');
+  setTimeout(function() {
+    modal.style.display = "none";
+  }, 400);
+}
+
+  // Close the modal when clicking outside of it
+  window.onclick = function(event) {
+  if (event.target === modal) {
+    modal.classList.add('modal-hiding');
+    setTimeout(function() {
+      modal.style.display = "none";
+    }, 400);
+  }
+}
+  </script>
+
   </body>
 </html>
