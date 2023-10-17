@@ -1,5 +1,8 @@
 # Refactoring in progress!
 
+```
+uvicorn server:app --reload
+```
 
 
 
