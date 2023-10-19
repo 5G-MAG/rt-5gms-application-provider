@@ -10,8 +10,12 @@ from rt_m1_client.types import ResourceId, ApplicationId
 
 app = FastAPI()
 
+PROVISIONING_SESSION_IDS = []
+
 @app.post("/create_session")
 async def new_provisioning_session():
+
+    global PROVISIONING_SESSION_IDS
 
     args = argparse.Namespace(app_id="MyAppId", asp_id="MyASPId")
     config = Configuration()
@@ -25,5 +29,10 @@ async def new_provisioning_session():
     if provisioning_session_id is None:
         return {"error": "Failed to create a new provisioning session"}
         
+    PROVISIONING_SESSION_IDS.append(str(provisioning_session_id))
     return {"message": f"Provisioning session {provisioning_session_id} created"}
 
+
+@app.get("/list_sessions")
+async def list_provisioning_session_ids():
+    return '\n'.join(PROVISIONING_SESSION_IDS)
