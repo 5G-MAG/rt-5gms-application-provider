@@ -1,6 +1,7 @@
-from fastapi import FastAPI
-from typing import Optional
+from fastapi import FastAPI, Depends, HTTPException, Path
+from typing import Optional, Any
 import argparse
+from pydantic import BaseModel
 from ap_package import append_ap_packages_to_sys_path
 append_ap_packages_to_sys_path()
 
@@ -9,56 +10,48 @@ from rt_m1_client.types import ResourceId, ApplicationId
 
 
 app = FastAPI()
+config = Configuration()
 
-# Local approach
-PROVISIONING_SESSION_IDS = []
+class DeleteSessionArgs(BaseModel):
+    provisioning_session: Optional[str]
+    ingesturl: str
+    entrypoint: str
 
+def get_config():
+    return Configuration()
+
+# Creates new provisioning session
 @app.post("/create_session")
 async def new_provisioning_session():
 
-    global PROVISIONING_SESSION_IDS
-
-    args = argparse.Namespace(app_id="MyAppId", asp_id="MyASPId")
-    config = Configuration()
-
     session = await get_session(config)
+    args = argparse.Namespace(app_id="MyAppId", asp_id="MyASPId")
     app_id = args.app_id or config.get('external_app_id')
     asp_id = args.asp_id or config.get('asp_id')
 
-    provisioning_session_id: Optional[ResourceId] = await session.createDownlinkPullProvisioningSession(ApplicationId(app_id), ApplicationId(asp_id) if asp_id else None)
+    provisioning_session_id: Optional[ResourceId] = await session.createDownlinkPullProvisioningSession(
+        ApplicationId(app_id),
+        ApplicationId(asp_id) if asp_id else None)
     
     if provisioning_session_id is None:
-        return {"error": "Failed to create a new provisioning session"}
+        return {"Failed to create a new provisioning session"}
         
-    PROVISIONING_SESSION_IDS.append(str(provisioning_session_id))
-    return {"message": f"Provisioning session {provisioning_session_id} created"}
-
-
-@app.get("/list_sessions")
-async def list_provisioning_session_ids():
-    return '\n'.join(PROVISIONING_SESSION_IDS)
+    return {provisioning_session_id}
 
 
 # Remove particular provisioning session
-
-'''
-async def cmd_delete_stream(args: argparse.Namespace, config: Configuration) -> int:
+@app.delete("/delete_session/{provisioning_session_id}")
+async def cmd_delete_stream(provisioning_session_id: str, config: Configuration = Depends(get_config)) -> int:    
     session = await get_session(config)
-    if args.provisioning_session is not None:
-        ps_id = args.provisioning_session
-    else:
-        ps_id = await session.provisioningSessionIdByIngestUrl(args.ingesturl, args.entrypoint)
-        if ps_id is None:
-            print('No such hosting session found')
-            return 1
-    result = await session.provisioningSessionDestroy(ps_id)
+    
+    result = await session.provisioningSessionDestroy(provisioning_session_id)
     if result is None:
-        print(f'Provisioning Session {ps_id} not found')
+        print(f'Provisioning Session {provisioning_session_id} not found')
         return 1
+    
     if not result:
-        print(f'Failed to destroy Provisioning Session {ps_id}')
+        print(f'Failed to destroy Provisioning Session {provisioning_session_id}')
         return 1
-    print(f'Provisioning Session {ps_id} and all its resources were destroyed')
+    
+    print(f'Provisioning Session {provisioning_session_id} and all its resources were destroyed')
     return 0
-
-'''
