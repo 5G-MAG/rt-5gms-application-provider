@@ -12,7 +12,7 @@ uvicorn server:app --reload
 ### Per provisioning session:
 - Remove Provisioning session ✅
 - CHC from JSON ✅
-- Check the session details 
+- Check the session details ✅
 - Create Server Certificate
 - Show Certificate Details
 - Show Content Protocols

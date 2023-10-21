@@ -1,5 +1,6 @@
-from fastapi import FastAPI, Depends, HTTPException, Path
-from typing import List, Dict, Optional, Any
+from fastapi import FastAPI, Query, Depends, HTTPException
+from fastapi.responses import JSONResponse
+from typing import List, Dict, Optional, Any, Union
 import argparse
 from pydantic import BaseModel
 from ap_package import append_ap_packages_to_sys_path
@@ -7,6 +8,8 @@ append_ap_packages_to_sys_path()
 import json
 import OpenSSL
 import datetime
+import traceback
+import subprocess
 
 
 from config import Configuration, get_session
@@ -21,6 +24,16 @@ class DeleteSessionArgs(BaseModel):
     provisioning_session: Optional[str]
     ingesturl: str
     entrypoint: str
+
+class CreateNewStreamModel(BaseModel):
+    ingesturl: str
+    app_id: str
+    entrypoints: Optional[List[str]] = None
+    name: Optional[str] = None
+    asp_id: Optional[str] = None
+    ssl: bool = False
+    insecure: bool = True
+    domain_name_alias: Optional[str] = None
 
 def get_config():
     return Configuration()
@@ -159,7 +172,7 @@ async def list_verbose(config: Configuration = Depends(get_config)) -> List[Dict
         chc = await session.contentHostingConfigurationGet(ps_id)
         if chc:
             ps_dict["ContentHostingConfiguration"] = chc
-            
+
         crc = await session.consumptionReportingConfigurationGet(ps_id)
         if crc:
             ps_dict["ConsumptionReportingConfiguration"] = crc
@@ -167,3 +180,24 @@ async def list_verbose(config: Configuration = Depends(get_config)) -> List[Dict
         results.append(ps_dict)
 
     return results
+
+@app.post("/create_session_chc")
+async def create_session_chc():
+    try:
+        command = [
+            "/home/stepski/rt-5gms-application-function/install/bin/m1-session",
+            "new-stream",
+            "-e", "MyAppId",
+            "-a", "MyASPId",
+            "-n", "Big Buck Bunny",
+            "https://ftp.itec.aau.at/datasets/DASHDataset2014/BigBuckBunny/4sec/",
+            "BigBuckBunny_4s_onDemand_2014_05_09.mpd"
+        ]
+        
+        subprocess.run(command, check=True)
+        
+        return {"status": "success"}
+    except subprocess.CalledProcessError as e:
+        raise HTTPException(status_code=500, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
