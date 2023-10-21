@@ -4,9 +4,10 @@ import argparse
 from pydantic import BaseModel
 from ap_package import append_ap_packages_to_sys_path
 append_ap_packages_to_sys_path()
+import json
 
 from config import Configuration, get_session
-from rt_m1_client.types import ResourceId, ApplicationId
+from rt_m1_client.types import ResourceId, ApplicationId, ContentHostingConfiguration
 
 
 app = FastAPI()
@@ -20,7 +21,9 @@ class DeleteSessionArgs(BaseModel):
 def get_config():
     return Configuration()
 
+
 # Creates new provisioning session
+# new-provisioning-session -e MyAppId -a MyASPId
 @app.post("/create_session")
 async def new_provisioning_session():
 
@@ -40,6 +43,7 @@ async def new_provisioning_session():
 
 
 # Remove particular provisioning session
+# del-stream -p ${provisioning_session_id}
 @app.delete("/delete_session/{provisioning_session_id}")
 async def cmd_delete_stream(provisioning_session_id: str, config: Configuration = Depends(get_config)) -> int:    
     session = await get_session(config)
@@ -55,3 +59,34 @@ async def cmd_delete_stream(provisioning_session_id: str, config: Configuration 
     
     print(f'Provisioning Session {provisioning_session_id} and all its resources were destroyed')
     return 0
+
+# Create CHC from json
+# set-stream -p ${provisioning_session_id} ~/rt-5gms-application-function/examples/ContentHostingConfiguration_Big-Buck-Bunny_pull-ingest.json
+
+@app.post("/set_stream/{provisioning_session_id}")
+async def set_stream(provisioning_session_id: str, config: Configuration = Depends(get_config)) -> int:
+    session = await get_session(config)
+    
+    json_path = "/home/stepski/rt-5gms-application-function/examples/ContentHostingConfiguration_Llama-Drama_pull-ingest.json"
+    with open(json_path, 'r') as f:
+        chc = json.load(f)
+    
+    old_chc = await session.contentHostingConfigurationGet(provisioning_session_id)
+    
+    if old_chc is None:
+        result = await session.contentHostingConfigurationCreate(provisioning_session_id, chc)
+    else:
+        for dc in chc['distributionConfigurations']:
+            for strip_field in ['canonicalDomainName', 'baseURL']:
+                if strip_field in dc:
+                    del dc[strip_field]
+        result = await session.contentHostingConfigurationUpdate(provisioning_session_id, chc)
+
+    if not result:
+        print(f'Failed to set hosting for provisioning session {provisioning_session_id}')
+        return 1
+    
+    print(f'Hosting set for provisioning session {provisioning_session_id}')
+    return 0
+
+

@@ -4,6 +4,23 @@
 uvicorn server:app --reload
 ```
 
+## Functionalities
+
+- Create Provisioning session ✅
+- Create Provisioning session with CHC
+
+### Per provisioning session:
+- Remove Provisioning session ✅
+- CHC from JSON
+- Check the session details
+- Create Server Certificate
+- Show Certificate Details
+- Show Content Protocols
+- Create CHC without certificate
+- Cosumption Reporting
+
+
+
 # 5GMS Application Function Management tool
 TBD
 ## Licensing and authorization
