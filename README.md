@@ -1,7 +1,7 @@
 <p align="center">
-  <img src="https://img.shields.io/badge/Status-Under_Development-yellow" alt="Under Development"><br>
-  <img src="https://img.shields.io/github/v/tag/5G-MAG/rt-5gms-application-function?label=version" alt="Version"><br>
-  <img src="https://img.shields.io/github/license/stojkovicv/5gms-m1-management-tool" alt="License"><br>
+  <img src="https://img.shields.io/badge/Status-Under_Development-yellow" alt="Under Development">
+  <img src="https://img.shields.io/github/v/tag/5G-MAG/rt-5gms-application-function?label=version" alt="Version">
+  <img src="https://img.shields.io/github/license/stojkovicv/5gms-m1-management-tool" alt="License">
   <img src="https://img.shields.io/github/issues-raw/stojkovicv/5gms-m1-management-tool" alt="Open Issues">
   <img src="https://img.shields.io/github/issues-closed-raw/stojkovicv/5gms-m1-management-tool" alt="Closed Issues">
   <img src="https://img.shields.io/badge/Branches-3-blue" alt="Number of Branches">
