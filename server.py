@@ -207,3 +207,47 @@ async def create_session_chc():
         raise HTTPException(status_code=500, detail=str(e))
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+    
+
+
+@app.post("/certificate/{provisioning_session_id}")
+async def new_certificate(provisioning_session_id: str, csr: bool = Query(False), extra_domain_names: str = Query(None)):
+    config = Configuration()
+    try:
+        session = await get_session(config)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+    if csr:
+        try:
+            result = await session.certificateNewSigningRequest(provisioning_session_id, extra_domain_names=extra_domain_names)
+            if result is None:
+                raise HTTPException(status_code=400, detail='Failed to reserve certificate')
+            cert_id, csr_data = result
+            return {"certificate_id": cert_id, "csr": csr_data}
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=str(e))
+
+    try:
+        cert_id = await session.createNewCertificate(provisioning_session_id, extra_domain_names=extra_domain_names)
+        if cert_id is None:
+            raise HTTPException(status_code=400, detail='Failed to create certificate')
+        return {"certificate_id": cert_id}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+    
+
+@app.get("/show_certificate/{provisioning_session_id}/{certificate_id}")
+async def show_certificate(provisioning_session_id: str, certificate_id: str, raw: Optional[bool] = False):
+    session = await get_session(config)
+    cert_data = await session.certificateGet(provisioning_session_id, certificate_id)
+
+    if cert_data is None:
+        raise HTTPException(status_code=404, detail=f"Unable to get certificate {certificate_id} for provisioning session {provisioning_session_id}")
+
+    if raw:
+        return {"raw_data": cert_data}
+
+    pretty_cert_data = await __prettyPrintCertificate(cert_data, indent=2)
+    return {"certificate_details": pretty_cert_data}
+    
