@@ -1,6 +1,6 @@
+AF Version: ![Version](https://img.shields.io/github/v/tag/5G-MAG/rt-5gms-application-function?label=version)
 ![Open Issues](https://img.shields.io/github/issues-raw/stojkovicv/5gms-m1-management-tool)
 ![Closed Issues](https://img.shields.io/github/issues-closed-raw/stojkovicv/5gms-m1-management-tool)
-![Version](https://img.shields.io/github/v/tag/5G-MAG/rt-5gms-application-function?label=version)
 ![License](https://img.shields.io/github/license/stojkovicv/5gms-m1-management-tool)
 ![Last Commit](https://img.shields.io/github/last-commit/stojkovicv/5gms-m1-management-tool)
 ![GitHub language count](https://img.shields.io/github/languages/count/stojkovicv/5gms-m1-management-tool)
