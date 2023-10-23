@@ -108,38 +108,33 @@ async def set_stream(provisioning_session_id: str, config: Configuration = Depen
 
 # Retrieve Session Details
 # list -v
-@app.get("/details", response_model=List[dict])
-async def list_provisioning_sessions():
-    config = Configuration()
-    try:
-        session = await get_session(config)
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+@app.get("/details")
+async def get_provisioning_session_details():
+    session = await get_session(config)
+    details = {}
 
-    provisioning_sessions = []
+    
     for ps_id in await session.provisioningSessionIds():
-        ps_data = {"id": ps_id, "Certificates": [], "ContentHostingConfiguration": None, "ConsumptionReportingConfiguration": None}
+        details[ps_id] = {"Certificates": {}}
         certs = await session.certificateIds(ps_id)
+
         for cert_id in certs:
             try:
                 cert = await session.certificateGet(ps_id, cert_id)
                 if cert is not None:
-                    cert_data = await __prettyPrintCertificate(cert, indent=6)
-                    ps_data["Certificates"].append({"id": cert_id, "data": cert_data})
+                    details[ps_id]["Certificates"][cert_id] = cert
                 else:
-                    ps_data["Certificates"].append({"id": cert_id, "data": "Certificate not yet uploaded"})
-            except M1Error as err:
-                ps_data["Certificates"].append({"id": cert_id, "error": str(err)})
+                    details[ps_id]["Certificates"][cert_id] = "Certificate not yet uploaded"
+            except Exception as err:
+                details[ps_id]["Certificates"][cert_id] = f"Certificate not available: {str(err)}"
 
         chc = await session.contentHostingConfigurationGet(ps_id)
-        ps_data["ContentHostingConfiguration"] = chc
+        details[ps_id]["ContentHostingConfiguration"] = chc if chc else "Not defined"
 
         crc = await session.consumptionReportingConfigurationGet(ps_id)
-        ps_data["ConsumptionReportingConfiguration"] = crc
+        details[ps_id]["ConsumptionReportingConfiguration"] = crc if crc else "Not defined"
 
-        provisioning_sessions.append(ps_data)
-
-    return provisioning_sessions
+    return JSONResponse(content={"Details": details})
 
 @app.post("/create_session_chc")
 async def create_session_chc():
