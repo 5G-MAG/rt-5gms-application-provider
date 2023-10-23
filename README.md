@@ -19,7 +19,6 @@ uvicorn server:app --reload
 
 - Show Content Protocols ✅
 
-- Create CHC without certificate
 - Create CHC with multiple entry points
 
 - Cosumption Reporting

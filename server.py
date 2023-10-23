@@ -35,6 +35,12 @@ class CreateNewStreamModel(BaseModel):
     insecure: bool = True
     domain_name_alias: Optional[str] = None
 
+class ConsumptionReportingConfiguration(Dict):
+    reportingInterval: Optional[int]
+    samplePercentage: Optional[float]
+    locationReporting: Optional[bool]
+    accessReporting: Optional[bool]
+
 def get_config():
     return Configuration()
 
@@ -279,3 +285,19 @@ async def show_protocol(provisioning_session_id: str) -> Any:
 
     return protocol_data
 
+
+@app.post("/set_consumption/{provisioning_session_id}")
+async def set_consumption(provisioning_session_id: str, crc: ConsumptionReportingConfiguration) -> Any:
+    session = await get_session(config)
+    result = await session.setOrUpdateConsumptionReporting(provisioning_session_id, crc)
+    if result:
+        return {"message": "Consumption reporting parameters set"}
+    raise HTTPException(status_code=400, detail="Failed to set consumption reporting parameters")
+
+@app.get("/show_consumption/{provisioning_session_id}")
+async def show_consumption(provisioning_session_id: str) -> Any:
+    session = await get_session(config)
+    crc = await session.consumptionReportingConfigurationGet(provisioning_session_id)
+    if crc is None:
+        return {"message": "No consumption reporting configured"}
+    return {"Consumption Reporting": crc}
