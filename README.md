@@ -1,3 +1,4 @@
+<h1 align="center">5GMS M1 Interface Management tool</h1>
 <p align="center">
   <img src="https://img.shields.io/badge/Status-Under_Development-yellow" alt="Under Development">
   <img src="https://img.shields.io/github/v/tag/5G-MAG/rt-5gms-application-function?label=version" alt="Version">
@@ -8,39 +9,26 @@
   <img src="https://img.shields.io/github/last-commit/stojkovicv/5gms-m1-management-tool" alt="Last Commit">
   <img src="https://img.shields.io/github/languages/count/stojkovicv/5gms-m1-management-tool" alt="Language Count">
   <img src="https://img.shields.io/github/languages/top/stojkovicv/5gms-m1-management-tool" alt="Top Language">
-</p>
 
 
+## Development progress  
+| Network functionalities                 | Asynchronous endpoints | UI elements |
+| ------------------------------------- | --------- | -- |
+| Create Provisioning session           | ✅        |    |
+| Create Provisioning session with Content Hosting Configuration  | ✅        |    |
+| Remove Provisioning session           | ✅        |    |
+| Content Hosting Configuration from JSON                         | ✅        |    |
+| Check the session details             | ✅        |    |
+| Create Server Certificate             | ✅        |    |
+| Show Certificate Details              | ✅        |    |
+| Show Content Protocols                | ✅        |    |
+| Cosumption Reporting                  | ✅        |    |
 
-
-# Refactoring in progress!
-
+## Start the server:
 ```
 uvicorn server:app --reload
 ```
 
-## Functionalities
-
-- Create Provisioning session ✅
-- Create Provisioning session with CHC ✅
-
-### Per provisioning session:
-- Remove Provisioning session ✅
-- CHC from JSON ✅
-- Check the session details ✅
-
-- Create Server Certificate ✅
-- Show Certificate Details ✅
-
-- Show Content Protocols ✅
-
-- Create CHC with multiple entry points
-
-- Cosumption Reporting
-
-
-# 5GMS Application Function Management tool
-TBD
 ## Licensing and authorization
 TBD
 
