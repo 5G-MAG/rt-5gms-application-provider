@@ -154,32 +154,38 @@ async def set_stream(provisioning_session_id: str, config: Configuration = Depen
 
 # Retrieve Session Details
 # list -v
-@app.get("/details", response_model=List[Dict[str, Any]])
-async def list_verbose(config: Configuration = Depends(get_config)) -> List[Dict[str, Any]]:
-    session = await get_session(config)
-    ps_ids = await session.provisioningSessionIds()
-    results = []
+@app.get("/details", response_model=List[dict])
+async def list_provisioning_sessions():
+    config = Configuration()
+    try:
+        session = await get_session(config)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
-    for ps_id in ps_ids:
-        ps_dict = {"id": ps_id, "Certificates": [], "ContentHostingConfiguration": None, "ConsumptionReportingConfiguration": None}
-        
+    provisioning_sessions = []
+    for ps_id in await session.provisioningSessionIds():
+        ps_data = {"id": ps_id, "Certificates": [], "ContentHostingConfiguration": None, "ConsumptionReportingConfiguration": None}
         certs = await session.certificateIds(ps_id)
         for cert_id in certs:
-            cert = await session.certificateGet(ps_id, cert_id)
-            if cert:
-                ps_dict["Certificates"].append(await __prettyPrintCertificate(cert))
-        
+            try:
+                cert = await session.certificateGet(ps_id, cert_id)
+                if cert is not None:
+                    cert_data = await __prettyPrintCertificate(cert, indent=6)
+                    ps_data["Certificates"].append({"id": cert_id, "data": cert_data})
+                else:
+                    ps_data["Certificates"].append({"id": cert_id, "data": "Certificate not yet uploaded"})
+            except M1Error as err:
+                ps_data["Certificates"].append({"id": cert_id, "error": str(err)})
+
         chc = await session.contentHostingConfigurationGet(ps_id)
-        if chc:
-            ps_dict["ContentHostingConfiguration"] = chc
+        ps_data["ContentHostingConfiguration"] = chc
 
         crc = await session.consumptionReportingConfigurationGet(ps_id)
-        if crc:
-            ps_dict["ConsumptionReportingConfiguration"] = crc
-        
-        results.append(ps_dict)
+        ps_data["ConsumptionReportingConfiguration"] = crc
 
-    return results
+        provisioning_sessions.append(ps_data)
+
+    return provisioning_sessions
 
 @app.post("/create_session_chc")
 async def create_session_chc():
