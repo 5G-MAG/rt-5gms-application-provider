@@ -5,7 +5,7 @@
   <img src="https://img.shields.io/github/issues-raw/stojkovicv/5gms-m1-management-tool" alt="Open Issues">
   <img src="https://img.shields.io/github/issues-closed-raw/stojkovicv/5gms-m1-management-tool" alt="Closed Issues">
   <img src="https://img.shields.io/badge/Branches-3-blue" alt="Number of Branches">
-  <img src="https://img.shields.io/github/last-commit/stojkovicv/5gms-m1-management-tool" alt="Last Commit"><br>
+  <img src="https://img.shields.io/github/last-commit/stojkovicv/5gms-m1-management-tool" alt="Last Commit">
   <img src="https://img.shields.io/github/languages/count/stojkovicv/5gms-m1-management-tool" alt="Language Count">
   <img src="https://img.shields.io/github/languages/top/stojkovicv/5gms-m1-management-tool" alt="Top Language">
 </p>
