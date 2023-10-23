@@ -1,3 +1,7 @@
+![Open Issues](https://img.shields.io/github/issues-raw/stojkovicv/5gms-m1-management-tool)
+![Closed Issues](https://img.shields.io/github/issues-closed-raw/stojkovicv/5gms-m1-management-tool)
+
+
 # Refactoring in progress!
 
 ```
