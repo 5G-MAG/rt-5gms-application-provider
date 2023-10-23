@@ -251,3 +251,31 @@ async def show_certificate(provisioning_session_id: str, certificate_id: str, ra
     pretty_cert_data = await __prettyPrintCertificate(cert_data, indent=2)
     return {"certificate_details": pretty_cert_data}
     
+
+@app.get("/show_protocol/{provisioning_session_id}")
+async def show_protocol(provisioning_session_id: str) -> Any:
+    session = await get_session(config)
+    protocols = await session.provisioningSessionProtocols(provisioning_session_id)
+    
+    if protocols is None:
+        raise HTTPException(status_code=404, detail=f"Failed to fetch the content protocols for provisioning session {provisioning_session_id}")
+        
+    protocol_data = {"provisioning_session": provisioning_session_id}
+
+    if 'downlinkIngestProtocols' in protocols:
+        protocol_data['Downlink'] = [proto["termIdentifier"] for proto in protocols['downlinkIngestProtocols']]
+    else:
+        protocol_data['Downlink'] = "No downlink capability"
+
+    if 'uplinkEgestProtocols' in protocols:
+        protocol_data['Uplink'] = [proto["termIdentifier"] for proto in protocols['uplinkEgestProtocols']]
+    else:
+        protocol_data['Uplink'] = "No uplink capability"
+
+    if 'geoFencingLocatorTypes' in protocols:
+        protocol_data['Geo-fencing'] = protocols['geoFencingLocatorTypes']
+    else:
+        protocol_data['Geo-fencing'] = "No geo-fencing capability"
+
+    return protocol_data
+

@@ -14,10 +14,10 @@ uvicorn server:app --reload
 - CHC from JSON ✅
 - Check the session details ✅
 
-- Create Server Certificate
-- Show Certificate Details
+- Create Server Certificate ✅
+- Show Certificate Details ✅
 
-- Show Content Protocols
+- Show Content Protocols ✅
 
 - Create CHC without certificate
 - Create CHC with multiple entry points
