@@ -301,3 +301,14 @@ async def show_consumption(provisioning_session_id: str) -> Any:
     if crc is None:
         return {"message": "No consumption reporting configured"}
     return {"Consumption Reporting": crc}
+
+from fastapi import Response
+
+@app.delete("/del_consumption/{provisioning_session_id}")
+async def del_consumption(provisioning_session_id: str):
+    session = await get_session(config)
+    result = await session.consumptionReportingConfigurationDelete(provisioning_session_id)
+    if result:
+        return Response(status_code=204)
+    else:
+        raise HTTPException(status_code=400, detail="No consumption reporting to remove")
