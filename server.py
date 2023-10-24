@@ -2,7 +2,9 @@ from fastapi import FastAPI, Query, Depends, HTTPException, Response
 from fastapi.responses import JSONResponse
 from typing import List, Dict, Optional, Any, Union
 import argparse
+import os
 from pydantic import BaseModel
+from flask import jsonify
 from utils import append_ap_packages_to_sys_path, __prettyPrintCertificate, __formatX509Name
 append_ap_packages_to_sys_path()
 import json
@@ -106,7 +108,6 @@ async def set_stream(provisioning_session_id: str, config: Configuration = Depen
     return 0
 
 
-'''
 # Retrieve Session Details
 # list -v
 @app.get("/details")
@@ -137,8 +138,6 @@ async def get_provisioning_session_details():
 
     return JSONResponse(content={"Details": details})
 
-'''
-
 @app.post("/create_session_chc")
 async def create_session_chc():
     try:
@@ -159,21 +158,6 @@ async def create_session_chc():
         raise HTTPException(status_code=500, detail=str(e))
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
-    
-
-@app.get("/session_details")
-async def fetch_session_details():
-    try:
-        command=["/home/stepski/rt-5gms-application-function/install/bin/m1-session",
-                 "list",
-                 "-v"]
-        output = subprocess.run(command, check=True, capture_output=True)
-        return {"status": "success", "output": output.stdout.decode('utf-8')}
-    except subprocess.CalledProcessError as e:
-        raise HTTPException(status_code=500, detail=str(e))
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
-    
     
 
 @app.post("/certificate/{provisioning_session_id}")
