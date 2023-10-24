@@ -1,10 +1,9 @@
 from fastapi import FastAPI, Query, Depends, HTTPException, Response
-from fastapi.responses import JSONResponse
-from typing import List, Dict, Optional, Any, Union
-import argparse
-import os
+from fastapi.responses import JSONResponse, FileResponse
+from fastapi.staticfiles import StaticFiles
+from fastapi.templating import Jinja2Templates
+from typing import List, Dict, Optional, Any
 from pydantic import BaseModel
-from flask import jsonify
 from utils import append_ap_packages_to_sys_path, __prettyPrintCertificate, __formatX509Name
 append_ap_packages_to_sys_path()
 import json
@@ -15,7 +14,16 @@ from rt_m1_client.exceptions import M1Error
 
 
 app = FastAPI()
+
+app.mount("/static", StaticFiles(directory="static"), name="static")
+templates = Jinja2Templates(directory="templates")
+
 config = Configuration()
+
+@app.get("/")
+def landing_page():
+    return FileResponse("templates/index.html")
+
 
 class DeleteSessionArgs(BaseModel):
     provisioning_session: Optional[str]
@@ -58,7 +66,7 @@ async def new_provisioning_session(app_id: Optional[str] = None, asp_id: Optiona
     if provisioning_session_id is None:
         raise HTTPException(status_code=400, detail="Failed to create a new provisioning session")
         
-    return {provisioning_session_id}
+    return {"provisioning_session_id": provisioning_session_id}
 
 # Remove particular provisioning session
 # del-stream -p ${provisioning_session_id}
@@ -67,6 +75,7 @@ async def cmd_delete_stream(provisioning_session_id: str, config: Configuration 
     session = await get_session(config)
     
     result = await session.provisioningSessionDestroy(provisioning_session_id)
+    
     if result is None:
         print(f'Provisioning Session {provisioning_session_id} not found')
         return 1
@@ -75,8 +84,7 @@ async def cmd_delete_stream(provisioning_session_id: str, config: Configuration 
         print(f'Failed to destroy Provisioning Session {provisioning_session_id}')
         return 1
     
-    print(f'Provisioning Session {provisioning_session_id} and all its resources were destroyed')
-    return 0
+    return(f'Provisioning Session {provisioning_session_id} and all its resources were destroyed')
 
 # Create CHC from json
 # set-stream -p ${provisioning_session_id} ~/rt-5gms-application-function/examples/ContentHostingConfiguration_Big-Buck-Bunny_pull-ingest.json

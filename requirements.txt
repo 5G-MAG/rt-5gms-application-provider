@@ -1,3 +1,2 @@
-fastapi
-uvicorn
-Flask
+fastapi==0.104.0
+uvicorn==0.23.2
