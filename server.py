@@ -67,20 +67,18 @@ async def new_provisioning_session(app_id: Optional[str] = None, asp_id: Optiona
     return {"provisioning_session_id": provisioning_session_id}
 
 @app.delete("/delete_session/{provisioning_session_id}")
-async def cmd_delete_stream(provisioning_session_id: str, config: Configuration = Depends(get_config)) -> int:    
+async def cmd_delete_stream(provisioning_session_id: str, config: Configuration = Depends(get_config)):
     session = await get_session(config)
-    
+
     result = await session.provisioningSessionDestroy(provisioning_session_id)
     
     if result is None:
-        print(f'Provisioning Session {provisioning_session_id} not found')
-        return 1
+        raise HTTPException(status_code=404, detail=f"Provisioning Session {provisioning_session_id} not found")
     
     if not result:
-        print(f'Failed to destroy Provisioning Session {provisioning_session_id}')
-        return 1
+        raise HTTPException(status_code=500, detail=f"Failed to destroy Provisioning Session {provisioning_session_id}")
     
-    return(f'Provisioning Session {provisioning_session_id} and all its resources were destroyed')
+    return JSONResponse(content={"message": f"Provisioning Session {provisioning_session_id} and all its resources were destroyed"}, status_code=200)
 
 @app.post("/set_stream/{provisioning_session_id}")
 async def set_stream(provisioning_session_id: str, config: Configuration = Depends(get_config)) -> int:
