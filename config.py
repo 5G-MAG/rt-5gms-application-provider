@@ -1,6 +1,6 @@
 import configparser
-from io import StringIO
 import os
+from io import StringIO
 from typing import List
 from utils import append_ap_packages_to_sys_path
 

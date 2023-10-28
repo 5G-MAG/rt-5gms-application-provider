@@ -1,3 +1,5 @@
+import json
+import subprocess
 from fastapi import FastAPI, Query, Depends, HTTPException, Response
 from fastapi.responses import JSONResponse, FileResponse
 from fastapi.staticfiles import StaticFiles
@@ -5,25 +7,21 @@ from fastapi.templating import Jinja2Templates
 from typing import List, Dict, Optional, Any
 from pydantic import BaseModel
 from utils import append_ap_packages_to_sys_path, __prettyPrintCertificate, __formatX509Name
-append_ap_packages_to_sys_path()
-import json
-import subprocess
 from config import Configuration, get_session
-from rt_m1_client.types import ResourceId, ApplicationId, ContentHostingConfiguration, ConsumptionReportingConfiguration
+from rt_m1_client.types import ResourceId, ApplicationId, ConsumptionReportingConfiguration
 from rt_m1_client.exceptions import M1Error
 
 
 app = FastAPI()
+append_ap_packages_to_sys_path()
+config = Configuration()
 
 app.mount("/static", StaticFiles(directory="static"), name="static")
 templates = Jinja2Templates(directory="templates")
 
-config = Configuration()
-
 @app.get("/")
 def landing_page():
     return FileResponse("templates/index.html")
-
 
 class DeleteSessionArgs(BaseModel):
     provisioning_session: Optional[str]
@@ -49,8 +47,8 @@ class ConsumptionReportingConfiguration(Dict):
 def get_config():
     return Configuration()
 
-# Creates new provisioning session
-# new-provisioning-session -e MyAppId -a MyASPId
+# Endpoints
+
 @app.post("/create_session")
 async def new_provisioning_session(app_id: Optional[str] = None, asp_id: Optional[str] = None):
 
@@ -68,8 +66,6 @@ async def new_provisioning_session(app_id: Optional[str] = None, asp_id: Optiona
         
     return {"provisioning_session_id": provisioning_session_id}
 
-# Remove particular provisioning session
-# del-stream -p ${provisioning_session_id}
 @app.delete("/delete_session/{provisioning_session_id}")
 async def cmd_delete_stream(provisioning_session_id: str, config: Configuration = Depends(get_config)) -> int:    
     session = await get_session(config)
@@ -85,9 +81,6 @@ async def cmd_delete_stream(provisioning_session_id: str, config: Configuration 
         return 1
     
     return(f'Provisioning Session {provisioning_session_id} and all its resources were destroyed')
-
-# Create CHC from json
-# set-stream -p ${provisioning_session_id} ~/rt-5gms-application-function/examples/ContentHostingConfiguration_Big-Buck-Bunny_pull-ingest.json
 
 @app.post("/set_stream/{provisioning_session_id}")
 async def set_stream(provisioning_session_id: str, config: Configuration = Depends(get_config)) -> int:
@@ -115,15 +108,11 @@ async def set_stream(provisioning_session_id: str, config: Configuration = Depen
     print(f'Hosting set for provisioning session {provisioning_session_id}')
     return 0
 
-
-# Retrieve Session Details
-# list -v
 @app.get("/details")
 async def get_provisioning_session_details():
     session = await get_session(config)
     details = {}
 
-    
     for ps_id in await session.provisioningSessionIds():
         details[ps_id] = {"Certificates": {}}
         certs = await session.certificateIds(ps_id)
@@ -160,13 +149,11 @@ async def create_session_chc():
         ]
         
         subprocess.run(command, check=True)    
-        
         return {"status": "success"}
     except subprocess.CalledProcessError as e:
         raise HTTPException(status_code=500, detail=str(e))
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
-    
 
 @app.post("/certificate/{provisioning_session_id}")
 async def new_certificate(provisioning_session_id: str, csr: bool = Query(False), extra_domain_names: str = Query(None)):
@@ -194,7 +181,6 @@ async def new_certificate(provisioning_session_id: str, csr: bool = Query(False)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
     
-
 @app.get("/show_certificate/{provisioning_session_id}/{certificate_id}")
 async def show_certificate(provisioning_session_id: str, certificate_id: str, raw: Optional[bool] = False):
     session = await get_session(config)
@@ -209,7 +195,6 @@ async def show_certificate(provisioning_session_id: str, certificate_id: str, ra
     pretty_cert_data = await __prettyPrintCertificate(cert_data, indent=2)
     return {"certificate_details": pretty_cert_data}
     
-
 @app.get("/show_protocol/{provisioning_session_id}")
 async def show_protocol(provisioning_session_id: str) -> Any:
     session = await get_session(config)
@@ -236,7 +221,6 @@ async def show_protocol(provisioning_session_id: str) -> Any:
         protocol_data['Geo-fencing'] = "No geo-fencing capability"
 
     return protocol_data
-
 
 @app.post("/set_consumption/{provisioning_session_id}")
 async def set_consumption(provisioning_session_id: str, crc: ConsumptionReportingConfiguration) -> Any:
