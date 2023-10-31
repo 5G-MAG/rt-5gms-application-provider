@@ -1,9 +1,7 @@
 <h1 align="center">5GMS M1 Interface Management tool</h1>
 <p align="center">
   <img src="https://img.shields.io/badge/Status-Under_Development-yellow" alt="Under Development">
-  <br>
   <img src="https://img.shields.io/github/v/tag/5G-MAG/rt-5gms-application-function?label=version" alt="Version">
-  <br>
   <img src="https://img.shields.io/badge/License-5G--MAG%20Public%20License%20(v1.0)-blue" alt="License">
   <br>
   <img src="https://img.shields.io/github/languages/top/5G-MAG/rt-5gms-m1-management-ui" alt="Top Language">
