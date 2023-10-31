@@ -1,20 +1,18 @@
 <h1 align="center">5GMS M1 Interface Management tool</h1>
 <p align="center">
   <img src="https://img.shields.io/badge/Status-Under_Development-yellow" alt="Under Development">
+  <br>
   <img src="https://img.shields.io/github/v/tag/5G-MAG/rt-5gms-application-function?label=version" alt="Version">
-  <img src="https://img.shields.io/github/license/5G-MAG/rt-5gms-m1-management-ui" alt="License">
-  <img src="https://img.shields.io/github/issues-raw/5G-MAG/rt-5gms-m1-management-ui" alt="Open Issues">
-  <img src="https://img.shields.io/github/issues-closed-raw/5G-MAG/rt-5gms-m1-management-ui" alt="Closed Issues">
-  <img src="https://img.shields.io/badge/Branches-3-blue" alt="Number of Branches">
-  <img src="https://img.shields.io/github/last-commit/5G-MAG/rt-5gms-m1-management-ui" alt="Last Commit">
-  <img src="https://img.shields.io/github/languages/count/5G-MAG/rt-5gms-m1-management-ui" alt="Language Count">
+  <br>
+  <img src="https://img.shields.io/badge/License-5G--MAG%20Public%20License%20(v1.0)-blue" alt="License">
+  <br>
   <img src="https://img.shields.io/github/languages/top/5G-MAG/rt-5gms-m1-management-ui" alt="Top Language">
 
 
 ## Development progress  
 | Network functionalities                 | Asynchronous endpoints | UI elements |
 | ------------------------------------- | --------- | -- |
-| Create Provisioning session           | ✅        |    |
+| Create Provisioning session           | ✅        | ✅ |
 | Create Provisioning session with Content Hosting Configuration  | ✅        |    |
 | Remove Provisioning session           | ✅        |    |
 | Content Hosting Configuration from JSON                         | ✅        |    |
