@@ -2,13 +2,13 @@
 <p align="center">
   <img src="https://img.shields.io/badge/Status-Under_Development-yellow" alt="Under Development">
   <img src="https://img.shields.io/github/v/tag/5G-MAG/rt-5gms-application-function?label=version" alt="Version">
-  <img src="https://img.shields.io/github/license/stojkovicv/5gms-m1-management-tool" alt="License">
-  <img src="https://img.shields.io/github/issues-raw/stojkovicv/5gms-m1-management-tool" alt="Open Issues">
-  <img src="https://img.shields.io/github/issues-closed-raw/stojkovicv/5gms-m1-management-tool" alt="Closed Issues">
+  <img src="https://img.shields.io/github/license/5G-MAG/rt-5gms-m1-management-ui" alt="License">
+  <img src="https://img.shields.io/github/issues-raw/5G-MAG/rt-5gms-m1-management-ui" alt="Open Issues">
+  <img src="https://img.shields.io/github/issues-closed-raw/5G-MAG/rt-5gms-m1-management-ui" alt="Closed Issues">
   <img src="https://img.shields.io/badge/Branches-3-blue" alt="Number of Branches">
-  <img src="https://img.shields.io/github/last-commit/stojkovicv/5gms-m1-management-tool" alt="Last Commit">
-  <img src="https://img.shields.io/github/languages/count/stojkovicv/5gms-m1-management-tool" alt="Language Count">
-  <img src="https://img.shields.io/github/languages/top/stojkovicv/5gms-m1-management-tool" alt="Top Language">
+  <img src="https://img.shields.io/github/last-commit/5G-MAG/rt-5gms-m1-management-ui" alt="Last Commit">
+  <img src="https://img.shields.io/github/languages/count/5G-MAG/rt-5gms-m1-management-ui" alt="Language Count">
+  <img src="https://img.shields.io/github/languages/top/5G-MAG/rt-5gms-m1-management-ui" alt="Top Language">
 
 
 ## Development progress  
