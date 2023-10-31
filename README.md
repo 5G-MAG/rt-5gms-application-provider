@@ -1,4 +1,4 @@
-<h1 align="center">5GMS M1 Interface Management tool</h1>
+<h1 align="center">5GMS M1 Interface Management UI</h1>
 <p align="center">
   <img src="https://img.shields.io/badge/Status-Under_Development-yellow" alt="Under Development">
   <img src="https://img.shields.io/github/v/tag/5G-MAG/rt-5gms-application-function?label=version" alt="Version">
@@ -18,16 +18,8 @@
 | Show Content Protocols                | ✅        |    |
 | Cosumption Reporting                  | ✅        |    |
 
-## Start the server:
-```
-uvicorn server:app --reload
-```
-
-## Licensing and authorization
+## Installation
 TBD
-
-## Set up
-This program requires Linux operating environment with warm recommendation for **Ubuntu (based) 22.04 LTS**.
 
 1️⃣ Clone this repository:
 
@@ -37,7 +29,7 @@ git clone https://github.com/stojkovicv/5gms-m1-user-interface.git
 2️⃣ Install dependencies:
 
 ```
-pip3 install -r requirements. txt
+pip3 install -r requirements.txt
 ```
 
 3️⃣ Set up Application Function. Please follow the guide in order to it properly:
@@ -57,13 +49,16 @@ Be aware of required versions for correct setup.
 sudo chmod 777 /var/cache/rt-5gms/m1-client/provisioning_sessions.json
 ```
  
-## Activate Management tool
+## Activate UI
 
-Run the main server:
+Run the server:
 
 ```
 uvicorn server:app --reload
 ```
+
+## Licensing and authorization
+TBD
 
 ## Development
 This project follows the [Gitflow workflow](https://www.atlassian.com/git/tutorials/comparing-workflows/gitflow-workflow). The potential development branch of this project serves as an integration branch for new features. Consequently, please make sure to switch to the development branch before starting the implementation of a new feature.
