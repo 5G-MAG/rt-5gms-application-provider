@@ -1,10 +1,18 @@
+'''
+License: 5G-MAG Public License (v1.0)
+Author: David Waring, Vuk Stojkovic
+Copyright: (C) British Broadcasting Corporation, Fraunhofer FOKUS
+For full license terms please see the LICENSE file distributed with this
+program. If this file is missing then the license can be retrieved from
+https://drive.google.com/file/d/1cinCiA778IErENZ3JN52VFW-1ffHpx7Z/view
+'''
+
 import json
-import subprocess
+from typing import List, Dict, Optional, Any
 from fastapi import FastAPI, Query, Depends, HTTPException, Response
 from fastapi.responses import JSONResponse, FileResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
-from typing import List, Dict, Optional, Any
 from pydantic import BaseModel
 from utils import append_ap_packages_to_sys_path, __prettyPrintCertificate, __formatX509Name
 from config import Configuration, get_session
@@ -16,13 +24,14 @@ app = FastAPI()
 append_ap_packages_to_sys_path()
 config = Configuration()
 
+# UI page rendering
 app.mount("/static", StaticFiles(directory="static"), name="static")
 templates = Jinja2Templates(directory="templates")
-
 @app.get("/")
 def landing_page():
     return FileResponse("templates/index.html")
 
+# Data models
 class DeleteSessionArgs(BaseModel):
     provisioning_session: Optional[str]
     ingesturl: str
@@ -81,7 +90,7 @@ async def cmd_delete_stream(provisioning_session_id: str, config: Configuration 
     return JSONResponse(content={"message": f"Provisioning Session {provisioning_session_id} and all its resources were destroyed"}, status_code=200)
 
 @app.post("/set_stream/{provisioning_session_id}")
-async def set_stream(provisioning_session_id: str, config: Configuration = Depends(get_config)) -> int:
+async def set_stream(provisioning_session_id: str, config: Configuration = Depends(get_config)):
     session = await get_session(config)
     
     json_path = "/home/stepski/rt-5gms-application-function/examples/ContentHostingConfiguration_Llama-Drama_pull-ingest.json"
@@ -100,11 +109,9 @@ async def set_stream(provisioning_session_id: str, config: Configuration = Depen
         result = await session.contentHostingConfigurationUpdate(provisioning_session_id, chc)
 
     if not result:
-        print(f'Failed to set hosting for provisioning session {provisioning_session_id}')
-        return 1
-    
-    print(f'Hosting set for provisioning session {provisioning_session_id}')
-    return 0
+            return JSONResponse(content={"message": f"Failed to set hosting for provisioning session {provisioning_session_id}"}, status_code=400)
+        
+    return JSONResponse(content={"message": f"Hosting set for provisioning session {provisioning_session_id}"}, status_code=200)
 
 @app.get("/details")
 async def get_provisioning_session_details():
@@ -132,27 +139,7 @@ async def get_provisioning_session_details():
         details[ps_id]["ConsumptionReportingConfiguration"] = crc if crc else "Not defined"
 
     return JSONResponse(content={"Details": details})
-
-@app.post("/create_session_chc")
-async def create_session_chc():
-    try:
-        command = [
-            "/home/stepski/rt-5gms-application-function/install/bin/m1-session",
-            "new-stream",
-            "-e", "MyAppId",
-            "-a", "MyASPId",
-            "-n", "Big Buck Bunny",
-            "https://ftp.itec.aau.at/datasets/DASHDataset2014/BigBuckBunny/4sec/",
-            "BigBuckBunny_4s_onDemand_2014_05_09.mpd"
-        ]
-        
-        subprocess.run(command, check=True)    
-        return {"status": "success"}
-    except subprocess.CalledProcessError as e:
-        raise HTTPException(status_code=500, detail=str(e))
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
-
+    
 @app.post("/certificate/{provisioning_session_id}")
 async def new_certificate(provisioning_session_id: str, csr: bool = Query(False), extra_domain_names: str = Query(None)):
     config = Configuration()
