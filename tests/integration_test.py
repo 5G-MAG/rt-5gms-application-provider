@@ -22,7 +22,7 @@ def is_uuid_valid(uuid_to_test: str, version: int = 4) -> bool:
         return False
     return str(uuid_obj) == uuid_to_test
 
-# Testing creational endpoint
+# Create provisioning session endpoint
 @pytest.mark.asyncio
 async def test_create_session():
     
@@ -37,3 +37,5 @@ async def test_create_session():
     provisioning_session_id = response_json["provisioning_session_id"]
 
     assert is_uuid_valid(provisioning_session_id), f"Invalid UUID: {provisioning_session_id}"
+
+# 

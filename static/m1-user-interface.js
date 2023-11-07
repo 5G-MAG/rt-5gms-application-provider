@@ -47,7 +47,7 @@ async function createNewSession() {
   cell4.innerHTML = `<button onclick="getProvisioningSessionDetails()">Show</button>`;
   cell5.innerHTML = `<button onclick="createNewCertificate('${data.provisioning_session_id}')">Create</button>`;
   cell6.innerHTML = data.certificate_id ? `<button onclick="showCertificateDetails('${data.provisioning_session_id}', '${data.certificate_id}')">Show</button>` : 'Not yet created';
-  cell7.innerHTML = `<button onclick="listContentProtocols('${data.provisioning_session_id}')">Show</button>`;
+  cell7.innerHTML = `<button onclick="getProtocols('${data.provisioning_session_id}')">Show</button>`;
   cell8.innerHTML = `<button onclick="getChcWithoutCertificate('${data.provisioning_session_id}')">Create</button>`;
   cell9.innerHTML = `
   <button onclick="setConsumptionReporting('${data.provisioning_session_id}')">Set</button>
@@ -148,7 +148,7 @@ function getProvisioningSessionDetails() {
   window.open('http://127.0.0.1:8000/details', '_blank');
 }
 
-
+/*
 async function createNewSessionWithCHCMultiple() {
     const response = await fetch('/chc_multiple_entry_points', { method: 'POST' });
     const data = await response.json();
@@ -186,7 +186,7 @@ async function createNewSessionWithCHCMultiple() {
     cell4.innerHTML = `<button onclick="getProvisioningSessionDetails()">Show</button>`;
     cell5.innerHTML = `<button onclick="createNewCertificate('${data.session_id}')">Create</button>`;
     cell6.innerHTML = data.certificate_id ? `<button onclick="showCertificateDetails('${data.session_id}', '${data.certificate_id}')">Show</button>` : 'Not yet created';
-    cell7.innerHTML = `<button onclick="listContentProtocols('${data.session_id}')">Show</button>`;
+    cell7.innerHTML = `<button onclick="getProtocols('${data.session_id}')">Show</button>`;
     cell8.innerHTML = `<button onclick="getChcWithoutCertificate('${data.session_id}')">Create</button>`;
     cell9.innerHTML = `
     <button onclick="setConsumptionReporting('${data.session_id}')">Set</button>
@@ -201,8 +201,9 @@ async function createNewSessionWithCHCMultiple() {
         protocol_list_created: true
       }));
 }
+*/
 
-async function createNewCertificate(session_id) {
+/*async function createNewCertificate(session_id) {
     const response = await fetch('/new_certificate', {
       method: 'POST',
       headers: {
@@ -233,6 +234,7 @@ async function createNewCertificate(session_id) {
       }
     }
 }
+*/
 
 async function showCertificateDetails(session_id, certificate_id) {
     const response = await fetch('/show_certificate', {
@@ -247,19 +249,12 @@ async function showCertificateDetails(session_id, certificate_id) {
     detailsWindow.document.write("<pre>" + data.details + "</pre>");
 }
 
-async function listContentProtocols(session_id) {
-    const response = await fetch('/get_protocol_list', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({ 'prov-session-id': session_id })
-    });
-    const data = await response.json();
-    let detailsWindow = window.open("", "_blank");
-    detailsWindow.document.write("<pre>" + data.details + "</pre>");
+function getProtocols(provisioning_session_id) {
+  const url = `http://127.0.0.1:8000/show_protocol/${provisioning_session_id}`;
+  window.open(url, '_blank');
 }
 
+/*
 async function getChcWithoutCertificate(session_id) {
     const response = await fetch('/get_chc_without_certificate', {
       method: 'POST',
@@ -277,7 +272,6 @@ async function getChcWithoutCertificate(session_id) {
       confirmButtonText: 'OK'
     }); 
 }
-
 async function createChcWithCertificate(session_id, certificate_id) {
     const response = await fetch('/create_chc_with_certificate', {
         method: 'POST',
@@ -289,87 +283,142 @@ async function createChcWithCertificate(session_id, certificate_id) {
             'certificate-id': certificate_id
         })
     });
-
     if (!response.ok) {
         alert("Failed to create Content Hosting Configuration with certificate");
         return;
     }
-
     const data = await response.json();
-
     const newWindow = window.open("", "_blank");
     alert(data.message);
 }
+*/
 
 async function setConsumptionReporting(session_id) {
-    const response = await fetch('/set_consumption_reporting', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({ 'prov-session-id': session_id })
-    });
-    const data = await response.json();
-    //alert(data.message);
-    Swal.fire({
-      title: 'Application Provider says:',
-      text: data.message,
-      icon: 'success',
-      confirmButtonText: 'OK'
-    }); 
-  }
+  const { value: formValues, dismiss } = await Swal.fire({
+    title: 'Set consumption reporting parameters:',
+    html:
+      '<input id="swal-input1" class="swal2-input" type="number" placeholder="Reporting Interval">' +
+      '<input id="swal-input2" class="swal2-input" type="number" placeholder="Sample Percentage">' +
+      '<label for="swal-input3">Location Reporting: </label><br>' +
+      '<select id="swal-input3" class="swal2-input">' +
+        '<option value="true">True</option>' +
+        '<option value="false">False</option>' +
+      '</select>' +
+      '<br><label for="swal-input4">Access Reporting: </label><br>' +
+      '<select id="swal-input4" class="swal2-input">' +
+        '<option value="true">True</option>' +
+        '<option value="false">False</option>' +
+      '</select>',
+    focusConfirm: false,
+    showCancelButton: true,
+    preConfirm: () => {
+      let reportingInterval = document.getElementById('swal-input1').value;
+      let samplePercentage = document.getElementById('swal-input2').value;
 
-async function showConsumptionReporting(session_id) {
-    const response = await fetch('/show_consumption_reporting', {
+      // Errors checking
+      if (!reportingInterval || !samplePercentage || isNaN(reportingInterval) || isNaN(samplePercentage)) {
+        Swal.showValidationMessage("Set all parameters with valid numerical values!");
+        return false;
+      }
+
+      return {
+        reportingInterval: parseInt(reportingInterval),
+        samplePercentage: parseFloat(samplePercentage),
+        locationReporting: document.getElementById('swal-input3').value === 'true',
+        accessReporting: document.getElementById('swal-input4').value === 'true'
+      };
+    }
+  });
+
+  if (formValues && !dismiss) {
+    const payload = {
+      reportingInterval: parseInt(formValues.reportingInterval, 10),
+      samplePercentage: formValues.samplePercentage,
+      locationReporting: formValues.locationReporting,
+      accessReporting: formValues.accessReporting
+    };
+
+    const response = await fetch(`/set_consumption/${session_id}`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
       },
-      body: JSON.stringify({ 'prov-session-id': session_id })
+      body: JSON.stringify(payload)
     });
-    const data = await response.json();
-    let detailsWindow = window.open("", "_blank");
-    detailsWindow.document.write("<pre>" + data.details + "</pre>");
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      Swal.fire({
+        title: 'Error',
+        text: errorData.detail || 'An error occurred while setting consumption parameters.',
+        icon: 'error'
+      });
+      return;
     }
 
-    async function deleteConsumptionReporting(session_id) {
-      const result = await Swal.fire({
-        title: 'Delete Consumption Reporting?',
-        text: "Are you sure? You won't be able to revert this.",
-        icon: 'warning',
-        showCancelButton: true,
-        confirmButtonText: 'Yes',
-        cancelButtonText: 'No'
+    const data = await response.json();
+    Swal.fire({
+      title: 'Success!',
+      text: data.message,
+      icon: 'success'
+    });
+  }
+}
+
+async function showConsumptionReporting(provisioning_session_id){
+  const url = `http://127.0.0.1:8000/show_consumption/${provisioning_session_id}`;
+  window.open(url, '_blank');
+}
+
+async function deleteConsumptionReporting(session_id) {
+  const result = await Swal.fire({
+    title: 'Delete Consumption Reporting?',
+    text: "Are you sure? You won't be able to revert this.",
+    icon: 'warning',
+    showCancelButton: true,
+    confirmButtonText: 'Yes',
+    cancelButtonText: 'No'
+  });
+
+  if (result.isConfirmed) {
+    try {
+      const response = await fetch(`/del_consumption/${session_id}`, {
+        method: 'DELETE'
       });
-    
-      if (result.isConfirmed) {
-        const response = await fetch('/delete_consumption_reporting', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({ 'prov-session-id': session_id })
+
+      if (response.status === 204) {
+        await Swal.fire({
+          title: 'Deleted!',
+          text: 'The consumption reporting has been deleted.',
+          icon: 'success',
+          confirmButtonText: 'OK'
         });
+      } else {
     
-        const data = await response.json();
-        //alert(data.message);
-    
-        if (response.ok) {
-          Swal.fire({
-            title: 'Application Provider says:',
-            text: data.message,
-            icon: 'success',
-            confirmButtonText: 'OK'
-          });
-        } else {
-          Swal.fire({
-            title: 'Application Provider says:',
-            text: data.message,
-            icon: 'error',
-            confirmButtonText: 'OK'
-          });
+        let data;
+        try {
+          data = await response.json();
+        } catch (error) {
+          data = { detail: "Unknown error occurred." };
         }
+
+        await Swal.fire({
+          title: 'Application Provider says:',
+          text: data.detail,
+          icon: 'error',
+          confirmButtonText: 'OK'
+        });
       }
+    } catch (error) {
+
+      await Swal.fire({
+        title: 'Error',
+        text: 'Network error or server not responding.',
+        icon: 'error',
+        confirmButtonText: 'OK'
+      });
+    }
+  }
 }
     
 
@@ -400,7 +449,7 @@ for (let i = 0; i < localStorage.length; i++) {
     cell6.innerHTML = 'Not yet created';
   }
   if (session_data.protocol_list_created) {
-    cell7.innerHTML = `<button onclick="listContentProtocols('${session_id}')">Show</button>`;
+    cell7.innerHTML = `<button onclick="getProtocols('${session_id}')">Show</button>`;
   } else {
     cell7.innerHTML = 'Not yet created';
   }
