@@ -9,14 +9,14 @@
 | Network functionalities| Asynchronous endpoints|UI elements|Unit test|
 | ------------------------------------- | --------- | -- |--|
 | Create Provisioning session|✅|✅|✅
-| Create Provisioning session with Content Hosting Configuration|❌|❌||
 | Remove Provisioning session|✅|✅||
 | Content Hosting Configuration from JSON|✅|✅||
 | Check the session details|✅|✅||
-| Create Server Certificate|✅|||
-| Show Certificate Details|✅|||
+| Create Server Certificate|✅|✅||
+| Show Certificate Details|✅|✅||
 | Show Content Protocols|✅|✅||
 | Cosumption Reporting|✅|✅||
+| Create Provisioning session with Content Hosting Configuration|❌|❌||
 
 ## Activate the UI server:
 
