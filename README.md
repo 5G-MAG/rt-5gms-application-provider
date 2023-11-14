@@ -9,7 +9,7 @@
 | Network functionalities| Asynchronous endpoints|UI elements|Unit test|
 | ------------------------------------- | --------- | -- |--|
 | Create Provisioning session|✅|✅|✅
-| Remove Provisioning session|✅|✅||
+| Remove Provisioning session|✅|✅|✅|
 | Content Hosting Configuration from JSON|✅|✅||
 | Check the session details|✅|✅||
 | Create Server Certificate|✅|✅||
