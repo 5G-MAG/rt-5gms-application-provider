@@ -7,6 +7,7 @@ program. If this file is missing then the license can be retrieved from
 https://drive.google.com/file/d/1cinCiA778IErENZ3JN52VFW-1ffHpx7Z/view
 */
 
+
 async function createNewSession() {
   const response = await fetch('/create_session', { method: 'POST' });
 
@@ -21,7 +22,6 @@ async function createNewSession() {
   }
 
   const data = await response.json();
-  // alert(data.message);
   Swal.fire({
     title: 'Application Provider says:',
     text: `Created provisioning session with the ID: ${data.provisioning_session_id}`,
@@ -42,13 +42,21 @@ async function createNewSession() {
   let cell9 = row.insertCell(8);
 
   cell1.innerHTML = data.provisioning_session_id;
+
   cell2.innerHTML = `<button onclick="deleteProvisioningSession('${data.provisioning_session_id}')">Delete</button>`;
+  
   cell3.innerHTML = `<button onclick="createChcFromJson('${data.provisioning_session_id}')">Create</button>`;
+ 
   cell4.innerHTML = `<button onclick="getProvisioningSessionDetails()">Show</button>`;
+ 
   cell5.innerHTML = `<button onclick="createNewCertificate('${data.provisioning_session_id}')">Create</button>`;
-  cell6.innerHTML = data.certificate_id ? `<button onclick="showCertificateDetails('${data.provisioning_session_id}', '${data.certificate_id}')">Show</button>` : 'Not yet created';
+ 
+  cell6.innerHTML = `<button onclick="createNewCertificate('${data.provisioning_session_id}')">Create Certificate</button>`;
+  
   cell7.innerHTML = `<button onclick="getProtocols('${data.provisioning_session_id}')">Show</button>`;
+  
   cell8.innerHTML = `<button onclick="getChcWithoutCertificate('${data.provisioning_session_id}')">Create</button>`;
+  
   cell9.innerHTML = `
   <button onclick="setConsumptionReporting('${data.provisioning_session_id}')">Set</button>
   <button onclick="showConsumptionReporting('${data.provisioning_session_id}')">Show</button>
@@ -203,38 +211,43 @@ async function createNewSessionWithCHCMultiple() {
 }
 */
 
-/*async function createNewCertificate(session_id) {
-    const response = await fetch('/new_certificate', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({ 'prov-session-id': session_id })
-    });
-    const data = await response.json();
-    //alert(data.message);
-    Swal.fire({
-      title: 'M1 Application Provider says:',
-      text: data.message,
-      icon: 'success',
-      confirmButtonText: 'OK'
-    });
-    if (data.certificate_id) {
-      let session_table = document.getElementById('session_table');
-      for(let i = 1; i < session_table.rows.length; i++){
-        if(session_table.rows[i].cells[0].innerHTML === session_id){
-          session_table.rows[i].cells[5].innerHTML = `<button onclick="showCertificateDetails('${session_id}', '${data.certificate_id}')">Show</button>`;
-          let session_data = JSON.parse(localStorage.getItem(session_id));
-          if (!session_data) {
-            session_data = { session_id: session_id, certificate_ids: [] };
+async function createNewCertificate(session_id) {
+  try {
+      const response = await fetch(`/certificate/${session_id}`, {
+          method: 'POST'
+      });
+      const data = await response.json();
+      if (response.ok) {
+          Swal.fire({
+              title: 'Success',
+              text: `Certificate Created Successfully. Certificate ID: ${data.certificate_id}`,
+              icon: 'success',
+              confirmButtonText: 'OK'
+          }); 
+          let session_table = document.getElementById('session_table');
+          for (let i = 1; i < session_table.rows.length; i++) {
+              if (session_table.rows[i].cells[0].innerHTML === session_id) {
+                  session_table.rows[i].cells[5].innerHTML = `<button onclick="showCertificateDetails('${session_id}', '${data.certificate_id}')">Show</button>`;
+              }
           }
-          session_data.certificate_id = data.certificate_id;
-          localStorage.setItem(session_id, JSON.stringify(session_data));
-        }
+      } else {
+          Swal.fire({
+              title: 'Error',
+              text: data.detail || 'An error occurred',
+              icon: 'error',
+              confirmButtonText: 'OK'
+          });
       }
-    }
+  } catch (error) {
+      Swal.fire({
+          title: 'Network Error',
+          text: 'Failed to communicate with the server',
+          icon: 'error',
+          confirmButtonText: 'OK'
+      });
+  }
 }
-*/
+
 
 async function showCertificateDetails(session_id, certificate_id) {
     const response = await fetch('/show_certificate', {
@@ -298,13 +311,13 @@ async function setConsumptionReporting(session_id) {
     title: 'Set consumption reporting parameters:',
     html:
       '<input id="swal-input1" class="swal2-input" type="number" placeholder="Reporting Interval">' +
-      '<input id="swal-input2" class="swal2-input" type="number" placeholder="Sample Percentage">' +
-      '<label for="swal-input3">Location Reporting: </label><br>' +
-      '<select id="swal-input3" class="swal2-input">' +
+      '<input id="swal-input2" class="swal2-input" type="number" placeholder="Sample Percentage"><br>' +
+      '<br><label for="swal-input3">Location Reporting: </label>' +
+      '<br><select id="swal-input3" class="swal2-input">' +
         '<option value="true">True</option>' +
         '<option value="false">False</option>' +
       '</select>' +
-      '<br><label for="swal-input4">Access Reporting: </label><br>' +
+      '<br><br><label for="swal-input4">Access Reporting: </label><br>' +
       '<select id="swal-input4" class="swal2-input">' +
         '<option value="true">True</option>' +
         '<option value="false">False</option>' +
@@ -318,6 +331,11 @@ async function setConsumptionReporting(session_id) {
       // Errors checking
       if (!reportingInterval || !samplePercentage || isNaN(reportingInterval) || isNaN(samplePercentage)) {
         Swal.showValidationMessage("Set all parameters with valid numerical values!");
+        return false;
+      }
+
+      if (samplePercentage < 0 || samplePercentage > 100) {
+        Swal.showValidationMessage("Sample percentage must be between 0 and 100 %");
         return false;
       }
 
@@ -358,8 +376,7 @@ async function setConsumptionReporting(session_id) {
 
     const data = await response.json();
     Swal.fire({
-      title: 'Success!',
-      text: data.message,
+      title: data.message,
       icon: 'success'
     });
   }
@@ -421,42 +438,41 @@ async function deleteConsumptionReporting(session_id) {
   }
 }
     
-
 window.onload = function() {
-let session_table = document.getElementById('session_table');
-for (let i = 0; i < localStorage.length; i++) {
-  let session_id = localStorage.key(i);
-  let session_data = JSON.parse(localStorage.getItem(session_id));
-  let row = session_table.insertRow(-1);
-  let cell1 = row.insertCell(0);
-  let cell2 = row.insertCell(1);
-  let cell3 = row.insertCell(2);
-  let cell4 = row.insertCell(3);
-  let cell5 = row.insertCell(4);
-  let cell6 = row.insertCell(5);
-  let cell7 = row.insertCell(6);
-  let cell8 = row.insertCell(7);
-  let cell9 = row.insertCell(8);
+  let session_table = document.getElementById('session_table');
+  for (let i = 0; i < localStorage.length; i++) {
+    let session_id = localStorage.key(i);
+    let session_data = JSON.parse(localStorage.getItem(session_id));
+    let row = session_table.insertRow(-1);
+    let cell1 = row.insertCell(0);
+    let cell2 = row.insertCell(1);
+    let cell3 = row.insertCell(2);
+    let cell4 = row.insertCell(3);
+    let cell5 = row.insertCell(4);
+    let cell6 = row.insertCell(5);
+    let cell7 = row.insertCell(6);
+    let cell8 = row.insertCell(7);
+    let cell9 = row.insertCell(8);
 
-  cell1.innerHTML = session_id;
-  cell2.innerHTML = `<button onclick="deleteProvisioningSession('${session_id}')">Delete</button>`;
-  cell3.innerHTML = `<button onclick="createChcFromJson('${session_id}')">Create</button>`;
-  cell4.innerHTML = `<button onclick="getProvisioningSessionDetails()">Show</button>`;
-  cell5.innerHTML = `<button onclick="createNewCertificate('${session_id}')">Create</button>`;
-  if (session_data.certificate_id && session_data.certificate_id !== 'Not yet created') {
-    cell6.innerHTML = `<button onclick="showCertificateDetails('${session_id}', '${session_data.certificate_id}')">Show</button>`;
-  } else {
-    cell6.innerHTML = 'Not yet created';
+    cell1.innerHTML = session_id;
+    cell2.innerHTML = `<button onclick="deleteProvisioningSession('${session_id}')">Delete</button>`;
+    cell3.innerHTML = `<button onclick="createChcFromJson('${session_id}')">Create</button>`;
+    cell4.innerHTML = `<button onclick="getProvisioningSessionDetails()">Show</button>`;
+    cell5.innerHTML = `<button onclick="createNewCertificate('${session_id}')">Create</button>`;
+    if (session_data.certificate_id && session_data.certificate_id !== 'Not yet created') {
+      cell6.innerHTML = `<button onclick="showCertificateDetails('${session_id}', '${session_data.certificate_id}')">Show</button>`;
+    } else {
+      cell6.innerHTML = 'Not yet created';
+    }
+    if (session_data.protocol_list_created) {
+      cell7.innerHTML = `<button onclick="getProtocols('${session_id}')">Show</button>`;
+    } else {
+      cell7.innerHTML = 'Not yet created';
+    }
+    cell8.innerHTML = `<button onclick="getChcWithoutCertificate('${session_id}')">Create</button>`;
+      cell9.innerHTML = `
+        <button onclick="setConsumptionReporting('${session_id}')">Set</button>
+        <button onclick="showConsumptionReporting('${session_id}')">Show</button>
+        <button onclick="deleteConsumptionReporting('${session_id}')">Delete</button>`;
   }
-  if (session_data.protocol_list_created) {
-    cell7.innerHTML = `<button onclick="getProtocols('${session_id}')">Show</button>`;
-  } else {
-    cell7.innerHTML = 'Not yet created';
-  }
-  cell8.innerHTML = `<button onclick="getChcWithoutCertificate('${session_id}')">Create</button>`;
-    cell9.innerHTML = `
-      <button onclick="setConsumptionReporting('${session_id}')">Set</button>
-      <button onclick="showConsumptionReporting('${session_id}')">Show</button>
-      <button onclick="deleteConsumptionReporting('${session_id}')">Delete</button>`;
-}
 }

@@ -18,38 +18,7 @@
 | Show Content Protocols|✅|✅||
 | Cosumption Reporting|✅|✅||
 
-## Installation
-TBD
-
-1️⃣ Clone this repository:
-
-```
-git clone https://github.com/stojkovicv/5gms-m1-user-interface.git
-```
-2️⃣ Install dependencies:
-
-```
-pip3 install -r requirements.txt
-```
-
-3️⃣ Set up Application Function. Please follow the guide in order to it properly:
-- [Application Function](https://github.com/5G-MAG/rt-5gms-application-function/wiki/Testing-as-a-Local-User) (**installation as local user**)
-
-Be aware of required versions for correct setup.
-
-4️⃣ Start Application Function in separate CLI:
-
-```
-~/rt-5gms-application-function/install/bin/open5gs-msafd
-```
-
-5️⃣ If needed allow root permission on configuration files:
-
-```
-sudo chmod 777 /var/cache/rt-5gms/m1-client/provisioning_sessions.json
-```
- 
-## Activate UI
+## Activate the UI server:
 
 Run the server:
 
@@ -59,6 +28,14 @@ uvicorn server:app --reload
 
 ## Licensing and authorization
 TBD
+
+## Run tests:
+TBD
+
+```
+cd tests
+pytest integration_test.py
+```
 
 ## Development
 This project follows the [Gitflow workflow](https://www.atlassian.com/git/tutorials/comparing-workflows/gitflow-workflow). The potential development branch of this project serves as an integration branch for new features. Consequently, please make sure to switch to the development branch before starting the implementation of a new feature.
