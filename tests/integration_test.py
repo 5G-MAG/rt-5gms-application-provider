@@ -23,7 +23,7 @@ def is_uuid_valid(uuid_to_test: str, version: int = 4) -> bool:
 @pytest.mark.asyncio
 async def test_provisioning_session_lifecycle():
 
-    # Create and delete the session using the same client instance
+    # One client instance
     async with httpx.AsyncClient() as client:
         
         # Create Provisioning Session

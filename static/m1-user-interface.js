@@ -192,7 +192,7 @@ async function createNewCertificate(provisioning_session_id) {
 function showCertificateDetails(provisioning_session_id) {
   let session_data = JSON.parse(localStorage.getItem(provisioning_session_id));
   let certificate_id = session_data.certificate_id;
-  window.open(`http://127.0.0.1:8000/show_certificate/${provisioning_session_id}/${certificate_id}`, '_blank');
+  window.open(`http://127.0.0.1:8000/show_certificate/${provisioning_session_id}/${certificate_id}`, '_blank');l
 }
 
 
