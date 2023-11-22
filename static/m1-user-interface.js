@@ -7,6 +7,21 @@ program. If this file is missing then the license can be retrieved from
 https://drive.google.com/file/d/1cinCiA778IErENZ3JN52VFW-1ffHpx7Z/view
 */
 
+function checkAFstatus() {
+  fetch('http://127.0.0.1:8000/connection_checker')
+  .then(response => response.json())
+  .then(data => {
+    if (data.status === 'ALIVE') {
+      document.getElementById('AFStatus').innerText = 'Connection with AF stable ✅';
+    } else {
+      document.getElementById('AFStatus').innerText = 'Connection with AF interrupted ❌';
+    }
+  })
+  .catch(error => {
+    console.error('Error:', error);
+    document.getElementById('AFStatus').innerText = 'Connection with AF interrupted ❌';
+  });
+}
 
 async function createNewSession() {
   const response = await fetch('/create_session', { method: 'POST' });
@@ -340,6 +355,9 @@ async function deleteConsumptionReporting(session_id) {
  */
 
 window.onload = function() {
+
+  setInterval(checkAFstatus, 5000);
+
   let session_table = document.getElementById('session_table');
   for (let i = 0; i < localStorage.length; i++) {
     let session_id = localStorage.key(i);

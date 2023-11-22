@@ -8,6 +8,7 @@ https://drive.google.com/file/d/1cinCiA778IErENZ3JN52VFW-1ffHpx7Z/view
 '''
 
 import json
+import requests
 from typing import List, Dict, Optional, Any
 from fastapi import FastAPI, Query, Depends, HTTPException, Response
 from fastapi.responses import JSONResponse, FileResponse
@@ -231,3 +232,15 @@ async def del_consumption(provisioning_session_id: str):
         return Response(status_code=204)
     else:
         raise HTTPException(status_code=400, detail="No consumption reporting to remove")
+
+@app.get("/connection_checker")
+async def connection_checker():
+    url = "http://127.0.0.23:7777/3gpp-m1/v2/provisioning-sessions/"
+    try:
+        response = requests.options(url)
+        if response.status_code == 204:
+            return {"status": "ALIVE"}
+        else:
+            return {"status": "DEAD"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
