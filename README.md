@@ -8,15 +8,15 @@
 ## Development progress  
 | Network functionalities| Asynchronous endpoints|UI elements|Unit test|
 | ------------------------------------- | --------- | -- |--|
-| Create Provisioning session|✅|✅|✅
-| Remove Provisioning session|✅|✅|✅|
-| Content Hosting Configuration from JSON|✅|✅||
-| Check the session details|✅|✅||
-| Create Server Certificate|✅|✅||
-| Show Certificate Details|✅|✅||
-| Show Content Protocols|✅|✅||
-| Cosumption Reporting|✅|✅||
-| Create Provisioning session with Content Hosting Configuration|❌|❌||
+| Create Provisioning session|`/create_session`|✅|✅
+| Remove Provisioning session|`/delete_session/{provisioning_session_id}`|✅|✅|
+| Content Hosting Configuration from JSON|`/set_stream/{provisioning_session_id}`|✅||
+| Check the session details|`/details`|✅||
+| Create Server Certificate|`/certificate/{provisioning_session_id}`|✅||
+| Show Certificate Details|`/show_certificate/{provisioning_session_id}/{certificate_id}`|✅||
+| Show Content Protocols|`/show_protocol/{provisioning_session_id}`|✅|✅|
+| Cosumption Reporting|`/set_consumption/{provisioning_session_id} /show_consumption/{provisioning_session_id} /del_consumption/{provisioning_session_id}`|✅||
+| Create Provisioning session with Content Hosting Configuration|TBD|TBD|TBD|
 
 ## Activate the UI server:
 
