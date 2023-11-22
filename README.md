@@ -10,12 +10,12 @@
 | ------------------------------------- | --------- | -- |--|
 | Create Provisioning session|`/create_session`|✅|✅
 | Remove Provisioning session|`/delete_session/{provisioning_session_id}`|✅|✅|
-| Content Hosting Configuration from JSON|`/set_stream/{provisioning_session_id}`|✅||
-| Check the session details|`/details`|✅||
-| Create Server Certificate|`/certificate/{provisioning_session_id}`|✅||
-| Show Certificate Details|`/show_certificate/{provisioning_session_id}/{certificate_id}`|✅||
+| Content Hosting Configuration from JSON|`/set_stream/{provisioning_session_id}`|✅|TBD|
+| Check the session details|`/details`|✅|TBD|
+| Create Server Certificate|`/certificate/{provisioning_session_id}`|✅|TBD|
+| Show Certificate Details|`/show_certificate/{provisioning_session_id}/{certificate_id}`|✅|TBD|
 | Show Content Protocols|`/show_protocol/{provisioning_session_id}`|✅|✅|
-| Cosumption Reporting|`/set_consumption/{provisioning_session_id} /show_consumption/{provisioning_session_id} /del_consumption/{provisioning_session_id}`|✅||
+| Cosumption Reporting|`/set_consumption/{provisioning_session_id} /show_consumption/{provisioning_session_id} /del_consumption/{provisioning_session_id}`|✅|TBD|
 | Create Provisioning session with Content Hosting Configuration|TBD|TBD|TBD|
 
 ## Activate the UI server:
