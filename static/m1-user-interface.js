@@ -12,9 +12,9 @@ function checkAFstatus() {
   .then(response => response.json())
   .then(data => {
     if (data.status === 'ALIVE') {
-      document.getElementById('AFStatus').innerText = 'Connection with AF stable ✅';
+      document.getElementById('AFStatus').innerText = 'Connection with the Application Function is stable ✅';
     } else {
-      document.getElementById('AFStatus').innerText = 'Connection with AF interrupted ❌';
+      document.getElementById('AFStatus').innerText = 'Connection with the Application Function has been interrupted ❌';
     }
   })
   .catch(error => {
@@ -23,10 +23,38 @@ function checkAFstatus() {
   });
 }
 
+function addSessionToTable(sessionId) {
+  const sessionData = JSON.parse(localStorage.getItem(sessionId));
+  const session_table = document.getElementById('session_table');
+
+  let row = session_table.insertRow(-1);
+
+  let cell1 = row.insertCell(0); // Session ID
+  let cell2 = row.insertCell(1); // Delete session
+  let cell3 = row.insertCell(2); // Create CHC from JSON
+  let cell4 = row.insertCell(3); // Show Session Details
+  let cell5 = row.insertCell(4); // Create and show certificate
+  let cell6 = row.insertCell(5); // Show Protocols button
+  let cell7 = row.insertCell(6); // Create CHC without certificate (not done)
+  let cell8 = row.insertCell(7); // Consumption Reporting (Set, Show, Delete)
+
+  cell1.innerHTML = sessionId;
+  cell2.innerHTML = `<button onclick="deleteProvisioningSession('${sessionId}')">Delete</button>`;
+  cell3.innerHTML = `<button onclick="createChcFromJson('${sessionId}')">Create</button>`;
+  cell4.innerHTML = `<button onclick="getProvisioningSessionDetails()">Show</button>`;
+  cell5.innerHTML = `<button onclick="createNewCertificate('${sessionId}')">Create</button>
+                     <button onclick="showCertificateDetails('${sessionId}', '${sessionData.certificate_id}')">Show</button>`;
+  cell6.innerHTML = `<button onclick="getProtocols('${sessionId}')">Show</button>`;
+  cell7.innerHTML = `<button onclick="getChcWithoutCertificate('${sessionId}')">Create</button>`;
+  cell8.innerHTML = `<button onclick="setConsumptionReporting('${sessionId}')">Set</button>
+                      <button onclick="showConsumptionReporting('${sessionId}')">Show</button>
+                      <button onclick="deleteConsumptionReporting('${sessionId}')">Delete</button>`;
+}
+
 async function createNewSession() {
   const response = await fetch('/create_session', { method: 'POST' });
 
-  if(!response.ok){
+  if (!response.ok) {
     Swal.fire({
       title: 'Application Provider says:',
       text: 'Failed to create new session. Make sure that AF is running!',
@@ -43,39 +71,14 @@ async function createNewSession() {
     icon: 'success',
     confirmButtonText: 'OK'
   });
-  
-  let session_table = document.getElementById('session_table');
-  let row = session_table.insertRow(-1);
-  let cell1 = row.insertCell(0);
-  let cell2 = row.insertCell(1);
-  let cell3 = row.insertCell(2);
-  let cell4 = row.insertCell(3);
-  let cell5 = row.insertCell(4);
-  let cell6 = row.insertCell(5);
-  let cell7 = row.insertCell(6);
-  let cell8 = row.insertCell(7);
 
-  cell1.innerHTML = data.provisioning_session_id;
+  localStorage.setItem(data.provisioning_session_id, JSON.stringify({
+    certificate_id: 'not yet created'
+  }));
 
-  cell2.innerHTML = `<button onclick="deleteProvisioningSession('${data.provisioning_session_id}')">Delete</button>`;
-  
-  cell3.innerHTML = `<button onclick="createChcFromJson('${data.provisioning_session_id}')">Create</button>`;
- 
-  cell4.innerHTML = `<button onclick="getProvisioningSessionDetails()">Show</button>`;
- 
-  cell5.innerHTML = `<button onclick="createNewCertificate('${data.provisioning_session_id}')">Create</button>
-                    <br><button onclick="showCertificateDetails('${data.provisioning_session_id}')">Show</button>`;
-  
-  cell6.innerHTML = `<button onclick="getProtocols('${data.provisioning_session_id}')">Show</button>`;
-  
-  cell7.innerHTML = `<button onclick="getChcWithoutCertificate('${data.provisioning_session_id}')">Create</button>`;
-  
-  cell8.innerHTML = `
-  <button onclick="setConsumptionReporting('${data.provisioning_session_id}')">Set</button>
-  <button onclick="showConsumptionReporting('${data.provisioning_session_id}')">Show</button>
-  <button onclick="deleteConsumptionReporting('${data.provisioning_session_id}')">Delete</button>`;
-
+  addSessionToTable(data.provisioning_session_id);
 }
+
 
 function removeSessionFromTableAndStorage(provisioning_session_id) {
   let session_table = document.getElementById('session_table');
@@ -215,8 +218,6 @@ function getProtocols(provisioning_session_id) {
   window.open(`http://127.0.0.1:8000/show_protocol/${provisioning_session_id}`, '_blank');
 }
 
-
-
 async function setConsumptionReporting(session_id) {
   const { value: formValues, dismiss } = await Swal.fire({
     title: 'Set consumption reporting parameters:',
@@ -349,11 +350,6 @@ async function deleteConsumptionReporting(session_id) {
   }
 }
  
-
-/**
- * WINDOW ONLOAD
- */
-
 window.onload = function() {
 
   setInterval(checkAFstatus, 5000);
