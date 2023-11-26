@@ -11,7 +11,7 @@ function checkAFstatus() {
   fetch('http://127.0.0.1:8000/connection_checker')
   .then(response => response.json())
   .then(data => {
-    if (data.status === 'ALIVE') {
+    if (data.status === 'STABLE') {
       document.getElementById('AFStatus').innerText = 'Connection with the Application Function is stable ✅';
     } else {
       document.getElementById('AFStatus').innerText = 'Connection with the Application Function has been interrupted ❌';
@@ -78,7 +78,6 @@ async function createNewSession() {
 
   addSessionToTable(data.provisioning_session_id);
 }
-
 
 function removeSessionFromTableAndStorage(provisioning_session_id) {
   let session_table = document.getElementById('session_table');
@@ -162,7 +161,6 @@ async function createChcFromJson(provisioning_session_id) {
 function getProvisioningSessionDetails() {
   window.open('http://127.0.0.1:8000/details', '_blank');
 }
-
 
 async function createNewCertificate(provisioning_session_id) {
   try {

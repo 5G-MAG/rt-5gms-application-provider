@@ -1,0 +1,25 @@
+{
+	"name": "AMP Demo Stream: Elephant's Dream",
+	"ingestConfiguration": {
+		"pull": true,
+		"protocol": "urn:3gpp:5gms:content-protocol:http-pull-ingest",
+		"baseURL": "http://amssamples.streaming.mediaservices.windows.net/b6822ec8-5c2b-4ae0-a851-fd46a78294e9/ElephantsDream.ism/"
+	},
+	"distributionConfigurations": [
+		{
+			"certificateId": "@certificate-id@",
+			"entryPoint": {
+				"relativePath": "manifest(format=mpd-time-csf)",
+				"contentType": "application/dash+xml",
+				"profiles": ["urn:mpeg:dash:profile:isoff-live:2011"]
+			}
+		},
+		{
+			"certificateId": "@certificate-id@",
+                        "entryPoint": {
+                                "relativePath": "manifest(format=m3u8-aapl-v3)",
+                                "contentType": "application/vnd.apple.mpegurl"
+                        }
+		}
+	]
+}

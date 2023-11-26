@@ -4,3 +4,4 @@ pytest
 httpx
 pytest-asyncio
 uuid
+asyncio

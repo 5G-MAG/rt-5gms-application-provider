@@ -11,9 +11,9 @@ import configparser
 import os
 from io import StringIO
 from typing import List
-from utils import append_ap_packages_to_sys_path
+from utils import lib_to_sys_path
 
-append_ap_packages_to_sys_path()
+lib_to_sys_path()
 
 from rt_m1_client.session import M1Session
 from rt_m1_client.data_store import JSONFileDataStore
