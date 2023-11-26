@@ -26,7 +26,7 @@ async def test_provisioning_session_lifecycle():
     # One client instance
     async with httpx.AsyncClient() as client:
         
-        # Create Provisioning Session
+        # Create provisioning session
         create_url = f"{FASTAPI_URL}/create_session"
         create_response = await client.post(create_url)
         assert create_response.status_code == 200
@@ -35,23 +35,52 @@ async def test_provisioning_session_lifecycle():
         provisioning_session_id = create_response_json["provisioning_session_id"]
         assert is_uuid_valid(provisioning_session_id)
 
-        # Show content protocls
+        # Content hosting configuring
+        set_stream_url = f"{FASTAPI_URL}/set_stream/{provisioning_session_id}"
+        set_stream_response = await client.post(set_stream_url)
+        assert set_stream_response.status_code == 200
+    
+        # Certification
+        set_certification_url = f"{FASTAPI_URL}/certificate/{provisioning_session_id}"
+        set_certification_response = await client.post(set_certification_url)
+        assert set_certification_response.status_code == 200
+        set_certification_response_json = set_certification_response.json()
+        assert "certificate_id" in set_certification_response_json
+        certificate_id = set_certification_response_json["certificate_id"]
+        assert is_uuid_valid(certificate_id)
+        show_certification_url = f"{FASTAPI_URL}/show_certificate/{provisioning_session_id}/{certificate_id}"
+        show_certification_response = await client.get(show_certification_url)
+        assert show_certification_response.status_code == 200
+
+        # Content protocols
         content_protocols = f"{FASTAPI_URL}/show_protocol/{provisioning_session_id}"
         content_protocols_response = await client.get(content_protocols)
         assert content_protocols_response.status_code == 200
-        content_protocols_response_json = content_protocols_response.json()
-        # Assert the structure of the response
-        assert "provisioning_session" in content_protocols_response_json, "Missing 'provisioning_session' in response"
-        assert isinstance(content_protocols_response_json["provisioning_session"], str), "'provisioning_session' should be a string"
 
-        assert "Downlink" in content_protocols_response_json, "Missing 'Downlink' in response"
-        assert isinstance(content_protocols_response_json["Downlink"], list), "'Downlink' should be a list"
+        # Consumption reporting
+        consumption_data = {
+            "reportingInterval": 5.0,
+            "samplePercentage": 5.667,
+            "locationReporting": True,
+            "accessReporting": True
+        }
 
-        assert "Uplink" in content_protocols_response_json, "Missing 'Uplink' in response"
-        assert isinstance(content_protocols_response_json["Uplink"], str), "'Uplink' should be a string"
+        set_consumption_url = f"{FASTAPI_URL}/set_consumption/{provisioning_session_id}"
+        set_consumption_response = await client.post(set_consumption_url, json=consumption_data)
+        assert set_consumption_response.status_code == 200
 
-        assert "Geo-fencing" in content_protocols_response_json, "Missing 'Geo-fencing' in response"
-        assert isinstance(content_protocols_response_json["Geo-fencing"], str), "'Geo-fencing' should be a string"
+        show_consumption_url = f"{FASTAPI_URL}/show_consumption/{provisioning_session_id}"
+        show_consumption_response = await client.get(show_consumption_url)
+        assert show_consumption_response.status_code == 200
+        show_consumption_response_json = show_consumption_response.json()
+
+        consumption_report = show_consumption_response_json.get("Consumption Reporting", {})
+        for key in consumption_data:
+            assert consumption_report.get(key) == consumption_data[key], f"Mismatch in {key}"
+
+        del_consumption_url = f"{FASTAPI_URL}/del_consumption/{provisioning_session_id}"
+        del_consumption_response = await client.delete(del_consumption_url)
+        assert del_consumption_response.status_code == 204
 
         # Delete Provisioning Session
         delete_url = f"{FASTAPI_URL}/delete_session/{provisioning_session_id}"

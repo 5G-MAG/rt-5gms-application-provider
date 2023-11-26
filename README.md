@@ -4,20 +4,6 @@
   <img src="https://img.shields.io/github/v/tag/5G-MAG/rt-5gms-application-function?label=version" alt="Version">
   <img src="https://img.shields.io/badge/License-5G--MAG%20Public%20License%20(v1.0)-blue" alt="License">
 
-
-## Development progress  
-| Network functionalities| Asynchronous endpoints|UI elements|Unit test|
-| ------------------------------------- | --------- | -- |--|
-| Create Provisioning session|`/create_session`|✅|✅
-| Remove Provisioning session|`/delete_session/{provisioning_session_id}`|✅|✅|
-| Content Hosting Configuration from JSON|`/set_stream/{provisioning_session_id}`|✅|TBD|
-| Check the session details|`/details`|✅|TBD|
-| Create Server Certificate|`/certificate/{provisioning_session_id}`|✅|TBD|
-| Show Certificate Details|`/show_certificate/{provisioning_session_id}/{certificate_id}`|✅|TBD|
-| Show Content Protocols|`/show_protocol/{provisioning_session_id}`|✅|✅|
-| Cosumption Reporting|`/set_consumption/{provisioning_session_id} /show_consumption/{provisioning_session_id} /del_consumption/{provisioning_session_id}`|✅|TBD|
-| Create Provisioning session with Content Hosting Configuration|TBD|TBD|TBD|
-
 ## Activate the UI server:
 
 Run the server:
@@ -30,10 +16,8 @@ uvicorn server:app --reload
 TBD
 
 ## Run tests:
-TBD
-
 ```
-cd tests
+cd tests/
 pytest integration_test.py
 ```
 
