@@ -38,7 +38,7 @@ import json
 import logging
 import os
 import os.path
-from typing import Any
+from typing_extensions import Any
 
 class DataStore:
     '''DataStore base class

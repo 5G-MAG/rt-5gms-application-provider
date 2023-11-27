@@ -29,7 +29,7 @@
 This module defines some classes that can be used by the `M1Session` class to provide certificate signing services.
 
 '''
-from typing import Optional, Tuple, List
+from typing_extensions import Optional, Tuple, List
 
 import OpenSSL
 

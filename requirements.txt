@@ -6,7 +6,6 @@ pytest-asyncio
 uuid
 asyncio
 requests
-typing-extensions
 jinja2
 configparser
 pyOpenSSL

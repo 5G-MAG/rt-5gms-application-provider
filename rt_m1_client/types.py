@@ -28,7 +28,7 @@ These types can be used in static type checking in Python 3.
 '''
 import enum
 import json
-from typing import List, Literal, TypedDict
+from typing_extensions import List, Literal, TypedDict
 
 # TS 26.512 ProvisioningSession
 
