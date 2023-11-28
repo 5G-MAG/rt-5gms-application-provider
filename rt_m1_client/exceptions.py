@@ -44,7 +44,7 @@ The M1ServerError exception derives from M1Error and is used when a request
 response indicates a 5XX status code. This means that there was an error on the
 server. The request may be retried at a later time and may then succeed.
 '''
-from typing_extensions import Optional
+from typing import Optional
 
 from .types import ProblemDetail, InvalidParam
 

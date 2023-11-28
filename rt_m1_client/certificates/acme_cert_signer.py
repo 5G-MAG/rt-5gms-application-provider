@@ -43,7 +43,7 @@ from cryptography.hazmat.primitives.serialization import Encoding as cryptograph
 import logging
 import os.path
 import re
-from typing_extensions import Optional, List, Tuple
+from typing import Optional, List, Tuple
 
 # 3rd party modules
 import OpenSSL

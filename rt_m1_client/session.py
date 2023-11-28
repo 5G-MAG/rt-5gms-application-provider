@@ -38,7 +38,7 @@ import importlib
 import inspect
 import logging
 import re
-from typing_extensions import Optional, Union, Tuple, Dict, Any, TypedDict, List, Iterable
+from typing import Optional, Union, Tuple, Dict, Any, TypedDict, List, Iterable
 
 import OpenSSL
 

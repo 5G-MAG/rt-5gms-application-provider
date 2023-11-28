@@ -36,7 +36,7 @@ should be performed outside of this class.
 import datetime
 import json
 import logging
-from typing_extensions import Optional, Union, Tuple, Dict, Any, TypedDict, List
+from typing import Optional, Union, Tuple, Dict, Any, TypedDict, List
 
 import httpx
 
