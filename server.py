@@ -17,11 +17,12 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from utils import lib_to_sys_path
 from config import Configuration, get_session
+
+lib_to_sys_path()
 from rt_m1_client.types import ResourceId, ApplicationId, ConsumptionReportingConfiguration
 
 
 app = FastAPI()
-lib_to_sys_path()
 config = Configuration()
 
 # Auxiliary function to pass proper configuration as dependency injection parameter

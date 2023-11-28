@@ -1,7 +1,14 @@
 fastapi==0.104.0
 uvicorn==0.23.2
+pydantic==1.9.0
 pytest
-httpx
 pytest-asyncio
+httpx
 uuid
 asyncio
+requests
+jinja2
+configparser
+pyOpenSSL
+aiofiles
+typing-extensions
