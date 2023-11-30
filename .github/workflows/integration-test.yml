@@ -20,7 +20,7 @@ jobs:
       run: |
         docker-compose up -d
         max_attempts=3
-        attempt = 0
+        attempt=0
         until [ $attempt -ge $max_attempts ]
         do
           docker-compose exec rt-5gms-m1-management-ui sh -c "cd tests && pytest integration_test.py" && break
