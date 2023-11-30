@@ -15,6 +15,7 @@ from fastapi import FastAPI, Query, Depends, HTTPException, Response
 from fastapi.responses import JSONResponse, FileResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
+from fastapi.middleware.cors import CORSMiddleware
 from utils import lib_to_sys_path
 from config import Configuration, get_session
 
@@ -274,6 +275,15 @@ HTTP Method: GET
 Path: /connection_checker
 Description: This endpoint will check the connection to the M1 interface sending an OPTIONS request.
 """
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://0.0.0.0:8000",
+                   "http://127.0.0.1:8000",
+                   "http://localhost:8000"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 @app.get("/connection_checker")
 async def connection_checker():
     url = "http://127.0.0.23:7777/3gpp-m1/v2/provisioning-sessions/"

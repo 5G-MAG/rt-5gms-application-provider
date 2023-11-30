@@ -4,6 +4,8 @@
   <img src="https://img.shields.io/github/v/tag/5G-MAG/rt-5gms-application-function?label=version" alt="Version">
   <img src="https://img.shields.io/badge/License-5G--MAG%20Public%20License%20(v1.0)-blue" alt="License">
 
+M1 Management tool is one of the 5GMAG's reference tools, designed and developed to facilitate network operations within 3GPP standardize 5G streaming architecture. Is supports and expands the M1 CLI Tools with meticulously designed control panel. This UI implements all network operations, that are happening at the data network side of overall architecture, as endpoints meant to be visualized and used by the browser.
+
 ## Activate the UI server:
 
 Run the server:
