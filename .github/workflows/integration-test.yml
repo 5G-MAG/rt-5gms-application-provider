@@ -10,18 +10,26 @@ jobs:
   integration-test:
     runs-on: ubuntu-latest
 
-    strategy:
-      fail-fast: false
-      max-attempts: 3
-
     steps:
     - uses: actions/checkout@v2
 
     - name: Build the Docker image
       run: docker-compose build
 
-    - name: Run Integration Tests
+    - name: Run Integration Tests with Retry
       run: |
         docker-compose up -d
-        docker-compose exec rt-5gms-m1-management-ui sh -c "cd tests && pytest integration_test.py"
+        max_attempts = 3
+        attempt = 0
+        until [ $attempt -ge $max_attempts ]
+        do
+          docker-compose exec rt-5gms-m1-management-ui sh -c "cd tests && pytest integration_test.py" && break
+          attempt=$((attempt+1))
+          echo "Test failed, next attempt..."
+          sleep 5
+        done
+        if [ $attempt -eq $max_attempts ]; then
+          echo "Test definetly failed."
+          exit 1
+        fi
         docker-compose down
