@@ -19,7 +19,7 @@ jobs:
     - name: Run Integration Tests with Retry
       run: |
         docker-compose up -d
-        max_attempts = 3
+        max_attempts=3
         attempt = 0
         until [ $attempt -ge $max_attempts ]
         do
