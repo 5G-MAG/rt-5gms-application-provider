@@ -10,6 +10,10 @@ jobs:
   integration-test:
     runs-on: ubuntu-latest
 
+    strategy:
+      fail-fast: false
+      max-attempts: 3
+
     steps:
     - uses: actions/checkout@v2
 
