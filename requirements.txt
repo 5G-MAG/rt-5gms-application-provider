@@ -12,3 +12,4 @@ configparser
 pyOpenSSL
 aiofiles
 typing-extensions
+python-dotenv
