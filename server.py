@@ -7,9 +7,11 @@ program. If this file is missing then the license can be retrieved from
 https://drive.google.com/file/d/1cinCiA778IErENZ3JN52VFW-1ffHpx7Z/view
 '''
 
+import os
 import json
 import requests
 import asyncio
+from dotenv import load_dotenv
 from typing import Optional
 from fastapi import FastAPI, Query, Depends, HTTPException, Response
 from fastapi.responses import JSONResponse, FileResponse
@@ -19,9 +21,12 @@ from fastapi.middleware.cors import CORSMiddleware
 from utils import lib_to_sys_path
 from config import Configuration, get_session
 
+load_dotenv()
 lib_to_sys_path()
 from rt_m1_client.types import ResourceId, ApplicationId, ConsumptionReportingConfiguration
 
+OPTIONS_ENDPOINT = os.getenv("OPTIONS_ENDPOINT", "http://127.0.0.23:7777/3gpp-m1/v2/provisioning-sessions/")
+CORS_ORIGINS = os.getenv("CORS_ORIGINS", "http://0.0.0.0:8000,http://127.0.0.1:8000,http://localhost:8000").split(',')
 
 app = FastAPI()
 config = Configuration()
@@ -275,20 +280,19 @@ HTTP Method: GET
 Path: /connection_checker
 Description: This endpoint will check the connection to the M1 interface sending an OPTIONS request.
 """
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://0.0.0.0:8000",
-                   "http://127.0.0.1:8000",
-                   "http://localhost:8000"],
+    allow_origins=CORS_ORIGINS,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
 @app.get("/connection_checker")
 async def connection_checker():
-    url = "http://127.0.0.23:7777/3gpp-m1/v2/provisioning-sessions/"
     try:
-        response = requests.options(url)
+        response = requests.options(OPTIONS_ENDPOINT)
         if response.status_code == 204:
             return {"status": "STABLE"}
         else:

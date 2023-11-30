@@ -9,9 +9,13 @@ https://drive.google.com/file/d/1cinCiA778IErENZ3JN52VFW-1ffHpx7Z/view
 
 import pytest
 import httpx
+import os
 from uuid import UUID
+from dotenv import load_dotenv
 
-FASTAPI_URL = "http://127.0.0.1:8000"
+load_dotenv()
+
+FASTAPI_URL = os.getenv("FASTAPI_URL", "http://localhost:8000")
 
 def is_uuid_valid(uuid_to_test: str, version: int = 4) -> bool:
     try:
@@ -48,9 +52,6 @@ async def test_provisioning_session_lifecycle():
         assert "certificate_id" in set_certification_response_json
         certificate_id = set_certification_response_json["certificate_id"]
         assert is_uuid_valid(certificate_id)
-        show_certification_url = f"{FASTAPI_URL}/show_certificate/{provisioning_session_id}/{certificate_id}"
-        show_certification_response = await client.get(show_certification_url)
-        assert show_certification_response.status_code == 200
 
         # Content protocols
         content_protocols = f"{FASTAPI_URL}/show_protocol/{provisioning_session_id}"
@@ -81,6 +82,11 @@ async def test_provisioning_session_lifecycle():
         del_consumption_url = f"{FASTAPI_URL}/del_consumption/{provisioning_session_id}"
         del_consumption_response = await client.delete(del_consumption_url)
         assert del_consumption_response.status_code == 204
+
+        # Show certificates
+        show_certification_url = f"{FASTAPI_URL}/show_certificate/{provisioning_session_id}/{certificate_id}"
+        show_certification_response = await client.get(show_certification_url)
+        assert show_certification_response.status_code == 200
 
         # Delete Provisioning Session
         delete_url = f"{FASTAPI_URL}/delete_session/{provisioning_session_id}"
