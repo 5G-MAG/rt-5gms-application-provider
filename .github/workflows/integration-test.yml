@@ -19,5 +19,5 @@ jobs:
     - name: Run Integration Tests
       run: |
         docker-compose up -d
-        docker-compose exec app-ui sh -c "cd tests && pytest integration_test.py"
+        docker-compose exec rt-5gms-m1-management-ui sh -c "cd tests && pytest integration_test.py"
         docker-compose down
