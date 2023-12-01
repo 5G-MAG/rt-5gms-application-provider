@@ -19,17 +19,15 @@ jobs:
     - name: Run Integration Tests with Retry
       run: |
         docker-compose up -d
-        max_attempts=3
-        attempt=0
-        until [ $attempt -ge $max_attempts ]
+        for attempt in {1..3}
         do
+          echo "Attempt $attempt from 3"
           docker-compose exec rt-5gms-m1-management-ui sh -c "cd tests && pytest integration_test.py" && break
-          attempt=$((attempt+1))
           echo "Test failed, next attempt..."
           sleep 5
         done
-        if [ $attempt -eq $max_attempts ]; then
-          echo "Test definetly failed."
+        if [ "$attempt" -eq 4 ]; then
+          echo "All tests definitively failed."
           exit 1
         fi
         docker-compose down
