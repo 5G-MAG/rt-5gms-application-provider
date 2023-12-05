@@ -35,8 +35,7 @@ function addSessionToTable(sessionId) {
   let cell4 = row.insertCell(3); // Show Session Details
   let cell5 = row.insertCell(4); // Create and show certificate
   let cell6 = row.insertCell(5); // Show Protocols button
-  let cell7 = row.insertCell(6); // Create CHC without certificate (not done)
-  let cell8 = row.insertCell(7); // Consumption Reporting (Set, Show, Delete)
+  let cell7 = row.insertCell(6); // Consumption Reporting (Set, Show, Delete)
 
   cell1.innerHTML = sessionId;
   cell2.innerHTML = `<button onclick="deleteProvisioningSession('${sessionId}')">Delete</button>`;
@@ -45,8 +44,7 @@ function addSessionToTable(sessionId) {
   cell5.innerHTML = `<button onclick="createNewCertificate('${sessionId}')">Create</button>
                      <button onclick="showCertificateDetails('${sessionId}', '${sessionData.certificate_id}')">Show</button>`;
   cell6.innerHTML = `<button onclick="getProtocols('${sessionId}')">Show</button>`;
-  cell7.innerHTML = `<button onclick="getChcWithoutCertificate('${sessionId}')">Create</button>`;
-  cell8.innerHTML = `<button onclick="setConsumptionReporting('${sessionId}')">Set</button>
+  cell7.innerHTML = `<button onclick="setConsumptionReporting('${sessionId}')">Set</button>
                       <button onclick="showConsumptionReporting('${sessionId}')">Show</button>
                       <button onclick="deleteConsumptionReporting('${sessionId}')">Delete</button>`;
 }
@@ -365,7 +363,6 @@ window.onload = function() {
     let cell5 = row.insertCell(4);
     let cell6 = row.insertCell(5);
     let cell7 = row.insertCell(6);
-    let cell8 = row.insertCell(7);
 
     cell1.innerHTML = session_id;
     cell2.innerHTML = `<button onclick="deleteProvisioningSession('${session_id}')">Delete</button>`;
@@ -378,9 +375,7 @@ window.onload = function() {
 
     cell6.innerHTML = `<button onclick="getProtocols('${session_id}')">Show</button>`;
 
-    cell7.innerHTML = `<button onclick="getChcWithoutCertificate('${session_id}')">Create</button>`;
-
-    cell8.innerHTML = `
+    cell7.innerHTML = `
         <button onclick="setConsumptionReporting('${session_id}')">Set</button>
         <button onclick="showConsumptionReporting('${session_id}')">Show</button>
         <button onclick="deleteConsumptionReporting('${session_id}')">Delete</button>`;

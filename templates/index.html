@@ -18,20 +18,14 @@ https://drive.google.com/file/d/1cinCiA778IErENZ3JN52VFW-1ffHpx7Z/view
   
   <body>
 
+  <h1 align="center" style="color:white;">Reference Tool 5G Media Streaming</h1>
   <div class="header">
     <img src="/static/images/5gmag.png" alt="5GMAG Logo" class="logo">
-    <h1>Reference Tool 5G Media Streaming<h2>M1 Management Interface</h2></h1>
-    <p id="AFStatus">Checking connection with the Application Function...</p>
+    <h1>M1 Management Interface</h1>
   </div>
-
-  <div class="container">
+  <div align="left" class="container">
   <div class="buttons">
     <button onclick="createNewSession()">Create Provisioning Session</button><br>
-    <button onclick="createNewSessionWithCHC()">
-      Create Provisioning Session with<br>
-      Content Hosting Configuration<br>
-      containing multiple entry points
-    </button>
   </div>
 
   <table id="session_table">
@@ -43,7 +37,6 @@ https://drive.google.com/file/d/1cinCiA778IErENZ3JN52VFW-1ffHpx7Z/view
         <th>Check the Session details</th>
         <th>Certificates</th>
         <th>Show Content Protocols</th>
-        <th>Create Content Hosting Configuration without Certificate</th>
         <th>Consumption Reporting</th>
       </tr>
     </thead>
@@ -52,7 +45,7 @@ https://drive.google.com/file/d/1cinCiA778IErENZ3JN52VFW-1ffHpx7Z/view
   </table>
   </div>
 
-  
+  <h2 id="AFStatus" align="center" style="color:white;">Checking connection with the Application Function...</h2>
   <button id="infoBtn">i</button>
   <div id="infoModal" class="modal">
     <div class="modal-content">
