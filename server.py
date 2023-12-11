@@ -59,7 +59,7 @@ async def new_provisioning_session(app_id: Optional[str] = None, asp_id: Optiona
         ApplicationId(asp_id) if asp_id else None)
     
     if provisioning_session_id is None:
-        raise HTTPException(status_code=400, error="Failed to create a new provisioning session")
+        raise HTTPException(status_code=400, detail="Failed to create a new provisioning session")
         
     return {"provisioning_session_id": provisioning_session_id}
 
