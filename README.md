@@ -6,7 +6,10 @@
 </p>
 
 # Introduction
-This full-stack web application represents Application Provider of 3GPP compliant 5G Media Streaming architecure, and it is part of 5GMAG's reference tools. It interacts with Application Function via interface with reference point M1, with possibility to establish connection over unstandardized M8. It utilizes classes of related Python tool that has been developed as CLI-based Application Provider. Every provisioning procedure is implemented as related web-server's endpoint, supported with the graphical control dashboard. With full-stack approach, the codebase of Application Provider becomes maintainable, scalable for new provisioning features, and the interaction with Application Function is enhanced with modern engineering design.
+This full-stack web application represents Application Provider of 3GPP compliant 5G Media Streaming architecure, and it is part of 5GMAG's Reference Tools. It interacts with Application Function via interface with reference point M1, with possibility to establish connection over unstandardized M8.
+
+It utilizes Python tool classes that has been developed as CLI-based Application Provider. Every provisioning procedure is implemented as related web-server's endpoint, supported with the graphical control dashboard. With full-stack approach, the codebase of Application Provider becomes maintainable, scalable for new provisioning features, and the interaction with Application Function is enhanced with modern engineering design.
+
 Furthermore, automated integration test is written to provide entire provisioning cycle starting with creation of provisioning session, activating realted procedures, and finalizing with deletion of resources. In addition - project has been wrapped with Docker Compose to prevent building & dependency issues and development supported with realted GitHub CI/CD actions.
 
 ## Licensing and authorization
