@@ -1,4 +1,4 @@
-<h1 align="center">5GMS M1 Interface Management UI</h1>
+<h1 align="center">5GMS Application Provider</h1>
 <p align="center">
   <img src="https://img.shields.io/badge/Status-Under_Development-yellow" alt="Under Development">
   <img src="https://img.shields.io/github/v/tag/5G-MAG/rt-5gms-application-function?label=version" alt="Version">
@@ -6,12 +6,14 @@
 </p>
 
 # Introduction
-M1 Management tool is one of the 5GMAG's reference tools, designed and developed to facilitate network operations within 3GPP standardize 5G streaming architecture. It supports and enhances the M1 CLI Tools with meticulously designed control panel. This UI implements all network operations, that are happening at the data network side of overall architecture, as the Python server's endpoints meant to be uplifted to the browser.
+This full-stack web application represents Application Provider of 3GPP compliant 5G Media Streaming architecure, and it is part of 5GMAG's reference tools. It interacts with Application Function via interface with reference point M1, with possibility to establish connection over unstandardized M8. It utilizes classes of related Python tool that has been developed as CLI-based Application Provider. Every provisioning procedure is implemented as related web-server's endpoint, supported with the graphical control dashboard. With full-stack approach, the codebase of Application Provider becomes maintainable, scalable for new provisioning features, and the interaction with Application Function is enhanced with modern engineering design.
+Furthermore, automated integration test is written to provide entire provisioning cycle starting with creation of provisioning session, activating realted procedures, and finalizing with deletion of resources. In addition - project has been wrapped with Docker Compose to prevent building & dependency issues and development supported with realted GitHub CI/CD actions.
 
 ## Licensing and authorization
 Licence and authorization are aligned with Fraunhofer Fokus, 5GMAG's and British Broadcast Company's (BBC) norms & regulations.
 For the full license terms, please see the LICENSE file distributed along with the repository for 5GMS Reference Tools or retrieve it from [here.](https://drive.google.com/file/d/1cinCiA778IErENZ3JN52VFW-1ffHpx7Z/view")
 
+TBD:
 
 ## Building and installing
 There are two ways to run this project, and the warm reccomendation is to use **Docker Compose** service, because lightweight container building and activation will solve entire scope of dependecies and the rest of requirements.
