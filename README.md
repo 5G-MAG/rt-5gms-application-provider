@@ -61,4 +61,4 @@ pytest integration_test.py
 Please be aware that this procedure is already provided with the repository's CI/CD pipeline. 
 
 # Licensing and authorization
-This project is developed under 5GMAG's Public License and in accordance with BBC and Fraunhofer Fokus legal norms & regulations. For the full license terms, please see the LICENSE file distributed along with the repository or retrieve it from [here.](https://drive.google.com/file/d/1cinCiA778IErENZ3JN52VFW-1ffHpx7Z/view")
+This project is developed under 5GMAG's Public License and in accordance with BBC and Fraunhofer Fokus legal norms & regulations. For the full license terms, please see the LICENSE file distributed along with the repository or retrieve it from [here.](https://drive.google.com/file/d/1cinCiA778IErENZ3JN52VFW-1ffHpx7Z/view)
