@@ -19,21 +19,37 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from fastapi.middleware.cors import CORSMiddleware
 from utils import lib_to_sys_path
-from config import Configuration, get_session
 
 load_dotenv()
 lib_to_sys_path()
+
 from rt_m1_client.types import ResourceId, ApplicationId, ConsumptionReportingConfiguration
+from rt_m1_client.configuration import Configuration
+from rt_m1_client.session import M1Session
+from rt_m1_client.data_store import JSONFileDataStore
 
 OPTIONS_ENDPOINT = os.getenv("OPTIONS_ENDPOINT", "http://127.0.0.23:7777/3gpp-m1/v2/provisioning-sessions/")
 CORS_ORIGINS = os.getenv("CORS_ORIGINS", "http://0.0.0.0:8000,http://127.0.0.1:8000,http://localhost:8000").split(',')
 
 app = FastAPI()
 config = Configuration()
+_m1_session = None
 
 # Auxiliary function to pass proper configuration as dependency injection parameter
 def get_config():
     return Configuration()
+
+
+async def get_session(config: Configuration) -> M1Session:
+    global _m1_session
+    if _m1_session is None:
+        data_store_dir = config.get('data_store')
+        if data_store_dir is not None:
+            data_store = await JSONFileDataStore(config.get('data_store'))
+        else:
+            data_store = None
+        _m1_session = await M1Session((config.get('m1_address', 'localhost'), config.get('m1_port',7777)), data_store, config.get('certificate_signing_class'))
+    return _m1_session
 
 # UI page rendering
 app.mount("/static", StaticFiles(directory="static"), name="static")
@@ -41,6 +57,7 @@ templates = Jinja2Templates(directory="templates")
 @app.get("/")
 def landing_page():
     return FileResponse("templates/index.html")
+
 
 """
 Endpoint: Create Provisioning Session
