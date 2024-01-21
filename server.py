@@ -48,7 +48,10 @@ async def get_session(config: Configuration) -> M1Session:
             data_store = await JSONFileDataStore(config.get('data_store'))
         else:
             data_store = None
-        _m1_session = await M1Session((config.get('m1_address', 'localhost'), config.get('m1_port',7777)), data_store, config.get('certificate_signing_class'))
+        _m1_session = await M1Session((config.get('m1_address', 'localhost'),
+                                       config.get('m1_port',7777)),
+                                       data_store,
+                                       config.get('certificate_signing_class'))
     return _m1_session
 
 # UI page rendering
@@ -128,6 +131,13 @@ async def set_stream(provisioning_session_id: str, config: Configuration = Depen
         
     return JSONResponse(content={"message": f"Hosting set for provisioning session {provisioning_session_id}"}, status_code=200)
 
+"""
+Endpoint: Retrieve all provisioning sessions details
+HTTP Method: GET
+Path: /details
+Description: This endpoint will return all details for all active provisioning sessions
+"""
+
 # Auxiliary function to get details for a particular provisioning session in async manner
 async def get_session_details(session, ps_id):
     details = {"Certificates": {}}
@@ -148,12 +158,6 @@ async def get_session_details(session, ps_id):
 
     return ps_id, details
 
-"""
-Endpoint: Retrieve all provisioning sessions details
-HTTP Method: GET
-Path: /details
-Description: This endpoint will return all details for all active provisioning sessions
-"""
 @app.get("/details")
 async def get_provisioning_session_details():
     session = await get_session(config)

@@ -12,14 +12,14 @@ function checkAFstatus() {
   .then(response => response.json())
   .then(data => {
     if (data.status === 'STABLE') {
-      document.getElementById('AFStatus').innerText = 'Connection with the Application Function is stable ✅';
+      document.getElementById('AFStatus').innerText = 'Connection with the Application Function is stable.';
     } else {
-      document.getElementById('AFStatus').innerText = 'Connection with the Application Function has been interrupted ❌';
+      document.getElementById('AFStatus').innerText = 'Connection with the Application Function has been interrupted.';
     }
   })
   .catch(error => {
     console.error('Error:', error);
-    document.getElementById('AFStatus').innerText = 'Connection with AF interrupted ❌';
+    document.getElementById('AFStatus').innerText = 'Connection with AF interrupted.';
   });
 }
 

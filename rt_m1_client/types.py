@@ -46,11 +46,11 @@ ProvisioningSessionId = ResourceId
 ProvisioningSessionType = Literal['DOWNLINK','UPLINK']
 
 class ProvisioningSessionMandatory(TypedDict):
-    '''Madatory fields for a `ProvisioningSession`
+    '''Mandatory fields for a `ProvisioningSession` v17.7.0
     '''
     provisioningSessionId: ProvisioningSessionId
     provisioningSessionType: ProvisioningSessionType
-    externalApplicationId: ApplicationId
+    appId: ApplicationId
 
 class ProvisioningSession (ProvisioningSessionMandatory, total=False):
     '''A `ProvisioningSession` object as defined in TS 26.512
@@ -473,14 +473,18 @@ class BitRate(object):
     '''
     def __init__(self, *args, **kwargs):
         if len(args) == 1 and len(kwargs) == 0:
+            if isinstance(args[0], bytes):
+                args[0] = args[0].decode('utf-8')
             if isinstance(args[0], str):
                 self.__bitrate = self.__parseBitrateString(args[0])
             elif isinstance(args[0], int):
                 self.__bitrate = float(args[0])
             elif isinstance(args[0], float):
                 self.__bitrate = args[0]
+            elif isinstance(args[0], BitRate):
+                self.__bitrate = args[0].bitrate()
             else:
-                raise TypeError('BitRate initialiser must be str, int or float')
+                raise TypeError(f'BitRate initialiser must be str, int or float: given {type(args[0]).__name__}')
         elif len(args) == 0 and len(kwargs) == 1 and kwargs.keys()[0] in ['bps', 'kbps', 'mbps', 'gbps', 'tbps', 'pbps']:
             k,v = kwargs.items()[0]
             if k == 'bps':
@@ -497,6 +501,9 @@ class BitRate(object):
                 self.__bitrate = v*1000000000000000.0
         else:
             raise ValueError('Only a bitrate string or one of the bitrate keywords can be used to initialise a BitRate')
+
+    def bitrate(self):
+        return self.__bitrate
 
     def __repr__(self) -> str:
         if self.__bitrate < 1000:
@@ -779,13 +786,13 @@ class PolicyTemplateMandatory(TypedDict):
     Mandatory fields from PolicyTemplate structure in TS 26.512
     '''
     externalReference: str
-    applicationSessionContext: AppSessionContext
 
 class PolicyTemplate(PolicyTemplateMandatory, total=False):
     '''
     PolicyTemplate structure from TS 26.512
     '''
     policyTemplateId: ResourceId
+    applicationSessionContext: AppSessionContext
     state: PolicyTemplateState
     stateReason: "ProblemDetail"
     qoSSpecification: M1QoSSpecification
@@ -817,7 +824,8 @@ class PolicyTemplate(PolicyTemplateMandatory, total=False):
         if 'state' in pt:
             pt['state'] = PolicyTemplateState[pt['state']]
         #ProblemDetail.validate(pt['stateReason'])
-        AppSessionContext.validate(pt['applicationSessionContext'], policy_template_json)
+        if 'applicationSessionContext' in pt:
+            AppSessionContext.validate(pt['applicationSessionContext'], policy_template_json)
         if 'qoSSpecification' in pt:
             M1QoSSpecification.validate(pt['qoSSpecification'], policy_template_json)
         if 'chargingSpecification' in pt:
@@ -833,9 +841,9 @@ class PolicyTemplate(PolicyTemplateMandatory, total=False):
 {prefix}  State Reason:
 {ProblemDetail.format(pt['stateReason'],indent+4)}
 {prefix}  External Reference: {pt['externalReference']}
-{prefix}  AppSessionContext:
-{AppSessionContext.format(pt['applicationSessionContext'], indent+4)}
 '''
+        if 'applicationSessionContext' in pt:
+            ret += f"{prefix}  AppSessionContext:\n{AppSessionContext.format(pt['applicationSessionContext'], indent+4)}"
         if 'qoSSpecification' in pt:
             ret += f"{prefix}  QoS Specification:\n{M1QoSSpecification.format(pt['qoSSpecification'], indent+4)}"
         if 'chargingSpecification' in pt:
