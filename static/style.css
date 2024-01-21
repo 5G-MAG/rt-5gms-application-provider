@@ -118,7 +118,7 @@ button {
   text-align: center;
   background-color: #0073ad;
   color: white;
-  /* conctrols movemenet of the header with scrolling */
+  /* controls mmovement of the header with scrolling */
   position: sticky;
   top: 0;
   z-index: 2;
@@ -133,7 +133,7 @@ button {
   height: 45px;
 }
 
-/* even/odd rows coloration */
+/* even-odd rows coloration */
 
 #session_table tr:nth-child(even) {
   background-color: #2596be;
