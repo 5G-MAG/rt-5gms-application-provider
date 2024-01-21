@@ -10,6 +10,7 @@ https://drive.google.com/file/d/1cinCiA778IErENZ3JN52VFW-1ffHpx7Z/view
 <!DOCTYPE html>
 <html>
   <head>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/css/bootstrap.min.css">
     <link rel="stylesheet" href="/static/style.css">
     <link href="https://cdn.jsdelivr.net/npm/sweetalert2@11.7.22/dist/sweetalert2.min.css" rel="stylesheet">
     <script src="/static/m1-user-interface.js"></script>
@@ -18,15 +19,20 @@ https://drive.google.com/file/d/1cinCiA778IErENZ3JN52VFW-1ffHpx7Z/view
   
   <body>
 
-  <h1 align="center" style="color:white;">Reference Tool 5G Media Streaming</h1>
+  <h1 align="center" style="color:white;">5G Media Streaming Reference Tool</h1>
   <div class="header">
     <img src="/static/images/5gmag.png" alt="5GMAG Logo" class="logo">
-    <h1>M1 Management Interface</h1>
+    <h3>Application Function Control Panel</h3>
   </div>
+
   <div align="left" class="container">
-  <div class="buttons">
-    <button onclick="createNewSession()">Create Provisioning Session</button><br>
-  </div>
+    <div class="create-session">
+        <br>
+        <button onclick="createNewSession()" class="create-session-button">Create Provisioning Session</button><br>
+    </div>
+</div>
+
+  
 
   <table id="session_table">
     <thead>
@@ -45,7 +51,11 @@ https://drive.google.com/file/d/1cinCiA778IErENZ3JN52VFW-1ffHpx7Z/view
   </table>
   </div>
 
-  <h2 id="AFStatus" align="center" style="color:white;">Checking connection with the Application Function...</h2>
+  <br><br>
+
+  <h4 id="AFStatus" align="center" style="color:white;">Checking connection with the Application Function...</h4>
+
+
   <button id="infoBtn">i</button>
   <div id="infoModal" class="modal">
     <div class="modal-content">

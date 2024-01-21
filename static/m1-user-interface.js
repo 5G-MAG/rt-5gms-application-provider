@@ -12,9 +12,9 @@ function checkAFstatus() {
   .then(response => response.json())
   .then(data => {
     if (data.status === 'STABLE') {
-      document.getElementById('AFStatus').innerText = 'Connection with the Application Function is stable.';
+      document.getElementById('AFStatus').innerText = 'Connection with Application Function is stable ✅';
     } else {
-      document.getElementById('AFStatus').innerText = 'Connection with the Application Function has been interrupted.';
+      document.getElementById('AFStatus').innerText = 'Connection with Application Function has been interrupted ❌';
     }
   })
   .catch(error => {
@@ -38,15 +38,21 @@ function addSessionToTable(sessionId) {
   let cell7 = row.insertCell(6); // Consumption Reporting (Set, Show, Delete)
 
   cell1.innerHTML = sessionId;
-  cell2.innerHTML = `<button onclick="deleteProvisioningSession('${sessionId}')">Delete</button>`;
-  cell3.innerHTML = `<button onclick="createChcFromJson('${sessionId}')">Create</button>`;
-  cell4.innerHTML = `<button onclick="getProvisioningSessionDetails()">Show</button>`;
-  cell5.innerHTML = `<button onclick="createNewCertificate('${sessionId}')">Create</button>
-                     <button onclick="showCertificateDetails('${sessionId}', '${sessionData.certificate_id}')">Show</button>`;
-  cell6.innerHTML = `<button onclick="getProtocols('${sessionId}')">Show</button>`;
-  cell7.innerHTML = `<button onclick="setConsumptionReporting('${sessionId}')">Set</button>
-                      <button onclick="showConsumptionReporting('${sessionId}')">Show</button>
-                      <button onclick="deleteConsumptionReporting('${sessionId}')">Delete</button>`;
+
+  cell2.innerHTML = `<button onclick="deleteProvisioningSession('${sessionId}')" class="btn btn-danger table-button">Delete</button>`;
+
+  cell3.innerHTML = `<button onclick="createChcFromJson('${sessionId}')" class="btn btn-primary table-button">Create</button>`;
+
+  cell4.innerHTML = `<button onclick="getProvisioningSessionDetails()" class="btn btn-info table-button">Show</button>`;
+
+  cell5.innerHTML = `<button onclick="createNewCertificate('${sessionId}')" class="btn btn-primary table-button">Create</button>
+                     <button onclick="showCertificateDetails('${sessionId}', '${sessionData.certificate_id}')" class="btn btn-warning table-button">Show</button>`;
+
+  cell6.innerHTML = `<button onclick="getProtocols('${sessionId}')" class="btn btn-secondary table-button">Show</button>`;
+
+  cell7.innerHTML = `<button onclick="setConsumptionReporting('${sessionId}')" class="btn btn-primary table-button">Set</button>
+                      <button onclick="showConsumptionReporting('${sessionId}')" class="btn btn-info table-button">Show</button>
+                      <button onclick="deleteConsumptionReporting('${sessionId}')" class="btn btn-danger table-button">Delete</button>`;
 }
 
 async function createNewSession() {
@@ -109,7 +115,7 @@ async function deleteProvisioningSession(provisioning_session_id) {
         removeSessionFromTableAndStorage(provisioning_session_id);
       } else {
         Swal.fire({
-          title: 'M1 Application Provider says:',
+          title: 'Application Provider says:',
           text: 'Failed to delete the provisioning session.',
           icon: 'error',
           confirmButtonText: 'OK'
@@ -119,7 +125,7 @@ async function deleteProvisioningSession(provisioning_session_id) {
     }
 
     Swal.fire({
-      title: 'M1 Application Provider says:',
+      title: 'Application Provider says:',
       text: `Provisioning session ${provisioning_session_id} deleted with all resources`,
       icon: 'success',
       confirmButtonText: 'OK'
@@ -139,7 +145,7 @@ async function createChcFromJson(provisioning_session_id) {
 
   if (!response.ok) {
     Swal.fire({
-      title: 'M1 Application Provider says:',
+      title: 'Application Provider says:',
       text: 'Failed to set hosting for the provisioning session.',
       icon: 'error',
       confirmButtonText: 'OK'
@@ -149,7 +155,7 @@ async function createChcFromJson(provisioning_session_id) {
   
   const data = await response.json();
   Swal.fire({
-    title: 'M1 Application Provider says:',
+    title: 'Application Provider says:',
     text: data.message,
     icon: 'success',
     confirmButtonText: 'OK'
@@ -179,12 +185,17 @@ async function createNewCertificate(provisioning_session_id) {
               icon: 'success',
               confirmButtonText: 'OK'
           }); 
+
           let session_table = document.getElementById('session_table');
+
           for (let i = 1; i < session_table.rows.length; i++) {
-              if (session_table.rows[i].cells[0].innerHTML === provisioning_session_id) {
-                  session_table.rows[i].cells[5].innerHTML = `<button onclick="showCertificateDetails('${provisioning_session_id}', '${data.certificate_id}')">Show</button>`;
-              }
-          }
+            if (session_table.rows[i].cells[0].innerHTML === provisioning_session_id) {
+                let cell = session_table.rows[i].cells[4];
+                cell.innerHTML = `<button onclick="createNewCertificate('${provisioning_session_id}')" class="btn btn-primary table-button">Create</button>
+                                  <button onclick="showCertificateDetails('${provisioning_session_id}', '${data.certificate_id}')" class="btn btn-warning table-button">Show</button>`;
+            }
+        }
+
       } else {
           Swal.fire({
               title: 'Error',
@@ -230,6 +241,9 @@ async function setConsumptionReporting(session_id) {
         '<option value="true">True</option>' +
         '<option value="false">False</option>' +
       '</select>',
+    customClass:{
+      popup: 'consumption-swall'
+    },
     focusConfirm: false,
     showCancelButton: true,
     preConfirm: () => {
@@ -365,19 +379,22 @@ window.onload = function() {
     let cell7 = row.insertCell(6);
 
     cell1.innerHTML = session_id;
-    cell2.innerHTML = `<button onclick="deleteProvisioningSession('${session_id}')">Delete</button>`;
-    cell3.innerHTML = `<button onclick="createChcFromJson('${session_id}')">Create</button>`;
-    cell4.innerHTML = `<button onclick="getProvisioningSessionDetails()">Show</button>`;
+
+    cell2.innerHTML = `<button onclick="deleteProvisioningSession('${session_id}')" class="btn btn-danger table-button">Delete</button>`;
+
+    cell3.innerHTML = `<button onclick="createChcFromJson('${session_id}')" class="btn btn-primary table-button">Create</button>`;
+
+    cell4.innerHTML = `<button onclick="getProvisioningSessionDetails()" class="btn btn-info table-button">Show</button>`;
 
     cell5.innerHTML = `
-    <button onclick="createNewCertificate('${session_id}')">Create</button>
-    <button onclick="showCertificateDetails('${session_id}', '${session_data.certificate_id}')">Show</button>`;
+            <button onclick="createNewCertificate('${session_id}')" class="btn btn-primary table-button">Create</button>
+            <button onclick="showCertificateDetails('${session_id}', '${session_data ? session_data.certificate_id : ''}')" class="btn btn-warning table-button">Show</button>`;
 
-    cell6.innerHTML = `<button onclick="getProtocols('${session_id}')">Show</button>`;
+    cell6.innerHTML = `<button onclick="getProtocols('${session_id}')" class="btn btn-secondary table-button">Show</button>`;
 
     cell7.innerHTML = `
-        <button onclick="setConsumptionReporting('${session_id}')">Set</button>
-        <button onclick="showConsumptionReporting('${session_id}')">Show</button>
-        <button onclick="deleteConsumptionReporting('${session_id}')">Delete</button>`;
-  }
+        <button onclick="setConsumptionReporting('${session_id}')" class="btn btn-primary table-button">Set</button>
+        <button onclick="showConsumptionReporting('${session_id}')" class="btn btn-info table-button">Show</button>
+        <button onclick="deleteConsumptionReporting('${session_id}')" class="btn btn-danger table-button">Delete</button>`;
+      }
 }

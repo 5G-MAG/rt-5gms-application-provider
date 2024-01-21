@@ -5,7 +5,6 @@ body {
   line-height: 1.6;
   padding-top: 2em;
   font-family: 'Poppins ExtraLight', sans-serif;
-
 }
 
 .container {
@@ -52,12 +51,15 @@ body {
 
 h1, h2, h3, h4, h5, h6 {
   color: #333;
+  font-family: "Poppins SemiBold"
+
 }
 
 a {
   color: #0099e5;
 }
 
+/* Create provisioning session button */
 button {
   white-space: normal;
   text-align: center;
@@ -79,8 +81,8 @@ button {
   border: 1px solid white;
 }
 
-button:hover {
-  background-color: black;
+.create-session-button:hover {
+  background-color: green;
   color: white;
 }
 
@@ -88,6 +90,8 @@ button:hover {
   width: 100px;
   height: auto;
 }
+
+/* Session table */
 
 #session_table {
   border-collapse: collapse;
@@ -98,22 +102,47 @@ button:hover {
 }
 
 #session_table td, #session_table th {
-  border: 1px solid #ddd;
+  border: 2px solid #ddd;
   padding: 8px;
   color: white;
   text-align: center;
+  width: 14.28%;
+  word-wrap: break-word;
+  vertical-align: middle;
 }
 
 #session_table th {
+  font-family: 'Poppins Semibold';
   padding-top: 12px;
   padding-bottom: 12px;
   text-align: center;
   background-color: #0073ad;
   color: white;
+  /* conctrols movemenet of the header with scrolling */
   position: sticky;
   top: 0;
   z-index: 2;
 }
+
+.table-button {
+  display: block;
+  width: 75%;
+  margin: 4px auto;
+  padding: 10px;
+  font-size: 14px;
+  height: 45px;
+}
+
+/* even/odd rows coloration */
+
+#session_table tr:nth-child(even) {
+  background-color: #2596be;
+}
+
+#session_table tr:nth-child(odd) {
+  background-color: #2596be;
+}
+
 
 /* INFORMATION WINDOW */
 
@@ -177,6 +206,7 @@ button:hover {
   to {top: 0; opacity: 1}
 }
 
+/*
 .close {
   color: black;
   float: right;
@@ -190,6 +220,7 @@ button:hover {
   text-decoration: none;
   cursor: pointer;
 }
+*/
 
 .icon-container {
   display: flex;
@@ -202,6 +233,13 @@ button:hover {
 .icon-container img {
   margin: 12px;
 }  
+
+/* Consumption reporting prompt window */
+.consumption-swall {
+  width: 380px; 
+  height: 450px;
+}
+
 
 @font-face {
   font-family: 'Poppins ExtraLight';
