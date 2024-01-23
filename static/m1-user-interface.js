@@ -7,19 +7,54 @@ program. If this file is missing then the license can be retrieved from
 https://drive.google.com/file/d/1cinCiA778IErENZ3JN52VFW-1ffHpx7Z/view
 */
 
+// Auxiliary function to clear storage when the connection is lost
+
+let isStorageCleared = false;
+
+function clearStorage() {
+
+  localStorage.clear();
+
+  let session_table = document.getElementById('session_table');
+  for (let i = session_table.rows.length - 1; i > 0; i--) {
+    session_table.deleteRow(i);
+  }
+}
+
+function showConnectionLostAlert() {
+  Swal.fire({
+    title: 'Lost connection with Application Function!',
+    text: 'All session data has been purged.',
+    icon: 'warning',
+    confirmButtonText: 'OK'
+  });
+}
+
 function checkAFstatus() {
   fetch('http://127.0.0.1:8000/connection_checker')
-  .then(response => response.json())
-  .then(data => {
-    if (data.status === 'STABLE') {
+  .then(response => {
+    if (!response.ok && !isStorageCleared) {
+
+      document.getElementById('AFStatus').innerText = 'Connection with Application Function has been lost ❌';
+      clearStorage();
+      showConnectionLostAlert();
+      isStorageCleared = true;
+
+    } else if (response.ok) {
+
       document.getElementById('AFStatus').innerText = 'Connection with Application Function is stable ✅';
-    } else {
-      document.getElementById('AFStatus').innerText = 'Connection with Application Function has been interrupted ❌';
+      isStorageCleared = false;
     }
   })
+
   .catch(error => {
     console.error('Error:', error);
-    document.getElementById('AFStatus').innerText = 'Connection with AF interrupted.';
+    if (!isStorageCleared) {
+      document.getElementById('AFStatus').innerText = 'Connection with AF interrupted.';
+      clearStorage();
+      showConnectionLostAlert();
+      isStorageCleared = true;
+    }
   });
 }
 
@@ -48,7 +83,7 @@ function addSessionToTable(sessionId) {
   cell5.innerHTML = `<button onclick="createNewCertificate('${sessionId}')" class="btn btn-primary table-button">Create</button>
                      <button onclick="showCertificateDetails('${sessionId}', '${sessionData.certificate_id}')" class="btn btn-warning table-button">Show</button>`;
 
-  cell6.innerHTML = `<button onclick="getProtocols('${sessionId}')" class="btn btn-secondary table-button">Show</button>`;
+  cell6.innerHTML = `<button onclick="getProtocols('${sessionId}')" class="btn btn-info table-button">Show</button>`;
 
   cell7.innerHTML = `<button onclick="setConsumptionReporting('${sessionId}')" class="btn btn-primary table-button">Set</button>
                       <button onclick="showConsumptionReporting('${sessionId}')" class="btn btn-info table-button">Show</button>
@@ -390,7 +425,7 @@ window.onload = function() {
             <button onclick="createNewCertificate('${session_id}')" class="btn btn-primary table-button">Create</button>
             <button onclick="showCertificateDetails('${session_id}', '${session_data ? session_data.certificate_id : ''}')" class="btn btn-warning table-button">Show</button>`;
 
-    cell6.innerHTML = `<button onclick="getProtocols('${session_id}')" class="btn btn-secondary table-button">Show</button>`;
+    cell6.innerHTML = `<button onclick="getProtocols('${session_id}')" class="btn btn-info table-button">Show</button>`;
 
     cell7.innerHTML = `
         <button onclick="setConsumptionReporting('${session_id}')" class="btn btn-primary table-button">Set</button>
