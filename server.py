@@ -12,8 +12,9 @@ import json
 import requests
 import asyncio
 from dotenv import load_dotenv
-from typing import Optional
-from fastapi import FastAPI, Query, Depends, HTTPException, Response
+from typing import Optional, Dict
+from pydantic import BaseModel
+from fastapi import FastAPI, Query, Depends, HTTPException, Response, Request
 from fastapi.responses import JSONResponse, FileResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
@@ -23,7 +24,7 @@ from utils import lib_to_sys_path
 load_dotenv()
 lib_to_sys_path()
 
-from rt_m1_client.types import ResourceId, ApplicationId, ConsumptionReportingConfiguration
+from rt_m1_client.types import ResourceId, ApplicationId, ConsumptionReportingConfiguration, PolicyTemplate
 from rt_m1_client.configuration import Configuration
 from rt_m1_client.session import M1Session
 from rt_m1_client.data_store import JSONFileDataStore
@@ -34,6 +35,9 @@ CORS_ORIGINS = os.getenv("CORS_ORIGINS", "http://0.0.0.0:8000,http://127.0.0.1:8
 app = FastAPI()
 config = Configuration()
 _m1_session = None
+
+class PolicyTemplateRequest(BaseModel):
+    external_policy_id: str
 
 # Auxiliary function to pass proper configuration as dependency injection parameter
 def get_config():
@@ -294,6 +298,29 @@ async def del_consumption(provisioning_session_id: str):
         return Response(status_code=204)
     else:
         raise HTTPException(status_code=400, detail="No consumption reporting to remove")
+
+"""
+Endpoint: Create dynamic policy for provisioning session
+HTTP Method: POST
+Path: /create_policy_template/{provisioning_session_id}
+Description: This endpoint will create a dynamic policy for a particular provisioning session.
+"""  
+@app.post("/create_policy_template/{provisioning_session_id}")
+async def create_policy_template(provisioning_session_id: str, request:Request):
+
+    body = await request.json()
+    external_policy_id = body.get("external_policy_id")
+    
+    if not external_policy_id:
+        raise HTTPException(status_code=400, detail="External policy ID is required.")
+    
+    session = await get_session(config)
+    result = await session.policyTemplateCreate(provisioning_session_id, {"externalReference":external_policy_id})
+
+    if result is not None:
+        return {"message": f"Added PolicyTemplate {result} to provisioning session"}
+    else:
+        raise HTTPException(status_code=400, detail="Addition of PolicyTemplate to provisioning session failed!")
 
 """
 Endpoint: Connection checker
