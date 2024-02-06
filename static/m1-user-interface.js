@@ -71,6 +71,7 @@ function addSessionToTable(sessionId) {
   let cell5 = row.insertCell(4); // Create and show certificate
   let cell6 = row.insertCell(5); // Show Protocols button
   let cell7 = row.insertCell(6); // Consumption Reporting (Set, Show, Delete)
+  let cell8 = row.insertCell(7); // Dynamic Policies
 
   cell1.innerHTML = sessionId;
 
@@ -88,6 +89,10 @@ function addSessionToTable(sessionId) {
   cell7.innerHTML = `<button onclick="setConsumptionReporting('${sessionId}')" class="btn btn-primary table-button">Set</button>
                       <button onclick="showConsumptionReporting('${sessionId}')" class="btn btn-info table-button">Show</button>
                       <button onclick="deleteConsumptionReporting('${sessionId}')" class="btn btn-danger table-button">Delete</button>`;
+                      
+  cell8.innerHTML = `
+                    <button onclick="setDynamicPolicy('${sessionId}')" class="btn btn-primary table-button">Set</button>
+                    <button onclick="showDynamicPolicies('${sessionId}', '${sessionData.policy_template_id}')" class="btn btn-info table-button">Show</button`;
 }
 
 async function createNewSession() {
@@ -260,6 +265,7 @@ function getProtocols(provisioning_session_id) {
   window.open(`http://127.0.0.1:8000/show_protocol/${provisioning_session_id}`, '_blank');
 }
 
+
 async function setConsumptionReporting(session_id) {
   const { value: formValues, dismiss } = await Swal.fire({
     title: 'Set consumption reporting parameters:',
@@ -394,7 +400,81 @@ async function deleteConsumptionReporting(session_id) {
     }
   }
 }
- 
+
+async function setDynamicPolicy(session_id) {
+  const { value: externalPolicyId } = await Swal.fire({
+    title: 'Enter External Policy ID',
+    input: 'text',
+    inputPlaceholder: 'External Policy ID',
+    showCancelButton: true,
+    confirmButtonText: 'Submit',
+    showLoaderOnConfirm: true,
+    preConfirm: (externalPolicyId) => {
+      if (!externalPolicyId) {
+        Swal.showValidationMessage(`Please enter an external policy ID`);
+        return false;
+      }
+      return externalPolicyId;
+    },
+    allowOutsideClick: () => !Swal.isLoading()
+  });
+
+  if (externalPolicyId) {
+    try {
+      const response = await fetch(`/create_policy_template/${session_id}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ external_policy_id: externalPolicyId })
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        Swal.fire({
+          title: 'Error',
+          text: errorData.detail || 'An error occurred while creating the policy template.',
+          icon: 'error'
+        });
+      } else {
+        const data = await response.json();
+        localStorage.setItem(`policyTemplateId_${session_id}`, data.policy_template_id);
+
+        Swal.fire({
+          title: 'Success',
+          text: `Created Dynamic Policies with an ID: "${data.policy_template_id}"`,
+          icon: 'success'
+        });
+      }
+    } catch (error) {
+      console.error('Error:', error);
+      Swal.fire({
+        title: 'Error',
+        text: 'An unexpected error occurred.',
+        icon: 'error'
+      });
+    }
+  }
+}
+
+
+async function showDynamicPolicies(provisioning_session_id) {
+
+  const policy_template_id = localStorage.getItem(`policyTemplateId_${provisioning_session_id}`);
+  if (policy_template_id && policy_template_id !== 'undefined') {
+      const url = `http://127.0.0.1:8000/show_policy_template/${provisioning_session_id}/${policy_template_id}`;
+      window.open(url, '_blank');
+  } else {
+      Swal.fire({
+        title: 'Error',
+        text: 'Policy template ID not found or not created yet.',
+        icon: 'error'
+      });
+  }
+}
+
+
+
 window.onload = function() {
 
   setInterval(checkAFstatus, 5000);
@@ -412,6 +492,7 @@ window.onload = function() {
     let cell5 = row.insertCell(4);
     let cell6 = row.insertCell(5);
     let cell7 = row.insertCell(6);
+    let cell8 = row.insertCell(7);
 
     cell1.innerHTML = session_id;
 
@@ -431,5 +512,11 @@ window.onload = function() {
         <button onclick="setConsumptionReporting('${session_id}')" class="btn btn-primary table-button">Set</button>
         <button onclick="showConsumptionReporting('${session_id}')" class="btn btn-info table-button">Show</button>
         <button onclick="deleteConsumptionReporting('${session_id}')" class="btn btn-danger table-button">Delete</button>`;
+    
+    
+    cell8.innerHTML = `
+        <button onclick="setDynamicPolicy('${session_id}')" class="btn btn-primary table-button">Set</button>
+        <button onclick="showDynamicPolicies('${session_id}', '${session_data ? session_data.policy_template_id : ''}')" class="btn btn-info table-button">Show</button>`;
+
       }
 }

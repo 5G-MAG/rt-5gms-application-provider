@@ -88,7 +88,7 @@ async def test_provisioning_session_lifecycle():
         show_certification_response = await client.get(show_certification_url)
         assert show_certification_response.status_code == 200
 
-        # Create Dynamic Policiy
+        # Create Dynamic Policy
         create_policy_url = f"{FASTAPI_URL}/create_policy_template/{provisioning_session_id}"
         create_policy_response = await client.post(create_policy_url, json={"external_policy_id": "111"})
         assert create_policy_response.status_code == 200

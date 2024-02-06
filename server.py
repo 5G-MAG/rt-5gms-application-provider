@@ -306,8 +306,7 @@ Path: /create_policy_template/{provisioning_session_id}
 Description: This endpoint will create a dynamic policy for a particular provisioning session.
 """  
 @app.post("/create_policy_template/{provisioning_session_id}")
-async def create_policy_template(provisioning_session_id: str, request:Request):
-
+async def create_policy_template(provisioning_session_id: str, request: Request):
     body = await request.json()
     external_policy_id = body.get("external_policy_id")
     
@@ -315,12 +314,29 @@ async def create_policy_template(provisioning_session_id: str, request:Request):
         raise HTTPException(status_code=400, detail="External policy ID is required.")
     
     session = await get_session(config)
-    result = await session.policyTemplateCreate(provisioning_session_id, {"externalReference":external_policy_id})
+    policy_template_id = await session.policyTemplateCreate(provisioning_session_id, {"externalReference": external_policy_id})
 
-    if result is not None:
-        return {"message": f"Added PolicyTemplate {result} to provisioning session"}
+    if policy_template_id is not None:
+        return {"policy_template_id": policy_template_id}
     else:
         raise HTTPException(status_code=400, detail="Addition of PolicyTemplate to provisioning session failed!")
+    
+"""
+Endpoint: Retrieve dynamic policy for provisioning session
+HTTP Method: GET
+Path: /show_policy_template/{provisioning_session_id}/{policy_template_id}
+Description: This endpoint will retrieve a dynamic policy for a particular provisioning session.
+"""
+@app.get("/show_policy_template/{provisioning_session_id}/{policy_template_id}")
+async def show_policy_template(provisioning_session_id: str, policy_template_id: str):
+    session = await get_session(config)
+    policy_template = await session.policyTemplateGet(provisioning_session_id, policy_template_id)
+    
+    if policy_template is not None:
+        return policy_template
+    else:
+        raise HTTPException(status_code=404, detail="PolicyTemplate not found")
+
 
 """
 Endpoint: Connection checker
