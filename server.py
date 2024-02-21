@@ -337,6 +337,26 @@ async def show_policy_template(provisioning_session_id: str, policy_template_id:
     
     return policy_template
 
+
+"""
+Endpoint: Delete dynamic policy for provisioning session
+HTTP Method: DELETE
+Path: /delete_policy_template/{provisioning_session_id}/{policy_template_id}
+Description: This endpoint will remove a dynamic policy for a particular provisioning session.
+"""
+@app.delete("/delete_policy_template/{provisioning_session_id}/{policy_template_id}")
+async def delete_policy_template(provisioning_session_id: str, policy_template_id: str):
+
+    session = await get_session(config)
+    deletion: bool = await session.policyTemplateDelete(provisioning_session_id, policy_template_id)
+    
+    if deletion:
+        return Response(status_code=204)
+    else:
+        raise HTTPException(status_code=404, detail="PolicyTemplate not found or could not be deleted")
+
+
+
 """
 Endpoint: Connection checker
 HTTP Method: GET
