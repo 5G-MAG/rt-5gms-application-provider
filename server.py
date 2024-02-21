@@ -12,8 +12,7 @@ import json
 import requests
 import asyncio
 from dotenv import load_dotenv
-from typing import Optional, Dict
-from pydantic import BaseModel
+from typing import Optional
 from fastapi import FastAPI, Query, Depends, HTTPException, Response, Request
 from fastapi.responses import JSONResponse, FileResponse
 from fastapi.staticfiles import StaticFiles
@@ -36,8 +35,6 @@ app = FastAPI()
 config = Configuration()
 _m1_session = None
 
-class PolicyTemplateRequest(BaseModel):
-    external_policy_id: str
 
 # Auxiliary function to pass proper configuration as dependency injection parameter
 def get_config():
@@ -304,22 +301,25 @@ Endpoint: Create dynamic policy for provisioning session
 HTTP Method: POST
 Path: /create_policy_template/{provisioning_session_id}
 Description: This endpoint will create a dynamic policy for a particular provisioning session.
-"""  
+"""
 @app.post("/create_policy_template/{provisioning_session_id}")
 async def create_policy_template(provisioning_session_id: str, request: Request):
-    body = await request.json()
-    external_policy_id = body.get("external_policy_id")
-    
-    if not external_policy_id:
-        raise HTTPException(status_code=400, detail="External policy ID is required.")
-    
+
     session = await get_session(config)
-    policy_template_id = await session.policyTemplateCreate(provisioning_session_id, {"externalReference": external_policy_id})
+    request_body = await request.json()
+
+    try:
+        policy_template = PolicyTemplate.fromJSON(json.dumps(request_body))
+    except Exception as e:
+        raise HTTPException(status_code=422, detail=f"Error processing policy template data: {str(e)}")
+
+    policy_template_id = await session.policyTemplateCreate(provisioning_session_id, policy_template)
 
     if policy_template_id is not None:
         return {"policy_template_id": policy_template_id}
     else:
         raise HTTPException(status_code=400, detail="Addition of PolicyTemplate to provisioning session failed!")
+
     
 """
 Endpoint: Retrieve dynamic policy for provisioning session
@@ -329,14 +329,13 @@ Description: This endpoint will retrieve a dynamic policy for a particular provi
 """
 @app.get("/show_policy_template/{provisioning_session_id}/{policy_template_id}")
 async def show_policy_template(provisioning_session_id: str, policy_template_id: str):
-    session = await get_session(config)
-    policy_template = await session.policyTemplateGet(provisioning_session_id, policy_template_id)
     
-    if policy_template is not None:
-        return policy_template
-    else:
+    session = await get_session(config)    
+    policy_template: Optional[PolicyTemplate] = await session.policyTemplateGet(provisioning_session_id, policy_template_id)
+    if policy_template is None:
         raise HTTPException(status_code=404, detail="PolicyTemplate not found")
-
+    
+    return policy_template
 
 """
 Endpoint: Connection checker
