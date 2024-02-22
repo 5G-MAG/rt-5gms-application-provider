@@ -245,6 +245,10 @@ button {
   width: 900px; 
 }
 
+.swal2-input::placeholder {
+  color: black;
+}
+
 @font-face {
   font-family: 'Poppins ExtraLight';
   src: url('fonts/Poppins-ExtraLight.ttf') format('truetype');

@@ -93,7 +93,7 @@ function addSessionToTable(sessionId) {
   cell8.innerHTML = `
                     <button onclick="setDynamicPolicy('${sessionId}')" class="btn btn-primary table-button">Set</button>
                     <button onclick="showDynamicPolicies('${sessionId}', '${sessionData.policy_template_id}')" class="btn btn-info table-button">Show</button>
-                    <button onclick="deleteDynamicPolicy('${sessionId}')" class="btn btn-danger table-button">Delete</button>`;
+                    <button onclick="deleteDynamicPolicy('${sessionId}', '${sessionData.policy_template_id}')" class="btn btn-danger table-button">Delete</button>`;
 }
 
 async function createNewSession() {
@@ -403,30 +403,28 @@ async function deleteConsumptionReporting(session_id) {
 }
 
 async function setDynamicPolicy(session_id) {
-  
+
   const { value: formValues, dismiss } = await Swal.fire({
     title: 'Create Dynamic Policy',
     html: 
     `
-    <input id="externalReference" class="swal2-input" placeholder="External Policy ID" required>
-      
-      <p>Application Session Context</p>
-      <input id="sliceInfo" class="swal2-input" placeholder="Slice Info">
-      <input id="sst" class="swal2-input" placeholder="SST">
+    <input id="externalReference" class="swal2-input" type="number" placeholder="External Policy ID" required>
+      <br><br><p>Application Session Context:</p>
+      <input id="sst" class="swal2-input" type="number" placeholder="SST">
       <input id="sd" class="swal2-input" placeholder="SD">
       <input id="dnn" class="swal2-input" placeholder="DNN">
 
-      <p>QoS Specification</p>
-      <input id="qosReference" class="swal2-input" placeholder="QoS Reference">
-      <input id="maxAuthBtrUl" class="swal2-input" placeholder="Max Auth Btr Ul">
+      <br><br><p font-weight="bold">QoS Specification:</p>
+      <input id="qosReference" class="swal2-input" placeholder="QoS Reference"><br>
+      <br><input id="maxAuthBtrUl" class="swal2-input" type="number" placeholder="Max Auth Btr Ul">
       <select id="maxAuthBtrUlUnit" class="swal2-input">
-        <option value="bps">bps</option>
-        <option value="kbps">kbps</option>
-        <option value="mbps">mbps</option>
-        <option value="gbps">gbps</option>
-        <option value="tbps">tbps</option>
+        <option value="bps">Bps</option>
+        <option value="kbps">Kbps</option>
+        <option value="mbps">Mbps</option>
+        <option value="gbps">Gbps</option>
+        <option value="tbps">Tbps</option>
       </select>
-      <input id="maxAuthBtrDl" class="swal2-input" placeholder="Max Auth Btr Dl">
+      <br><input id="maxAuthBtrDl" class="swal2-input" type="number" placeholder="Max Auth Btr Dl">
       <select id="maxAuthBtrDlUnit" class="swal2-input">
         <option value="bps">bps</option>
         <option value="kbps">kbps</option>
@@ -434,17 +432,17 @@ async function setDynamicPolicy(session_id) {
         <option value="gbps">gbps</option>
         <option value="tbps">tbps</option>
       </select>
+      <br>
       <input id="defPacketLossRateDl" class="swal2-input" placeholder="Def Packet Loss Rate Dl">
       <input id="defPacketLossRateUl" class="swal2-input" placeholder="Def Packet Loss Rate Ul">
 
-      <p>Charging Specification</p>
+      <br><br><p>Charging Specification</p>
       <input id="sponId" class="swal2-input" placeholder="Sponsor ID">
       <input id="sponStatus" class="swal2-input" placeholder="Sponsor Status">
       <input id="gpsi" class="swal2-input" placeholder="GPSI">
 
 
       <input id="state" class="swal2-input" placeholder="State">
-      <input id="stateReason" class="swal2-input" placeholder="State Reason">
       <input id="type" class="swal2-input" placeholder="Type">
     `,
   customClass:{
@@ -520,8 +518,6 @@ async function setDynamicPolicy(session_id) {
   }
 }
 
-
-
 async function showDynamicPolicies(provisioning_session_id) {
 
   const policy_template_id = localStorage.getItem(`policyTemplateId_${provisioning_session_id}`);
@@ -537,7 +533,72 @@ async function showDynamicPolicies(provisioning_session_id) {
   }
 }
 
+async function deleteDynamicPolicy(provisioning_session_id) {
+  const policyTemplateId = localStorage.getItem(`policyTemplateId_${provisioning_session_id}`);
 
+  if (!policyTemplateId || policyTemplateId === 'undefined') {
+    await Swal.fire({
+      title: 'Error',
+      text: 'Policy template ID not found or not created yet.',
+      icon: 'error',
+      confirmButtonText: 'OK'
+    });
+    return;
+  }
+
+  const result = await Swal.fire({
+    title: 'Delete Policy Template?',
+    text: `Are you sure you want to delete the policy template with ID: ${policyTemplateId}?`,
+    icon: 'warning',
+    showCancelButton: true,
+    confirmButtonText: 'Yes',
+    cancelButtonText: 'No',
+  });
+
+  if (result.isConfirmed) {
+    try {
+      const response = await fetch(`/delete_policy_template/${provisioning_session_id}/${policyTemplateId}`, {
+        method: 'DELETE'
+      });
+
+      if (response.status === 204) {
+
+        await Swal.fire({
+          title: 'Deleted!',
+          text: `The policy template with ID: ${policyTemplateId} has been deleted.`,
+          icon: 'success',
+          confirmButtonText: 'OK'
+        });
+
+
+        localStorage.removeItem(`policyTemplateId_${provisioning_session_id}`);
+      } else {
+        let data;
+        try {
+          data = await response.json();
+        } catch (error) {
+          data = { detail: "Unknown error occurred." };
+        }
+
+
+        await Swal.fire({
+          title: 'Failed to Delete',
+          text: data.detail,
+          icon: 'error',
+          confirmButtonText: 'OK'
+        });
+      }
+    } catch (error) {
+
+      await Swal.fire({
+        title: 'Error',
+        text: 'Network error or server not responding.',
+        icon: 'error',
+        confirmButtonText: 'OK'
+      });
+    }
+  }
+}
 
 window.onload = function() {
 
@@ -581,7 +642,7 @@ window.onload = function() {
     cell8.innerHTML = `
         <button onclick="setDynamicPolicy('${session_id}')" class="btn btn-primary table-button">Set</button>
         <button onclick="showDynamicPolicies('${session_id}', '${session_data ? session_data.policy_template_id : ''}')" class="btn btn-info table-button">Show</button>
-        <button onclick="deleteDynamicPolicy('${session_id}')" class="btn btn-danger table-button">Delete</button>`;
+        <button onclick="deleteDynamicPolicy('${session_id}', '${session_data ? session_data.policy_template_id : ''}')" class="btn btn-danger table-button">Delete</button>`;
 
       }
 }

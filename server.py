@@ -355,8 +355,6 @@ async def delete_policy_template(provisioning_session_id: str, policy_template_i
     else:
         raise HTTPException(status_code=404, detail="PolicyTemplate not found or could not be deleted")
 
-
-
 """
 Endpoint: Connection checker
 HTTP Method: GET
