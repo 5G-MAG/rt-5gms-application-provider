@@ -240,6 +240,10 @@ button {
   height: 450px;
 }
 
+/* Dynamic Policies prompt window */
+.policies-swall {
+  width: 900px; 
+}
 
 @font-face {
   font-family: 'Poppins ExtraLight';

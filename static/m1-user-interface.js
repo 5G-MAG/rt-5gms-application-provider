@@ -35,14 +35,14 @@ function checkAFstatus() {
   .then(response => {
     if (!response.ok && !isStorageCleared) {
 
-      document.getElementById('AFStatus').innerText = 'Connection with Application Function has been lost ❌';
+      document.getElementById('AFStatus').innerText = 'Connection with Application Function: ❌';
       clearStorage();
       showConnectionLostAlert();
       isStorageCleared = true;
 
     } else if (response.ok) {
 
-      document.getElementById('AFStatus').innerText = 'Connection with Application Function is stable ✅';
+      document.getElementById('AFStatus').innerText = 'Connection with Application Function: ✅';
       isStorageCleared = false;
     }
   })
@@ -92,7 +92,8 @@ function addSessionToTable(sessionId) {
                       
   cell8.innerHTML = `
                     <button onclick="setDynamicPolicy('${sessionId}')" class="btn btn-primary table-button">Set</button>
-                    <button onclick="showDynamicPolicies('${sessionId}', '${sessionData.policy_template_id}')" class="btn btn-info table-button">Show</button`;
+                    <button onclick="showDynamicPolicies('${sessionId}', '${sessionData.policy_template_id}')" class="btn btn-info table-button">Show</button>
+                    <button onclick="deleteDynamicPolicy('${sessionId}')" class="btn btn-danger table-button">Delete</button>`;
 }
 
 async function createNewSession() {
@@ -402,60 +403,123 @@ async function deleteConsumptionReporting(session_id) {
 }
 
 async function setDynamicPolicy(session_id) {
-  const { value: externalPolicyId } = await Swal.fire({
-    title: 'Enter External Policy ID',
-    input: 'text',
-    inputPlaceholder: 'External Policy ID',
-    showCancelButton: true,
-    confirmButtonText: 'Submit',
-    showLoaderOnConfirm: true,
-    preConfirm: (externalPolicyId) => {
-      if (!externalPolicyId) {
-        Swal.showValidationMessage(`Please enter an external policy ID`);
+  
+  const { value: formValues, dismiss } = await Swal.fire({
+    title: 'Create Dynamic Policy',
+    html: 
+    `
+    <input id="externalReference" class="swal2-input" placeholder="External Policy ID" required>
+      
+      <p>Application Session Context</p>
+      <input id="sliceInfo" class="swal2-input" placeholder="Slice Info">
+      <input id="sst" class="swal2-input" placeholder="SST">
+      <input id="sd" class="swal2-input" placeholder="SD">
+      <input id="dnn" class="swal2-input" placeholder="DNN">
+
+      <p>QoS Specification</p>
+      <input id="qosReference" class="swal2-input" placeholder="QoS Reference">
+      <input id="maxAuthBtrUl" class="swal2-input" placeholder="Max Auth Btr Ul">
+      <select id="maxAuthBtrUlUnit" class="swal2-input">
+        <option value="bps">bps</option>
+        <option value="kbps">kbps</option>
+        <option value="mbps">mbps</option>
+        <option value="gbps">gbps</option>
+        <option value="tbps">tbps</option>
+      </select>
+      <input id="maxAuthBtrDl" class="swal2-input" placeholder="Max Auth Btr Dl">
+      <select id="maxAuthBtrDlUnit" class="swal2-input">
+        <option value="bps">bps</option>
+        <option value="kbps">kbps</option>
+        <option value="mbps">mbps</option>
+        <option value="gbps">gbps</option>
+        <option value="tbps">tbps</option>
+      </select>
+      <input id="defPacketLossRateDl" class="swal2-input" placeholder="Def Packet Loss Rate Dl">
+      <input id="defPacketLossRateUl" class="swal2-input" placeholder="Def Packet Loss Rate Ul">
+
+      <p>Charging Specification</p>
+      <input id="sponId" class="swal2-input" placeholder="Sponsor ID">
+      <input id="sponStatus" class="swal2-input" placeholder="Sponsor Status">
+      <input id="gpsi" class="swal2-input" placeholder="GPSI">
+
+
+      <input id="state" class="swal2-input" placeholder="State">
+      <input id="stateReason" class="swal2-input" placeholder="State Reason">
+      <input id="type" class="swal2-input" placeholder="Type">
+    `,
+  customClass:{
+    popup: 'policies-swall'
+  },
+
+    focusConfirm: false,
+    preConfirm: () => {
+      const externalReference = document.getElementById('externalReference').value;
+      if (!externalReference) {
+        Swal.showValidationMessage('External Policy ID is required');
         return false;
       }
-      return externalPolicyId;
+
+      const policyData = {
+        externalReference: externalReference,
+        applicationSessionContext: {
+          sliceInfo: {
+            sst: document.getElementById('sst').value ? parseInt(document.getElementById('sst').value) : undefined,
+            sd: document.getElementById('sd').value
+          },
+          dnn: document.getElementById('dnn').value
+        },
+        qosSpecification: {
+          qosReference: document.getElementById('qosReference').value,
+          maxAuthBtrUl: document.getElementById('maxAuthBtrUl').value ? document.getElementById('maxAuthBtrUl').value + " " + document.getElementById('maxAuthBtrUlUnit').value : undefined,
+          maxAuthBtrDl: document.getElementById('maxAuthBtrDl').value ? document.getElementById('maxAuthBtrDl').value + " " + document.getElementById('maxAuthBtrDlUnit').value : undefined,
+          defPacketLossRateDl: document.getElementById('defPacketLossRateDl').value ? parseInt(document.getElementById('defPacketLossRateDl').value) : undefined,
+          defPacketLossRateUl: document.getElementById('defPacketLossRateUl').value ? parseInt(document.getElementById('defPacketLossRateUl').value) : undefined
+        },
+        chargingSpecification: {
+          sponId: document.getElementById('sponId').value,
+          sponStatus: document.getElementById('sponStatus').value,
+          gpsi: document.getElementById('gpsi').value ? document.getElementById('gpsi').value.split(',').map(item => item.trim()) : []
+        },
+        state: document.getElementById('state').value,
+        stateReason: {
+          type: document.getElementById('type').value
+        }
+      };
+    
+      const cleanPolicyData = JSON.parse(JSON.stringify(policyData, (key, value) => (value === "" || value === undefined) ? undefined : value));
+    
+      return cleanPolicyData;
     },
-    allowOutsideClick: () => !Swal.isLoading()
+    showCancelButton: true,
   });
 
-  if (externalPolicyId) {
+  if (formValues) {
     try {
       const response = await fetch(`/create_policy_template/${session_id}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify({ external_policy_id: externalPolicyId })
+        body: JSON.stringify(formValues)
       });
 
       if (!response.ok) {
         const errorData = await response.json();
-        Swal.fire({
-          title: 'Error',
-          text: errorData.detail || 'An error occurred while creating the policy template.',
-          icon: 'error'
-        });
-      } else {
-        const data = await response.json();
-        localStorage.setItem(`policyTemplateId_${session_id}`, data.policy_template_id);
-
-        Swal.fire({
-          title: 'Success',
-          text: `Created Dynamic Policies with an ID: "${data.policy_template_id}"`,
-          icon: 'success'
-        });
+        Swal.fire('Error', errorData.detail || 'An error occurred while creating the policy template.', 'error');
+        return;
       }
+
+      const data = await response.json();
+      localStorage.setItem(`policyTemplateId_${session_id}`, data.policy_template_id);
+
+      Swal.fire('Success', `Created Dynamic Policies with ID: "${data.policy_template_id}"`, 'success');
     } catch (error) {
       console.error('Error:', error);
-      Swal.fire({
-        title: 'Error',
-        text: 'An unexpected error occurred.',
-        icon: 'error'
-      });
+      Swal.fire('Error', 'An unexpected error occurred.', 'error');
     }
   }
 }
+
 
 
 async function showDynamicPolicies(provisioning_session_id) {
@@ -516,7 +580,8 @@ window.onload = function() {
     
     cell8.innerHTML = `
         <button onclick="setDynamicPolicy('${session_id}')" class="btn btn-primary table-button">Set</button>
-        <button onclick="showDynamicPolicies('${session_id}', '${session_data ? session_data.policy_template_id : ''}')" class="btn btn-info table-button">Show</button>`;
+        <button onclick="showDynamicPolicies('${session_id}', '${session_data ? session_data.policy_template_id : ''}')" class="btn btn-info table-button">Show</button>
+        <button onclick="deleteDynamicPolicy('${session_id}')" class="btn btn-danger table-button">Delete</button>`;
 
       }
 }
