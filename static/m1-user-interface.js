@@ -458,6 +458,23 @@ async function setDynamicPolicy(session_id) {
         return false;
       }
 
+      const capitalizeUnit = (unit) => {
+        switch (unit.toLowerCase()) {
+          case "bps":
+            return "bps";
+          case "kbps":
+            return "Kbps";
+          case "mbps":
+            return "Mbps";
+          case "gbps":
+            return "Gbps";
+          case "tbps":
+            return "Tbps";
+          default:
+            return unit;
+        }
+      };
+
       const policyData = {
         externalReference: externalReference,
         applicationSessionContext: {
@@ -467,10 +484,10 @@ async function setDynamicPolicy(session_id) {
           },
           dnn: document.getElementById('dnn').value
         },
-        qosSpecification: {
+        qoSSpecification: {
           qosReference: document.getElementById('qosReference').value,
-          maxAuthBtrUl: document.getElementById('maxAuthBtrUl').value ? document.getElementById('maxAuthBtrUl').value + " " + document.getElementById('maxAuthBtrUlUnit').value : undefined,
-          maxAuthBtrDl: document.getElementById('maxAuthBtrDl').value ? document.getElementById('maxAuthBtrDl').value + " " + document.getElementById('maxAuthBtrDlUnit').value : undefined,
+          maxAuthBtrUl: document.getElementById('maxAuthBtrUl').value ? `${document.getElementById('maxAuthBtrUl').value} ${capitalizeUnit(document.getElementById('maxAuthBtrUlUnit').value)}` : undefined,
+          maxAuthBtrDl: document.getElementById('maxAuthBtrDl').value ? `${document.getElementById('maxAuthBtrDl').value} ${capitalizeUnit(document.getElementById('maxAuthBtrDlUnit').value)}` : undefined,
           defPacketLossRateDl: document.getElementById('defPacketLossRateDl').value ? parseInt(document.getElementById('defPacketLossRateDl').value) : undefined,
           defPacketLossRateUl: document.getElementById('defPacketLossRateUl').value ? parseInt(document.getElementById('defPacketLossRateUl').value) : undefined
         },
@@ -485,6 +502,9 @@ async function setDynamicPolicy(session_id) {
         }
       };
     
+      console.log("Formatted maxAuthBtrUl:", policyData.qoSSpecification.maxAuthBtrUl);
+      console.log("Formatted maxAuthBtrDl:", policyData.qoSSpecification.maxAuthBtrDl);
+
       const cleanPolicyData = JSON.parse(JSON.stringify(policyData, (key, value) => (value === "" || value === undefined) ? undefined : value));
     
       return cleanPolicyData;
