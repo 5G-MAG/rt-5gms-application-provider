@@ -409,7 +409,8 @@ async function setDynamicPolicy(session_id) {
     html: 
     `
     <input id="externalReference" class="swal2-input" type="number" placeholder="External Policy ID" required>
-      <br><br><p>Application Session Context:</p>
+    
+    <br><br><p>Application Session Context:</p>
       <input id="sst" class="swal2-input" type="number" placeholder="SST">
       <input id="sd" class="swal2-input" placeholder="SD">
       <input id="dnn" class="swal2-input" placeholder="DNN">
@@ -426,11 +427,11 @@ async function setDynamicPolicy(session_id) {
       </select>
       <br><input id="maxAuthBtrDl" class="swal2-input" type="number" placeholder="Max Auth Btr Dl">
       <select id="maxAuthBtrDlUnit" class="swal2-input">
-        <option value="bps">bps</option>
-        <option value="kbps">kbps</option>
-        <option value="mbps">mbps</option>
-        <option value="gbps">gbps</option>
-        <option value="tbps">tbps</option>
+        <option value="bps">Bps</option>
+        <option value="kbps">Kbps</option>
+        <option value="mbps">Mbps</option>
+        <option value="gbps">Gbps</option>
+        <option value="tbps">Tbps</option>
       </select>
       <br>
       <input id="defPacketLossRateDl" class="swal2-input" placeholder="Def Packet Loss Rate Dl">

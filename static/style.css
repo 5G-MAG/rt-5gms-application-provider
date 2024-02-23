@@ -245,7 +245,7 @@ button {
   width: 900px; 
 }
 
-.swal2-input::placeholder {
+.swal2-popup .swal2-input::placeholder {
   color: black;
 }
 
