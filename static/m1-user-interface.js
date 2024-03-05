@@ -65,35 +65,35 @@ function addSessionToTable(sessionId) {
   let row = session_table.insertRow(-1);
 
   let cell1 = row.insertCell(0); // Session ID
-  let cell2 = row.insertCell(1); // Delete session
-  let cell3 = row.insertCell(2); // Create CHC from JSON
-  let cell4 = row.insertCell(3); // Show Session Details
-  let cell5 = row.insertCell(4); // Create and show certificate
-  let cell6 = row.insertCell(5); // Show Protocols button
-  let cell7 = row.insertCell(6); // Consumption Reporting (Set, Show, Delete)
-  let cell8 = row.insertCell(7); // Dynamic Policies
+  let cell2 = row.insertCell(1); // Create CHC from JSON
+  let cell3 = row.insertCell(2); // Create and show certificate
+  let cell4 = row.insertCell(3); // Show Protocols button
+  let cell5 = row.insertCell(4); // Consumption Reporting (Set, Show, Delete)
+  let cell6 = row.insertCell(5); // Dynamic Policies
+  let cell7 = row.insertCell(6); // Show Session Details
+  let cell8 = row.insertCell(7); // Delete session
 
   cell1.innerHTML = sessionId;
 
-  cell2.innerHTML = `<button onclick="deleteProvisioningSession('${sessionId}')" class="btn btn-danger table-button">Delete</button>`;
+  cell2.innerHTML = `<button onclick="createChcFromJson('${sessionId}')" class="btn btn-primary table-button">Create</button>`;
 
-  cell3.innerHTML = `<button onclick="createChcFromJson('${sessionId}')" class="btn btn-primary table-button">Create</button>`;
+  cell3.innerHTML = `<button onclick="createNewCertificate('${sessionId}')" class="btn btn-primary table-button">Create</button>
+                      <button onclick="showCertificateDetails('${sessionId}', '${sessionData.certificate_id}')" class="btn btn-warning table-button">Show</button>`
 
-  cell4.innerHTML = `<button onclick="getProvisioningSessionDetails()" class="btn btn-info table-button">Show</button>`;
+  cell4.innerHTML = `<button onclick="getProtocols('${sessionId}')" class="btn btn-info table-button">Show</button>`;
 
-  cell5.innerHTML = `<button onclick="createNewCertificate('${sessionId}')" class="btn btn-primary table-button">Create</button>
-                     <button onclick="showCertificateDetails('${sessionId}', '${sessionData.certificate_id}')" class="btn btn-warning table-button">Show</button>`;
-
-  cell6.innerHTML = `<button onclick="getProtocols('${sessionId}')" class="btn btn-info table-button">Show</button>`;
-
-  cell7.innerHTML = `<button onclick="setConsumptionReporting('${sessionId}')" class="btn btn-primary table-button">Set</button>
+  cell5.innerHTML = `<button onclick="setConsumptionReporting('${sessionId}')" class="btn btn-primary table-button">Set</button>
                       <button onclick="showConsumptionReporting('${sessionId}')" class="btn btn-info table-button">Show</button>
                       <button onclick="deleteConsumptionReporting('${sessionId}')" class="btn btn-danger table-button">Delete</button>`;
-                      
-  cell8.innerHTML = `
-                    <button onclick="setDynamicPolicy('${sessionId}')" class="btn btn-primary table-button">Set</button>
+
+  cell6.innerHTML = `<button onclick="setDynamicPolicy('${sessionId}')" class="btn btn-primary table-button">Set</button>
                     <button onclick="showDynamicPolicies('${sessionId}', '${sessionData.policy_template_id}')" class="btn btn-info table-button">Show</button>
                     <button onclick="deleteDynamicPolicy('${sessionId}', '${sessionData.policy_template_id}')" class="btn btn-danger table-button">Delete</button>`;
+
+  cell7.innerHTML = `<button onclick="getProvisioningSessionDetails()" class="btn btn-info table-button">Show</button>`;
+
+  cell8.innerHTML = `<button onclick="deleteProvisioningSession('${sessionId}')" class="btn btn-danger table-button">Remove</button>`;
+
 }
 
 async function createNewSession() {
@@ -231,7 +231,7 @@ async function createNewCertificate(provisioning_session_id) {
 
           for (let i = 1; i < session_table.rows.length; i++) {
             if (session_table.rows[i].cells[0].innerHTML === provisioning_session_id) {
-                let cell = session_table.rows[i].cells[4];
+                let cell = session_table.rows[i].cells[2];
                 cell.innerHTML = `<button onclick="createNewCertificate('${provisioning_session_id}')" class="btn btn-primary table-button">Create</button>
                                   <button onclick="showCertificateDetails('${provisioning_session_id}', '${data.certificate_id}')" class="btn btn-warning table-button">Show</button>`;
             }
@@ -622,7 +622,7 @@ async function deleteDynamicPolicy(provisioning_session_id) {
 }
 
 window.onload = function() {
-
+  
   setInterval(checkAFstatus, 5000);
 
   let session_table = document.getElementById('session_table');
@@ -631,39 +631,34 @@ window.onload = function() {
     let session_data = JSON.parse(localStorage.getItem(session_id));
     let row = session_table.insertRow(-1);
 
-    let cell1 = row.insertCell(0);
-    let cell2 = row.insertCell(1);
-    let cell3 = row.insertCell(2);
-    let cell4 = row.insertCell(3);
-    let cell5 = row.insertCell(4);
-    let cell6 = row.insertCell(5);
-    let cell7 = row.insertCell(6);
-    let cell8 = row.insertCell(7);
+    let cell1 = row.insertCell(0); // Session ID
+    let cell2 = row.insertCell(1); // Create CHC from JSON
+    let cell3 = row.insertCell(2); // Create and show certificate
+    let cell4 = row.insertCell(3); // Show Protocols button
+    let cell5 = row.insertCell(4); // Consumption Reporting (Set, Show, Delete)
+    let cell6 = row.insertCell(5); // Dynamic Policies
+    let cell7 = row.insertCell(6); // Show Session Details
+    let cell8 = row.insertCell(7); // Delete session
 
     cell1.innerHTML = session_id;
 
-    cell2.innerHTML = `<button onclick="deleteProvisioningSession('${session_id}')" class="btn btn-danger table-button">Delete</button>`;
+    cell2.innerHTML = `<button onclick="createChcFromJson('${session_id}')" class="btn btn-primary table-button">Create</button>`;
 
-    cell3.innerHTML = `<button onclick="createChcFromJson('${session_id}')" class="btn btn-primary table-button">Create</button>`;
+    cell3.innerHTML = `<button onclick="createNewCertificate('${session_id}')" class="btn btn-primary table-button">Create</button>
+                        <button onclick="showCertificateDetails('${session_id}', '${session_data ? session_data.certificate_id : ''}')" class="btn btn-warning table-button">Show</button>`;
 
-    cell4.innerHTML = `<button onclick="getProvisioningSessionDetails()" class="btn btn-info table-button">Show</button>`;
+    cell4.innerHTML = `<button onclick="getProtocols('${session_id}')" class="btn btn-info table-button">Show</button>`;
 
-    cell5.innerHTML = `
-            <button onclick="createNewCertificate('${session_id}')" class="btn btn-primary table-button">Create</button>
-            <button onclick="showCertificateDetails('${session_id}', '${session_data ? session_data.certificate_id : ''}')" class="btn btn-warning table-button">Show</button>`;
+    cell5.innerHTML = `<button onclick="setConsumptionReporting('${session_id}')" class="btn btn-primary table-button">Set</button>
+                        <button onclick="showConsumptionReporting('${session_id}')" class="btn btn-info table-button">Show</button>
+                        <button onclick="deleteConsumptionReporting('${session_id}')" class="btn btn-danger table-button">Delete</button>`;
 
-    cell6.innerHTML = `<button onclick="getProtocols('${session_id}')" class="btn btn-info table-button">Show</button>`;
+    cell6.innerHTML = `<button onclick="setDynamicPolicy('${session_id}')" class="btn btn-primary table-button">Set</button>
+                        <button onclick="showDynamicPolicies('${session_id}', '${session_data ? session_data.policy_template_id : ''}')" class="btn btn-info table-button">Show</button>
+                        <button onclick="deleteDynamicPolicy('${session_id}', '${session_data ? session_data.policy_template_id : ''}')" class="btn btn-danger table-button">Delete</button>`;
 
-    cell7.innerHTML = `
-        <button onclick="setConsumptionReporting('${session_id}')" class="btn btn-primary table-button">Set</button>
-        <button onclick="showConsumptionReporting('${session_id}')" class="btn btn-info table-button">Show</button>
-        <button onclick="deleteConsumptionReporting('${session_id}')" class="btn btn-danger table-button">Delete</button>`;
-    
-    
-    cell8.innerHTML = `
-        <button onclick="setDynamicPolicy('${session_id}')" class="btn btn-primary table-button">Set</button>
-        <button onclick="showDynamicPolicies('${session_id}', '${session_data ? session_data.policy_template_id : ''}')" class="btn btn-info table-button">Show</button>
-        <button onclick="deleteDynamicPolicy('${session_id}', '${session_data ? session_data.policy_template_id : ''}')" class="btn btn-danger table-button">Delete</button>`;
+    cell7.innerHTML = `<button onclick="getProvisioningSessionDetails()" class="btn btn-info table-button">Show</button>`;
 
-      }
+    cell8.innerHTML = `<button onclick="deleteProvisioningSession('${session_id}')" class="btn btn-danger table-button">Remove</button>`;
+  }
 }
