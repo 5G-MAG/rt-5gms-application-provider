@@ -42,6 +42,7 @@ cd
 git clone https://github.com/5G-MAG/rt-5gms-application-provider
 cd ~/rt-5gms-application-provider
 pip3 install -r requirements.txt
+pip3 install ./python
 ```
 
 Activate server with the following command:
