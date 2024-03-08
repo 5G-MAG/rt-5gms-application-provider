@@ -1,0 +1,31 @@
+[build-system]
+requires = ["setuptools"]
+
+[project]
+name = "rt-5gms-application-provider"
+version = "1.0.0"
+dependencies = [
+    'httpx[http2] >= 0.21.1',
+    'h11 >= 0.11.0',
+    'h2 >= 4.1.0',
+    'aiofiles >= 0.7.0',
+    'pyOpenSSL >= 20.0.1',
+]
+requires-python = ">=3.7"
+scripts = { msaf-configuration = "rt_m1_apps.msaf_configuration:app", m1-session = "rt_m1_apps.m1_session:app", m1-client = "rt_m1_apps.m1_client:app" }
+authors = [
+    { name = 'David Waring', email = 'david.waring2@bbc.co.uk' }
+]
+license = { file = "LICENSE" }
+readme = "README.md"
+
+[project.urls]
+"Homepage" = "https://5g-mag.com/"
+"Source" = "https://github.com/5G-MAG/rt-5gms-application-provider"
+
+[tool.setuptools.packages.find]
+where = ["src", "lib"]
+
+[tool.setuptools.package-data]
+
+[tool.setuptools.data-files]
