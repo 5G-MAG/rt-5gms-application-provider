@@ -6,9 +6,9 @@
 </p>
 
 # Introduction
-This full-stack web application represents Application Provider of 3GPP compliant 5G Media Streaming architecure, and it is part of 5GMAG's Reference Tools. It interacts with Application Function via interface with reference point M1, with possibility to establish connection over unstandardized M8.
+This full-stack web application represents Application Provider of 3GPP compliant 5G Media Streaming architecure, and is part of 5GMAG's Reference Tools. It interacts with the RT Application Function via interface with reference point M1, with the possibility to establish connection over unstandardized M8.
 
-It utilizes Python tool classes that has been developed as CLI-based Application Provider. Every provisioning procedure is implemented as related web-server's endpoint, supported with the graphical control dashboard. With full-stack approach, the codebase of Application Provider becomes maintainable, scalable for a new provisioning features, and the interaction with Application Function is enhanced with modern engineering design.
+It utilizes a Python library that has been developed as CLI-based program to interact with the RT Application Function. Every provisioning procedure is implemented as a related web-server's endpoint, supported with a graphical control dashboard.
 
 # Building and installing
 There are two ways to run this project, and the warm reccomendation is to use **Docker Compose** service, because lightweight container building and activation will solve entire scope of dependecies and the rest of requirements.
@@ -18,11 +18,12 @@ To install this service follow the official [documentation](https://docs.docker.
 ```
 cd
 git clone https://github.com/5G-MAG/rt-5gms-application-provider
+cd ~/rt-5gms-application-provider
 ```
 
-Building this Docker image will effectivelly install all requirements for RT Application Function and the rest of Python packages:
+Building Docker image will effectivelly install all dependecies for RT Application Function and the rest of Python dependencies:
+
 ```
-cd ~/rt-5gms-application-provider
 sudo docker-compose build
 ```
 
@@ -31,25 +32,47 @@ Upon successful completion, activate RT Application Provider with:
 sudo docker-compose up
 ```
 
-Accessed the module at: `localhost:8000`
+Open the module at: `localhost:8000`
 
 ## Separate installation
-If you prefere to have both services installed separately, without setting up the Docker environment, you have to build and install RT Application Function as the local user. Please use this [documentation](https://github.com/5G-MAG/rt-5gms-application-function/wiki/Testing-as-a-Local-User). Subsequently, you must install Python requirements in order to activate this Application Provider.
+If you prefere to run RT Application Function and Provisioning Web server separately, without setting up the Docker environment, you have to build and install RT Application Function as a local user. Please follow this [documentation](https://github.com/5G-MAG/rt-5gms-application-function/wiki/Testing-as-a-Local-User). 
 
-Clone this repository, and install Python dependencies:
+Once installed and built, activate RT Application Function:
+
 ```
-cd
-git clone https://github.com/5G-MAG/rt-5gms-application-provider
+~/rt-5gms-application-function/install/bin/open5gs-msafd
+```
+
+Subsequently, install Python dependencies in order to run web-based GUI server:
+
+```
 cd ~/rt-5gms-application-provider
+python3 -m pip install ./python
 pip3 install -r requirements.txt
-pip3 install ./python
 ```
 
-Activate server with the following command:
+Activate GUI with the following command:
 ```
 uvicorn server:app --reload
 ```
-The application will be accessible at the port `8000`, but it must communicate with the Reference tool Application Function running as the separate process.
+Web application will be accessible at the port `8000`, and it requires active communication with the RT Application Function running as a separate process.
+
+## CLI program
+Python Web Server implements classes and methods from `python` library. If you prefere to control RT Application Function operations using Command Line Interface, independently of the web-based GUI, run the following command on the `python` subdirectory:
+
+```
+cd rt-5gms-application-provider
+python3 -m pip install ./python
+```
+
+This will install the executables i.e. `m1-session`, `m1-client` and `msaf-configuration` and associated `rt_m1_client` python module.
+For testing use a venv so that you don't change system python modules, e.g.:
+
+```
+cd rt-5gms-application-provider
+python3 -m venv venv
+venv/bin/python3 -m pip install ./python
+```
 
 ## Testing and deployment
 This repository contains CI/CD workflows for building native Docker image, Docker Compose and integration test. Automated integration test is written to provide entire provisioning cycle starting with creation of provisioning session, activating realted procedures, and finalizing with deletion of resources. 
