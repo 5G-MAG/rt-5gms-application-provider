@@ -12,12 +12,11 @@ RUN apt-get update && apt-get install -y \
 
 RUN pip3 install --upgrade pip && pip3 install meson
 
-# AD build & install
+# AF build & install
 RUN git clone -b development --recurse-submodules https://github.com/5G-MAG/rt-5gms-application-function.git
 WORKDIR /rt-5gms-application-function
 RUN git submodule update
-RUN meson setup --prefix=`pwd`/install build || (echo '===================== build/meson-logs/meson-log.txt ======================'; cat build/meson-logs/meson-log.txt)
-RUN ninja -C build
+RUN meson setup --prefix=`pwd`/install build || (echo '===================== build/meson-logs/meson-log.txt ======================'; cat build/meson-logs/meson-log.txt) && ninja -C build
 RUN rm -f install/etc/open5gs/msaf.yaml
 RUN meson install -C build --no-rebuild
 

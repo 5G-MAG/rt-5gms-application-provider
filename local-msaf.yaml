@@ -1,6 +1,6 @@
 # License: 5G-MAG Public License (v1.0)
-# Author: Dev Audsin
-# Copyright: (C) 2022-2023 British Broadcasting Corporation
+# Author: Vuk Stojkovic
+# Copyright: (C) 2024 Fraunhofer Fokus
 #
 # For full license terms please see the LICENSE file distributed with this
 # program. If this file is missing then the license can be retrieved from
@@ -185,7 +185,7 @@ msaf:
       - canonicalHostname: localhost
         urlPathPrefixFormat: /m4d/provisioning-session-{provisioningSessionId}/
         m3Port: 7777
-    certificateManager: /home/stepski/rt-5gms-application-function/install/libexec/rt-5gms/self-signed-certmgr
+    certificateManager: /rt-5gms-application-function/install/libexec/rt-5gms/self-signed-certmgr
     serverResponseCacheControl:
       - maxAge: 60
         m1ProvisioningSessions: 60
@@ -195,7 +195,7 @@ msaf:
         m1MetricsReportingConfiguration: 60
         m1ConsumptionReportingConfiguration: 60
         m5ServiceAccessInformation: 60
-    dataCollectionDir: /home/stepski/rt-5gms-application-function/install/var/log/open5gs/reports
+    dataCollectionDir: /rt-5gms-application-function/install/var/log/open5gs/reports
     offerNetworkAssistance: false
 #    networkAssistance:
 #      deliveryBoost:
