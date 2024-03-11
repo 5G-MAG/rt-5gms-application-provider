@@ -90,7 +90,7 @@ async def test_provisioning_session_lifecycle():
 
         # Create Dynamic Policy
         create_policy_url = f"{FASTAPI_URL}/create_policy_template/{provisioning_session_id}"
-        create_policy_response = await client.post(create_policy_url, json={"external_policy_id": "111"})
+        create_policy_response = await client.post(create_policy_url, json={"externalReference": "111", "sst":"200"})
         assert create_policy_response.status_code == 200
 
         # Delete Provisioning Session
