@@ -1,7 +1,7 @@
 version: '3.8'
 services:
   app-ui:
-    container_name: rt-5gms-m1-management-ui
+    container_name: rt-5gms-application-provider
     build: .
     ports:
       - "8000:8000"

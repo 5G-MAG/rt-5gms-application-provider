@@ -8,7 +8,7 @@
 # Introduction
 This full-stack web application represents Application Provider of 3GPP compliant 5G Media Streaming architecure, and is part of 5GMAG's Reference Tools. It interacts with the RT Application Function via interface with reference point M1, with the possibility to establish connection over unstandardized M8.
 
-It utilizes a Python library that has been developed as CLI-based program to interact with the RT Application Function. Every provisioning procedure is implemented as a related web-server's endpoint, supported with a graphical control dashboard.
+It utilizes a Python library to interact with the RT Application Function. Every provisioning procedure is implemented as a related web-server's endpoint, supported with a graphical control dashboard.
 
 # Building and installing
 There are two ways to run this project, and the warm reccomendation is to use **Docker Compose** service, because lightweight container building and activation will solve entire scope of dependecies and the rest of requirements.
@@ -53,6 +53,7 @@ pip3 install -r requirements.txt
 
 Activate GUI with the following command:
 ```
+cd management-ui/
 uvicorn server:app --reload
 ```
 Web application will be accessible at the port `8000`, and it requires active communication with the RT Application Function running as a separate process.
@@ -79,7 +80,7 @@ This repository contains CI/CD workflows for building native Docker image, Docke
 
 Run automated test:
 ```
-cd ~/rt-5gms-application-provider/tests
+cd ~/rt-5gms-application-provider/management-ui/tests
 pytest integration_test.py
 ```
 Please be aware that this procedure is already provided with the repository's CI/CD pipeline. 

@@ -23,7 +23,7 @@ RUN meson install -C build --no-rebuild
 # UI server
 COPY . /ui
 WORKDIR /ui
-RUN pip3 install -r requirements.txt
+RUN pip3 install -r management-ui/requirements.txt
 RUN pip3 install uvicorn
 RUN pip3 install ./python
 
