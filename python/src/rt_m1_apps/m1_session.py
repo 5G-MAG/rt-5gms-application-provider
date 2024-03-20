@@ -151,7 +151,7 @@ if os.path.isdir(installed_packages_dir) and installed_packages_dir not in sys.p
 from rt_m1_client.session import M1Session
 from rt_m1_client.exceptions import M1Error
 from rt_m1_client.data_store import JSONFileDataStore
-from rt_m1_client.types import ContentHostingConfiguration, ConsumptionReportingConfiguration, PolicyTemplate, BitRate, SponsoringStatus
+from rt_m1_client.types import ContentHostingConfiguration, ConsumptionReportingConfiguration, PolicyTemplate, BitRate, SponsoringStatus, MetricsReportingConfiguration
 from rt_m1_client.configuration import Configuration
 
 async def cmd_configure_show(args: argparse.Namespace, config: Configuration) -> int:
@@ -809,6 +809,20 @@ async def cmd_show_policy_template(args: argparse.Namespace, config: Configurati
     print(f'Failed to find policy template {pol_id} for provisioning session {ps_id}')
     return 1
 
+async def cmd_activate_metrics_reporting(args: argparse.Namespace, config: Configuration) -> int:
+    session = await get_session(config)
+    provisioning_session_id = args.provisioning_session
+    # Read the MetricsReportingConfiguration from the JSON file provided via CLI arguments
+    print(f"Opening file: {args.file}")
+    async with aiofiles.open(args.file, 'r') as json_in:
+        mrc = json.loads(await json_in.read())
+    result = await session.metricsReportingConfigurationCreate(provisioning_session_id, mrc)
+    if result is None:
+        print(f'Failed to activate metrics reporting for provisioning session {provisioning_session_id}')
+        return 1
+    print(f'Metrics reporting activated for provisioning session {provisioning_session_id}. Configuration ID: {result}')
+    return 0
+
 async def parse_args() -> Tuple[argparse.Namespace,Configuration]:
     '''Parse command line options and load app configuration
 
@@ -951,6 +965,13 @@ async def parse_args() -> Tuple[argparse.Namespace,Configuration]:
     #parser_renewcert_filter.add_argument('ingesturl', metavar='ingest-URL', nargs='?', help='The ingest URL prefix to use')
     # The entry-point-path should go with ingest-URL, but argparser lacks the ability to do subgroups
     #parser_renewcert.add_argument('entrypoint', metavar='entry-point-path', nargs='?', help='The media player entry point suffix.')
+
+    # m1-session-cli set-metrics-reporting -p <provisioning-session-id> <MRC-JSON-FILE>
+    parser_set_metrics_reporting = subparsers.add_parser('set-metrics-reporting', help='Set the metrics reporting configuration for a provisioning session')
+    parser_set_metrics_reporting.set_defaults(command=cmd_activate_metrics_reporting)
+    parser_set_metrics_reporting.add_argument('-p', '--provisioning-session', required=True,
+                                                help='Provisioning session id to set the metrics reporting for')
+    parser_set_metrics_reporting.add_argument('file', metavar='MRC-JSON-FILE', help='A filepath to a JSON encoded MetricsReportingConfiguration')
 
     # m1-session-cli set-consumption-reporting -p <provisioning-session-id> [-i <interval>] [-s <sample-percent>] [-l] [-A]
     parser_set_consumption = subparsers.add_parser('set-consumption-reporting', help='Activate/set consumption reporting')

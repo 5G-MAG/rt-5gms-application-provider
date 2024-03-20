@@ -42,7 +42,7 @@ import httpx
 
 from .exceptions import (M1ClientError, M1ServerError)
 from .types import (ApplicationId, ContentHostingConfiguration, ContentProtocols,
-                    ConsumptionReportingConfiguration, PolicyTemplate,
+                    ConsumptionReportingConfiguration, PolicyTemplate, MetricsReportingConfiguration,
                     ProvisioningSessionType, ProvisioningSession, ResourceId)
 
 class TagAndDateResponse(TypedDict, total=False):
@@ -94,6 +94,12 @@ class PolicyTemplateResponse(TagAndDateResponse, total=False):
     '''
     ProvisioningSessionId: ResourceId
     PolicyTemplate: PolicyTemplate
+
+class MetricsReportingConfigurationReponse(TagAndDateResponse, total=False):
+    '''Response containing a metrics reporting configuration
+    '''
+    ProvisioningSessionId: ResourceId
+    MetricsReportingConfiguration: MetricsReportingConfiguration
 
 class M1Client:
     '''5G-MAG Reference Tools: M1 Client
@@ -658,7 +664,18 @@ class M1Client:
     #async def destroyEventDataProcessingConfiguration(self, provisioning_session_id: ResourceId, event_data_processing_config_id: ResourceId) -> bool:
 
     # TS26512_M1_MetricsReportingProvisioning
-    #async def activateMetricsReporting(self, provisioning_session_id: ResourceId, metrics_reporting_config: MetricsReportingConfiguration) -> ResourceId:
+    async def activateMetricsReporting(self, provisioning_session_id: ResourceId, metrics_reporting_config: MetricsReportingConfiguration) -> Union[Optional[MetricsReportingConfigurationReponse], bool]:
+        result = await self.__do_request('POST', f'/provisioning-sessions/{provisioning_session_id}/metrics-reporting-configurations', json.dumps(metrics_reporting_config), 'application/json')
+        if result['status_code'] == 201:
+            #return result['headers'].get('Location').rsplit('/',1)[1]
+            ret: MetricsReportingConfigurationReponse = self.__tag_and_date(result)
+            ret['MetricsReportingConfiguration'] = MetricsReportingConfiguration.fromJSON(result['body'])
+            return ret
+        elif result['status_code'] == 204:
+            return True
+        self.__default_response(result)
+        return None
+
     #async def retrieveMetricsReportingConfiguration(self, provisioning_session_id: ResourceId, metrics_reporting_config_id: ResourceId) -> MetricsReportingConfigurationResponse:
     #async def updateMetricsReportingConfiguration(self, provisioning_session_id: ResourceId, metrics_reporting_config_id: ResourceId, metrics_reporting_config: MetricsReportingConfiguration) -> bool:
     #async def patchMetricsReportingConfiguration(self, provisioning_session_id: ResourceId, metrics_reporting_config_id: ResourceId, patch: str) -> MetricsReportingConfigurationResponse:
@@ -884,6 +901,7 @@ __all__ = [
         'ProvisioningSessionResponse',
         'ContentHostingConfigurationResponse',
         'ConsumptionReportingConfigurationResponse',
+        'MetricsReportingConfigurationReponse',
         'ServerCertificateResponse',
         'ServerCertificateSigningRequestResponse',
         'ContentProtocolsResponse',
