@@ -44,9 +44,9 @@ import OpenSSL
 
 from .exceptions import (M1ClientError, M1ServerError, M1Error)
 from .types import (ApplicationId, ContentHostingConfiguration, ContentProtocols, ProvisioningSessionType, ProvisioningSession,
-                    ConsumptionReportingConfiguration, ResourceId, PolicyTemplate, PROVISIONING_SESSION_TYPE_DOWNLINK)
+                    ConsumptionReportingConfiguration, MetricsReportingConfiguration, ResourceId, PolicyTemplate, PROVISIONING_SESSION_TYPE_DOWNLINK)
 from .client import (M1Client, ProvisioningSessionResponse, ContentHostingConfigurationResponse, ServerCertificateResponse,
-                     ServerCertificateSigningRequestResponse, ContentProtocolsResponse, ConsumptionReportingConfigurationResponse,
+                     ServerCertificateSigningRequestResponse, ContentProtocolsResponse, ConsumptionReportingConfigurationResponse, MetricsReportingConfigurationReponse,
                      PolicyTemplateResponse)
 from .data_store import DataStore
 from .certificates import CertificateSigner, DefaultCertificateSigner
@@ -963,6 +963,21 @@ class M1Session:
         '''Dump the current provisioning session cache to the log
         '''
         self.__log.debug(repr(self.__provisioning_sessions))
+
+
+    # MetricsReportingConfiguration methods
+
+    async def metricsReportingConfigurationCreate(self, provisioning_session: ResourceId, mrc: MetricsReportingConfiguration) -> bool:
+        if provisioning_session not in self.__provisioning_sessions:
+            return False
+        await self.__connect()
+        mrc_resp: Union[bool,MetricsReportingConfigurationReponse,None] = await self.__m1_client.activateMetricsReporting(provisioning_session, mrc)
+        if isinstance(mrc_resp,bool):
+            return mrc_resp
+        ps = await self.__getProvisioningSessionCache(provisioning_session)
+        if ps is not None:
+            ps['metrics-reporting-configuration'] = {k.lower(): v for k,v in mrc_resp.items()}
+        return True   
 
 __all__ = [
         # Classes
