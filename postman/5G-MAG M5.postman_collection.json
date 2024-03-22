@@ -1,0 +1,135 @@
+{
+	"info": {
+		"_postman_id": "b0f01879-662d-4187-b5a3-c7eb747bbaee",
+		"name": "5G-MAG M5",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "1951126"
+	},
+	"item": [
+		{
+			"name": "Service Access Information API",
+			"item": [
+				{
+					"name": "GET SAI",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{m5_url}}/3gpp-m5/v2/service-access-information/{{provisioning_session_id}}",
+							"host": [
+								"{{m5_url}}"
+							],
+							"path": [
+								"3gpp-m5",
+								"v2",
+								"service-access-information",
+								"{{provisioning_session_id}}"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Consumption Reporting API",
+			"item": [
+				{
+					"name": "Report",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"mediaPlayerEntry\": \"https://livesim.dashif.org/livesim/testpic_2s/Manifest.mpd\",\n  \"reportingClientId\": \"b3559848-df2b-4140-a373-4caccda31d00\",\n  \"consumptionReportingUnits\": [\n    {\n      \"mediaConsumed\": \"A48\",\n      \"clientEndpointAddress\": {\n        \"ipv4Addr\": \"192.168.2.4\",\n        \"portNumber\": 443\n      },\n      \"serverEndpointAddress\": {\n        \"domainName\": \"livesim.dashif.org\",\n        \"portNumber\": 443\n      },\n      \"startTime\": \"2024-01-18T13:35:22Z\",\n      \"duration\": 12,\n      \"locations\": []\n    }\n  ]\n}\n",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{m5_url}}/3gpp-m5/v2/consumption-reporting/{{provisioning_session_id}}",
+							"host": [
+								"{{m5_url}}"
+							],
+							"path": [
+								"3gpp-m5",
+								"v2",
+								"consumption-reporting",
+								"{{provisioning_session_id}}"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Dynamic Policies API",
+			"item": [
+				{
+					"name": "Create",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"serviceDataFlowDescriptions\": [\n        {\n            \"direction\": \"direction\"\n        }\n    ],\n    \"provisioningSessionId\": \"{{provisioning_session_id}}\",\n    \"policyTemplateId\": \"{{policy_template_id}}\"\n}\n",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{m5_url}}/3gpp-m5/v2/dynamic-policies",
+							"host": [
+								"{{m5_url}}"
+							],
+							"path": [
+								"3gpp-m5",
+								"v2",
+								"dynamic-policies"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Network Assistance API",
+			"item": [
+				{
+					"name": "Create",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"serviceDataFlowDescriptions\": [\n        {\n            \"direction\": \"direction\"\n        }\n    ],\n    \"provisioningSessionId\": \"{{provisioning_session_id}}\"\n}\n",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{m5_url}}/3gpp-m5/v2/network-assistance",
+							"host": [
+								"{{m5_url}}"
+							],
+							"path": [
+								"3gpp-m5",
+								"v2",
+								"network-assistance"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		}
+	]
+}

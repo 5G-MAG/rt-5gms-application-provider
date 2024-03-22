@@ -1,0 +1,482 @@
+{
+	"info": {
+		"_postman_id": "c111a476-6ebd-426f-b43f-8cdccddf9242",
+		"name": "5G-MAG M1",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "1951126"
+	},
+	"item": [
+		{
+			"name": "Provisioning Session",
+			"item": [
+				{
+					"name": "GET Provisioning Session",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"method": "GET",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{m1_url}}/3gpp-m1/v2/provisioning-sessions/{{provisioning_session_id}}",
+							"host": [
+								"{{m1_url}}"
+							],
+							"path": [
+								"3gpp-m1",
+								"v2",
+								"provisioning-sessions",
+								"{{provisioning_session_id}}"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Create Provisioning Session",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var responseBody = pm.response.json();",
+									"var provisioningSessionId = responseBody.provisioningSessionId;",
+									"pm.environment.set(\"provisioning_session_id\", provisioningSessionId);"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"aspId\": \"aspId\",\n    \"appId\": \"appId\",\n    \"provisioningSessionType\": \"DOWNLINK\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{m1_url}}/3gpp-m1/v2/provisioning-sessions",
+							"host": [
+								"{{m1_url}}"
+							],
+							"path": [
+								"3gpp-m1",
+								"v2",
+								"provisioning-sessions"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Delete a provisioning session",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{m1_url}}/3gpp-m1/v2/provisioning-sessions/{{provisioning_session_id}}",
+							"host": [
+								"{{m1_url}}"
+							],
+							"path": [
+								"3gpp-m1",
+								"v2",
+								"provisioning-sessions",
+								"{{provisioning_session_id}}"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Consumption Reporting",
+			"item": [
+				{
+					"name": "Get Consumption Reporting Configuration",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{m1_url}}/3gpp-m1/v2/provisioning-sessions/{{provisioning_session_id}}/consumption-reporting-configuration",
+							"host": [
+								"{{m1_url}}"
+							],
+							"path": [
+								"3gpp-m1",
+								"v2",
+								"provisioning-sessions",
+								"{{provisioning_session_id}}",
+								"consumption-reporting-configuration"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Delete Consumption Reporting Configuration",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{m1_url}}/3gpp-m1/v2/provisioning-sessions/{{provisioning_session_id}}/consumption-reporting-configuration",
+							"host": [
+								"{{m1_url}}"
+							],
+							"path": [
+								"3gpp-m1",
+								"v2",
+								"provisioning-sessions",
+								"{{provisioning_session_id}}",
+								"consumption-reporting-configuration"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Update Consumption Reporting Configuration",
+					"request": {
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"reportingInterval\": 30,\n    \"samplePercentage\": 50,\n    \"locationReporting\": true,\n    \"accessReporting\": true\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{m1_url}}/3gpp-m1/v2/provisioning-sessions/{{provisioning_session_id}}/consumption-reporting-configuration",
+							"host": [
+								"{{m1_url}}"
+							],
+							"path": [
+								"3gpp-m1",
+								"v2",
+								"provisioning-sessions",
+								"{{provisioning_session_id}}",
+								"consumption-reporting-configuration"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Create Consumption Reporting Configuration",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"reportingInterval\": 10,\n    \"samplePercentage\": 100,\n    \"locationReporting\": true,\n    \"accessReporting\": true\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{m1_url}}/3gpp-m1/v2/provisioning-sessions/{{provisioning_session_id}}/consumption-reporting-configuration",
+							"host": [
+								"{{m1_url}}"
+							],
+							"path": [
+								"3gpp-m1",
+								"v2",
+								"provisioning-sessions",
+								"{{provisioning_session_id}}",
+								"consumption-reporting-configuration"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Policy Templates",
+			"item": [
+				{
+					"name": "Flow Requests",
+					"item": [
+						{
+							"name": "Update Policy Template Flow",
+							"request": {
+								"method": "PUT",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"externalReference\": \"externalReferenceUpdated2\",\n    \"policyTemplateId\": \"editedId\",\n    \"state\": \"INVALID\",\n    \"stateReason\": {\n        \"type\": \"type\"\n    },\n    \"qoSSpecification\": {\n        \"qosReference\": \"qosReference\",\n        \"maxBtrUl\": \"abcde\",\n        \"maxBtrDl\": \"abcde\",\n        \"maxAuthBtrUl\": \"abcde\",\n        \"maxAuthBtrDl\": \"abcde\",\n        \"defPacketLossRateDl\": 1,\n        \"defPacketLossRateUl\": 1\n    },\n    \"applicationSessionContext\": {\n        \"sliceInfo\": {\n            \"sst\": 200,\n            \"sd\": \"GGGG\"\n        },\n        \"dnn\": \"test\"\n    },\n    \"chargingSpecification\": {\n        \"sponId\": \"sponId\",\n        \"sponStatus\": \"SPONSOR_ENABLED_INVALID\",\n        \"gpsi\": [\n            \"random value\"\n        ]    \n    }\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "http://192.168.2.7:5678{{update_policy_template_url}}",
+									"protocol": "http",
+									"host": [
+										"192",
+										"168",
+										"2",
+										"7"
+									],
+									"port": "5678{{update_policy_template_url}}"
+								}
+							},
+							"response": []
+						}
+					]
+				},
+				{
+					"name": "Create Policy Template",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var policyTemplateId = pm.response.headers.get(\"Location\").split(\"/\").pop()",
+									"pm.environment.set(\"policy_template_id\", policyTemplateId);"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"externalReference\": \"externalReference\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{m1_url}}/3gpp-m1/v2/provisioning-sessions/{{provisioning_session_id}}/policy-templates",
+							"host": [
+								"{{m1_url}}"
+							],
+							"path": [
+								"3gpp-m1",
+								"v2",
+								"provisioning-sessions",
+								"{{provisioning_session_id}}",
+								"policy-templates"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Update Policy Template",
+					"request": {
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"externalReference\": \"externalReferenceUpdated2\",\n    \"policyTemplateId\": \"editedId\",\n    \"state\": \"INVALID\",\n    \"stateReason\": {\n        \"type\": \"type\"\n    },\n    \"qoSSpecification\": {\n        \"qosReference\": \"qosReference\",\n        \"maxBtrUl\": \"560 Kbps\",\n        \"maxBtrDl\": \"500 Kbps\",\n        \"maxAuthBtrUl\": \"400 Kbps\",\n        \"maxAuthBtrDl\": \"300 Kbps\",\n        \"defPacketLossRateDl\": 1,\n        \"defPacketLossRateUl\": 1\n    },\n    \"applicationSessionContext\": {\n        \"sliceInfo\": {\n            \"sst\": 200,\n            \"sd\": \"000000\"\n        },\n        \"dnn\": \"test\"\n    },\n    \"chargingSpecification\": {\n        \"sponId\": \"sponId\",\n        \"sponStatus\": \"SPONSOR_ENABLED\",\n        \"gpsi\": [\n            \"msisdn-12345\"\n        ]    \n    }\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{m1_url}}/3gpp-m1/v2/provisioning-sessions/{{provisioning_session_id}}/policy-templates/{{policy_template_id}}",
+							"host": [
+								"{{m1_url}}"
+							],
+							"path": [
+								"3gpp-m1",
+								"v2",
+								"provisioning-sessions",
+								"{{provisioning_session_id}}",
+								"policy-templates",
+								"{{policy_template_id}}"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "DELETE Policy Template",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{m1_url}}/3gpp-m1/v2/provisioning-sessions/{{provisioning_session_id}}/policy-templates/{{policy_template_id}}",
+							"host": [
+								"{{m1_url}}"
+							],
+							"path": [
+								"3gpp-m1",
+								"v2",
+								"provisioning-sessions",
+								"{{provisioning_session_id}}",
+								"policy-templates",
+								"{{policy_template_id}}"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "GET Policy Template",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{m1_url}}/3gpp-m1/v2/provisioning-sessions/{{provisioning_session_id}}/policy-templates/{{policy_template_id}}",
+							"host": [
+								"{{m1_url}}"
+							],
+							"path": [
+								"3gpp-m1",
+								"v2",
+								"provisioning-sessions",
+								"{{provisioning_session_id}}",
+								"policy-templates",
+								"{{policy_template_id}}"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Metrics Reporting",
+			"item": [
+				{
+					"name": "Get Metrics Reporting Configuration",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{m1_url}}/3gpp-m1/v2/provisioning-sessions/{{provisioning_session_id}}/metrics-reporting-configurations/{{metrics_reporting_configuration_id}}",
+							"host": [
+								"{{m1_url}}"
+							],
+							"path": [
+								"3gpp-m1",
+								"v2",
+								"provisioning-sessions",
+								"{{provisioning_session_id}}",
+								"metrics-reporting-configurations",
+								"{{metrics_reporting_configuration_id}}"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "DELETE Metrics Reporting Configuration",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{m1_url}}/3gpp-m1/v2/provisioning-sessions/{{provisioning_session_id}}/metrics-reporting-configurations/{{metrics_reporting_configuration_id}}",
+							"host": [
+								"{{m1_url}}"
+							],
+							"path": [
+								"3gpp-m1",
+								"v2",
+								"provisioning-sessions",
+								"{{provisioning_session_id}}",
+								"metrics-reporting-configurations",
+								"{{metrics_reporting_configuration_id}}"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Create Metrics Reporting Configuration",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var metricsReportingConfigurationId = pm.response.headers.get(\"Location\").split(\"/\").pop()",
+									"pm.environment.set(\"metrics_reporting_configuration_id\", metricsReportingConfigurationId);"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"scheme\": \"scheme\",\n    \"dataNetworkName\": \"dataNetworkName\",\n    \"reportingInterval\": 10,\n    \"samplePercentage\": 50.0,\n    \"urlFilters\": [],\n    \"samplingPeriod\": 10,\n    \"metrics\": []\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{m1_url}}/3gpp-m1/v2/provisioning-sessions/{{provisioning_session_id}}/metrics-reporting-configurations",
+							"host": [
+								"{{m1_url}}"
+							],
+							"path": [
+								"3gpp-m1",
+								"v2",
+								"provisioning-sessions",
+								"{{provisioning_session_id}}",
+								"metrics-reporting-configurations"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		}
+	],
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		}
+	]
+}
