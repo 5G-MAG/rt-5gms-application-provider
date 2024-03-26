@@ -783,6 +783,7 @@ class M1Session:
                     'protocols': None,
                     'content-hosting-configuration': None,
                     'consumption-reporting-configuration': None,
+                    'metrics-reporting-configuration':None,
                     'certificates': None,
                     'policyTemplates': None,
                     })
@@ -889,6 +890,24 @@ class M1Session:
                 crc.update({k.lower(): v for k,v in result.items()})
             else:
                 ps['consumption-reporting-configuration'] = None
+
+    async def _cacheMetricsReportingConfiguration(self, provisioning_session_id: ResourceId) -> None:
+
+        await self.__cacheProvisioningSession(provisioning_session_id)
+        ps = self.__provisioning_sessions[provisioning_session_id]
+        now = datetime.datetime.now(datetime.timezone.utc)
+        mrc = ps['metrics-reporting-configuration']
+        if mrc is None or mrc['cache-until'] is None or mrc['cache-until'] < now:
+            await self.__connect()
+            result: Optional[MetricsReportingConfigurationReponse] = \
+                    await self.__m1_client.retrieveMetricsReportingConfiguration(provisioning_session_id)
+            if result is not None:
+                if mrc is None:
+                    mrc = {}
+                    ps['metrics-reporting-configuration'] = mrc
+                mrc.update({k.lower(): v for k,v in result.items()})
+            else:
+                ps['metrics-reporting-configuration'] = None
 
     async def __cachePolicyTemplates(self, provisioning_session_id: ResourceId):
         '''Cache all policy templates for the provisioning session

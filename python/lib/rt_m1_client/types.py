@@ -1068,7 +1068,7 @@ class MetricsReportingConfiguration(TypedDict, total=False):
     scheme: str
     dataNetworkName: str
     isReportingInterval: bool
-    isReportingInterval: int
+    reportingInterval: int
     isSamplePercentage: bool
     samplePercentage: float
     urlFilters: List[str]
@@ -1105,7 +1105,7 @@ class MetricsReportingConfiguration(TypedDict, total=False):
             if not isinstance(mrc['isReportingInterval'], bool):
                 raise ValueError('MetricsReportingConfiguration.isReportingInterval must be a boolean')
 
-        if 'reportingInterval' in mrc and mrc.get('isReportingInterval', False):
+        if 'reportingInterval' in mrc and mrc.get('reportingInterval', False):
             if not isinstance(mrc['reportingInterval'], int) or mrc['reportingInterval'] <= 0:
                 raise ValueError('MetricsReportingConfiguration.reportingInterval must be a positive integer')
 
@@ -1113,7 +1113,7 @@ class MetricsReportingConfiguration(TypedDict, total=False):
             if not isinstance(mrc['isSamplePercentage'], bool):
                 raise ValueError('MetricsReportingConfiguration.isSamplePercentage must be a boolean')
 
-        if 'samplePercentage' in mrc and mrc.get('isSamplePercentage', False):
+        if 'samplePercentage' in mrc and mrc.get('samplePercentage', False):
             if not isinstance(mrc['samplePercentage'], (float, int)) or not (0.0 <= mrc['samplePercentage'] <= 100.0):
                 raise ValueError('MetricsReportingConfiguration.samplePercentage must be between 0.0 and 100.0')
 
