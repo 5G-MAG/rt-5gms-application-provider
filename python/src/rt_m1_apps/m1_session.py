@@ -286,14 +286,6 @@ async def cmd_list_verbose(args: argparse.Namespace, config: Configuration) -> i
                 pol = await session.policyTemplateGet(ps_id, polid)
                 if pol is not None:
                     print(PolicyTemplate.format(pol, indent=6))
-        mrc_ids = await session.metricsReportingConfigurationIds(ps_id)
-        if mrc_ids is not None and len(mrc_ids) > 0:
-            print('  MetricsReportingConfigurations:')
-            for mrc_id in mrc_ids:
-                print(f'    {mrc_id}:')
-                mrc = await session.metricsReportingConfigurationGet(ps_id, mrc_id)
-                if mrc is not None:
-                    print(MetricsReportingConfiguration.format(mrc, indent=6))
     return 0
 
 async def cmd_list(args: argparse.Namespace, config: Configuration) -> int:
@@ -817,32 +809,57 @@ async def cmd_show_policy_template(args: argparse.Namespace, config: Configurati
     print(f'Failed to find policy template {pol_id} for provisioning session {ps_id}')
     return 1
 
-async def cmd_create_metrics_reporting(args: argparse.Namespace, config: Configuration) -> int:
-    session = await get_session(config)
-    provisioning_session_id = args.provisioning_session
+async def _make_metrics_reporting_configuration_from_args(
+    args: argparse.Namespace, 
+    extra_flags: bool = False,
+    metrics_reporting_configuration: Optional[MetricsReportingConfiguration] = None) -> Optional[MetricsReportingConfiguration]:
 
-    print(f"Opening file: {args.file}")
-    async with aiofiles.open(args.file, 'r') as json_in:
-        mrc = json.loads(await json_in.read())
-    result = await session.metricsReportingConfigurationCreate(provisioning_session_id, mrc)
-    if result is None:
-        print(f'Failed to create metrics reporting for provisioning session {provisioning_session_id}')
-        return 1
-    print(f'Metrics reporting create for provisioning session {provisioning_session_id}. Configuration ID: {result}')
-    return 0
-
-async def cmd_show_metrics_reporting(args: argparse.Namespace, config: Configuration) -> int:
-    session = await get_session(config)
-    provisioning_session_id = args.provisioning_session
-    mrc_id = args.metrics_reporting_configuration_id
-    result = await session.metricsReportingConfigurationGet(provisioning_session_id, mrc_id)
-    if result is not None:
-        print(f'Metrics reporting for provisioning session {provisioning_session_id}:')
-        print(json.dumps(result, indent=2, sort_keys=True))
-        return 0
+    if metrics_reporting_configuration is None:
+        mrc = MetricsReportingConfiguration()
     else:
-        print(f'Failed to find metrics reporting configuration {mrc_id} for provisioning session {provisioning_session_id}')
-        return 1
+        mrc = copy.deepcopy(metrics_reporting_configuration)
+    
+    # Scheme
+    mrc['scheme'] = args.scheme    
+    # Data Network Name
+    mrc['dataNetworkName'] = args.dataNetworkName    
+    # Is Reporting Interval
+    mrc['isReportingInterval'] = getattr(args, 'isReportingInterval', True)    
+    # Reporting Interval
+    if hasattr(args, 'reportingInterval') and args.reportingInterval is not None:
+        mrc['reportingInterval'] = args.reportingInterval    
+    # Is Sample Percentage
+    mrc['isSamplePercentage'] = getattr(args, 'isSamplePercentage', True)    
+    # Sample Percentage
+    if hasattr(args, 'samplePercentage') and args.samplePercentage is not None:
+        mrc['samplePercentage'] = args.samplePercentage    
+    # URL Filters
+    if hasattr(args, 'urlFilters') and args.urlFilters is not None:
+        if not isinstance(args.urlFilters, list):
+            args.urlFilters = [args.urlFilters]
+        mrc['urlFilters'] = args.urlFilters
+    # Sampling Period
+    if hasattr(args, 'samplingPeriod') and args.samplingPeriod is not None:
+        mrc['samplingPeriod'] = args.samplingPeriod        
+    # Metrics
+    if hasattr(args, 'metrics') and args.metrics is not None:
+        if not isinstance(args.metrics, list):
+            args.metrics = [args.metrics]
+        mrc['metrics'] = args.metrics
+
+    return MetricsReportingConfiguration(mrc)
+
+
+async def cmd_new_metrics_reporting_configuration(args: argparse.Namespace, config: Configuration) -> int:
+    session = await get_session(config)
+    ps_id = args.provisioning_session
+    mrc = await _make_metrics_reporting_configuration_from_args(args, extra_flags=False)
+    result: Optional[ResourceId] = await session.metricsReportingConfigurationCreate(ps_id, mrc)
+    if result is not None:
+        print(f'Created MetricsReportingConfiguration {result} to provisioning session')
+        return 0
+    print(f'Creation of MetricsReportingConfiguration to provisioning session failed!')
+    return 1
 
 
 async def parse_args() -> Tuple[argparse.Namespace,Configuration]:
@@ -988,20 +1005,20 @@ async def parse_args() -> Tuple[argparse.Namespace,Configuration]:
     # The entry-point-path should go with ingest-URL, but argparser lacks the ability to do subgroups
     #parser_renewcert.add_argument('entrypoint', metavar='entry-point-path', nargs='?', help='The media player entry point suffix.')
 
-    # m1-session-cli create-metrics-reporting -p <provisioning-session-id> <MRC-JSON-FILE>
-    parser_create_metrics_reporting = subparsers.add_parser('create-metrics-reporting', help='Create the metrics reporting configuration for a provisioning session')
-    parser_create_metrics_reporting.set_defaults(command=cmd_create_metrics_reporting)
+    # m1-session-cli new-metrics-reporting -p <provisioning-session-id> -sch <scheme> -dnn <dataNetworkName> -irp -rp <reportingInterval> -isp -sp <samplePercentage> -urlf <urlFilters>... -smp <samplingPeriod> -m <metrics>...    
+    parser_create_metrics_reporting = subparsers.add_parser('new-metrics-reporting', help='Add a new metrics reporting configuration')
+    parser_create_metrics_reporting.set_defaults(command=cmd_new_metrics_reporting_configuration)
     parser_create_metrics_reporting.add_argument('-p', '--provisioning-session', required=True,
-                                                help='Provisioning session id to create the metrics reporting for')
-    parser_create_metrics_reporting.add_argument('file', metavar='MRC-JSON-FILE', help='A filepath to a JSON encoded MetricsReportingConfiguration')
-
-    # m1-session-cli retrieve-metrics-reporting -p <provisioning-session-id> -m <metrics-reporting-configuration-id>
-    parser_retrieve_metrics_reporting = subparsers.add_parser('retrieve-metrics-configuration', help='Retrieve the metrics reporting configuration for a provisioning session')
-    parser_retrieve_metrics_reporting.set_defaults(command=cmd_show_metrics_reporting)
-    parser_retrieve_metrics_reporting.add_argument('-p', '--provisioning-session', required=True,
-                                               help='Provisioning session id to retrieve the metrics reporting for')
-    parser_retrieve_metrics_reporting.add_argument('-m', '--metrics-reporting-configuration-id', required=True,
-                                                   help='The metrics reporting configuration id to retrieve')
+                                        help='Provisioning session id to create the policy template for')
+    parser_create_metrics_reporting.add_argument('-sch', '--scheme', required=True, help='The scheme for metrics reporting')
+    parser_create_metrics_reporting.add_argument('-dnn', '--dataNetworkName', required=True, help='The data network name for metrics reporting')
+    parser_create_metrics_reporting.add_argument('-irp', '--isReportingInterval', action='store_true', help='Flag to enable reporting interval')
+    parser_create_metrics_reporting.add_argument('-rp', '--reportingInterval', type=int, required=True, help='The reporting interval in seconds')
+    parser_create_metrics_reporting.add_argument('-isp', '--isSamplePercentage', action='store_true', help='Flag to enable sample percentage')
+    parser_create_metrics_reporting.add_argument('-sp', '--samplePercentage', type=float, required=True, help='The sample percentage')
+    parser_create_metrics_reporting.add_argument('-urlf', '--urlFilters', action='append', required=True, help='URL filter(s) to include in the reporting')
+    parser_create_metrics_reporting.add_argument('-smp', '--samplingPeriod', type=int, required=True, help='The sampling period in seconds')
+    parser_create_metrics_reporting.add_argument('-m', '--metrics', action='append', required=True, help='Metric(s) to include in the reporting')
 
 
     # m1-session-cli set-consumption-reporting -p <provisioning-session-id> [-i <interval>] [-s <sample-percent>] [-l] [-A]
