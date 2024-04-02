@@ -286,6 +286,14 @@ async def cmd_list_verbose(args: argparse.Namespace, config: Configuration) -> i
                 pol = await session.policyTemplateGet(ps_id, polid)
                 if pol is not None:
                     print(PolicyTemplate.format(pol, indent=6))
+        mrc_ids = await session.metricsReportingConfigurationIds(ps_id)
+        if mrc_ids is not None and len(mrc_ids) > 0:
+            print('  MetricsReportingConfigurations:')
+            for mrc_id in mrc_ids:
+                print(f'    {mrc_id}:')
+                mrc = await session.metricsReportingConfigurationGet(ps_id, mrc_id)
+                if mrc is not None:
+                    print(MetricsReportingConfiguration.format(mrc, indent=6))
     return 0
 
 async def cmd_list(args: argparse.Namespace, config: Configuration) -> int:
@@ -809,19 +817,33 @@ async def cmd_show_policy_template(args: argparse.Namespace, config: Configurati
     print(f'Failed to find policy template {pol_id} for provisioning session {ps_id}')
     return 1
 
-async def cmd_activate_metrics_reporting(args: argparse.Namespace, config: Configuration) -> int:
+async def cmd_create_metrics_reporting(args: argparse.Namespace, config: Configuration) -> int:
     session = await get_session(config)
     provisioning_session_id = args.provisioning_session
-    # Read the MetricsReportingConfiguration from the JSON file provided via CLI arguments
+
     print(f"Opening file: {args.file}")
     async with aiofiles.open(args.file, 'r') as json_in:
         mrc = json.loads(await json_in.read())
     result = await session.metricsReportingConfigurationCreate(provisioning_session_id, mrc)
     if result is None:
-        print(f'Failed to activate metrics reporting for provisioning session {provisioning_session_id}')
+        print(f'Failed to create metrics reporting for provisioning session {provisioning_session_id}')
         return 1
-    print(f'Metrics reporting activated for provisioning session {provisioning_session_id}. Configuration ID: {result}')
+    print(f'Metrics reporting create for provisioning session {provisioning_session_id}. Configuration ID: {result}')
     return 0
+
+async def cmd_show_metrics_reporting(args: argparse.Namespace, config: Configuration) -> int:
+    session = await get_session(config)
+    provisioning_session_id = args.provisioning_session
+    mrc_id = args.metrics_reporting_configuration_id
+    result = await session.metricsReportingConfigurationGet(provisioning_session_id, mrc_id)
+    if result is not None:
+        print(f'Metrics reporting for provisioning session {provisioning_session_id}:')
+        print(json.dumps(result, indent=2, sort_keys=True))
+        return 0
+    else:
+        print(f'Failed to find metrics reporting configuration {mrc_id} for provisioning session {provisioning_session_id}')
+        return 1
+
 
 async def parse_args() -> Tuple[argparse.Namespace,Configuration]:
     '''Parse command line options and load app configuration
@@ -966,12 +988,21 @@ async def parse_args() -> Tuple[argparse.Namespace,Configuration]:
     # The entry-point-path should go with ingest-URL, but argparser lacks the ability to do subgroups
     #parser_renewcert.add_argument('entrypoint', metavar='entry-point-path', nargs='?', help='The media player entry point suffix.')
 
-    # m1-session-cli set-metrics-reporting -p <provisioning-session-id> <MRC-JSON-FILE>
-    parser_set_metrics_reporting = subparsers.add_parser('set-metrics-reporting', help='Set the metrics reporting configuration for a provisioning session')
-    parser_set_metrics_reporting.set_defaults(command=cmd_activate_metrics_reporting)
-    parser_set_metrics_reporting.add_argument('-p', '--provisioning-session', required=True,
-                                                help='Provisioning session id to set the metrics reporting for')
-    parser_set_metrics_reporting.add_argument('file', metavar='MRC-JSON-FILE', help='A filepath to a JSON encoded MetricsReportingConfiguration')
+    # m1-session-cli create-metrics-reporting -p <provisioning-session-id> <MRC-JSON-FILE>
+    parser_create_metrics_reporting = subparsers.add_parser('create-metrics-reporting', help='Create the metrics reporting configuration for a provisioning session')
+    parser_create_metrics_reporting.set_defaults(command=cmd_create_metrics_reporting)
+    parser_create_metrics_reporting.add_argument('-p', '--provisioning-session', required=True,
+                                                help='Provisioning session id to create the metrics reporting for')
+    parser_create_metrics_reporting.add_argument('file', metavar='MRC-JSON-FILE', help='A filepath to a JSON encoded MetricsReportingConfiguration')
+
+    # m1-session-cli retrieve-metrics-reporting -p <provisioning-session-id> -m <metrics-reporting-configuration-id>
+    parser_retrieve_metrics_reporting = subparsers.add_parser('retrieve-metrics-configuration', help='Retrieve the metrics reporting configuration for a provisioning session')
+    parser_retrieve_metrics_reporting.set_defaults(command=cmd_show_metrics_reporting)
+    parser_retrieve_metrics_reporting.add_argument('-p', '--provisioning-session', required=True,
+                                               help='Provisioning session id to retrieve the metrics reporting for')
+    parser_retrieve_metrics_reporting.add_argument('-m', '--metrics-reporting-configuration-id', required=True,
+                                                   help='The metrics reporting configuration id to retrieve')
+
 
     # m1-session-cli set-consumption-reporting -p <provisioning-session-id> [-i <interval>] [-s <sample-percent>] [-l] [-A]
     parser_set_consumption = subparsers.add_parser('set-consumption-reporting', help='Activate/set consumption reporting')

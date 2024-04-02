@@ -1064,7 +1064,7 @@ class MetricsReportingConfiguration(TypedDict, total=False):
     '''
     MetricsReportingConfiguration structure in TS 26.512
     '''
-    metricsReportingConfigurationId: str
+    metricsReportingConfigurationId: ResourceId
     scheme: str
     dataNetworkName: str
     isReportingInterval: bool
@@ -1076,16 +1076,7 @@ class MetricsReportingConfiguration(TypedDict, total=False):
     metrics: List[str]
 
     @staticmethod
-    
     def fromJSON(mrc_json: str) -> "MetricsReportingConfiguration":
-        '''Create a MetricsReportingConfiguration from a JSON string
-
-        :param str json: The JSON string to parse into a MetricsReportingConfiguration structure.
-
-        :return: The `MetricsReportingConfiguration` generated from the JSON string.
-
-        :raise ValueError: If the JSON could not be parsed.
-        '''
         mrc = json.loads(mrc_json)
         
         # validate types and values
@@ -1101,17 +1092,9 @@ class MetricsReportingConfiguration(TypedDict, total=False):
             if not isinstance(mrc['dataNetworkName'], str):
                 raise ValueError('MetricsReportingConfiguration.dataNetworkName must be a string')
 
-        if 'isReportingInterval' in mrc:
-            if not isinstance(mrc['isReportingInterval'], bool):
-                raise ValueError('MetricsReportingConfiguration.isReportingInterval must be a boolean')
-
         if 'reportingInterval' in mrc and mrc.get('reportingInterval', False):
             if not isinstance(mrc['reportingInterval'], int) or mrc['reportingInterval'] <= 0:
                 raise ValueError('MetricsReportingConfiguration.reportingInterval must be a positive integer')
-
-        if 'isSamplePercentage' in mrc:
-            if not isinstance(mrc['isSamplePercentage'], bool):
-                raise ValueError('MetricsReportingConfiguration.isSamplePercentage must be a boolean')
 
         if 'samplePercentage' in mrc and mrc.get('samplePercentage', False):
             if not isinstance(mrc['samplePercentage'], (float, int)) or not (0.0 <= mrc['samplePercentage'] <= 100.0):
@@ -1129,7 +1112,7 @@ class MetricsReportingConfiguration(TypedDict, total=False):
             if not all(isinstance(metric, str) for metric in mrc['metrics']):
                 raise ValueError('MetricsReportingConfiguration.metrics must be a list of strings')
 
-        return MetricsReportingConfiguration(mrc)
+        return mrc
 
 
 __all__ = [
@@ -1140,6 +1123,7 @@ __all__ = [
         "ApplicationId",
         "ResourceId",
         "PolicyTemplate",
+        "MetricsReportingConfiguration",
         "ProvisioningSessionId",
         "ProvisioningSessionType",
         "ProvisioningSession",

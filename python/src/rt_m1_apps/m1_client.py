@@ -65,8 +65,8 @@ installed_packages_dir = '@python_packages_dir@'
 if os.path.isdir(installed_packages_dir) and installed_packages_dir not in sys.path:
     sys.path.append(installed_packages_dir)
 
-from rt_m1_client.client import M1Client, ProvisioningSessionResponse, ContentProtocolsResponse, ServerCertificateSigningRequestResponse, ServerCertificateResponse, ContentHostingConfigurationResponse, ConsumptionReportingConfigurationResponse, PolicyTemplateResponse
-from rt_m1_client.types import PROVISIONING_SESSION_TYPE_DOWNLINK, PROVISIONING_SESSION_TYPE_UPLINK, ContentHostingConfiguration, ConsumptionReportingConfiguration, PolicyTemplate
+from rt_m1_client.client import M1Client, ProvisioningSessionResponse, ContentProtocolsResponse, ServerCertificateSigningRequestResponse, ServerCertificateResponse, ContentHostingConfigurationResponse, ConsumptionReportingConfigurationResponse, PolicyTemplateResponse, MetricsReportingConfigurationResponse
+from rt_m1_client.types import PROVISIONING_SESSION_TYPE_DOWNLINK, PROVISIONING_SESSION_TYPE_UPLINK, ContentHostingConfiguration, ConsumptionReportingConfiguration, PolicyTemplate, MetricsReportingConfiguration
 from rt_m1_client.exceptions import M1Error
 
 async def cmd_provisioning_create(args: argparse.Namespace) -> int:
@@ -465,6 +465,17 @@ async def cmd_consumption_delete(args: argparse.Namespace) -> int:
         print('ConsumptionReportingConfiguration deleted')
     else:
         print('ConsumptionReportingConfiguration failed to delete')
+    return 0
+
+async def cmd_metrics_show(args: argparse.Namespace) -> int:
+    client = await getClient(args)
+    provisioning_session_id: ResourceId = args.provisioning_session_id
+    metrics_reporting_configuration_id: ResourceId = args.metrics_reporting_configuration_id
+    resp: Optional[MetricsReportingConfigurationResponse] = await client.retrieveMetricsReportingConfiguration(provisioning_session_id, metrics_reporting_configuration_id)
+    if resp is None:
+        print(f'Metrics configuration "{metrics_reporting_configuration_id}" for provisioning session "{provisioning_session_id}" not found')
+    else:
+        print('Metrics found.')
     return 0
 
 async def __policyTemplateFromArgs(args: argparse.Namespace) -> PolicyTemplate:
