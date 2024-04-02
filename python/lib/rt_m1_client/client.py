@@ -664,32 +664,46 @@ class M1Client:
     #async def destroyEventDataProcessingConfiguration(self, provisioning_session_id: ResourceId, event_data_processing_config_id: ResourceId) -> bool:
 
     # TS26512_M1_MetricsReportingProvisioning
+
     async def activateMetricsReporting(self, provisioning_session_id: ResourceId, metrics_reporting_config: MetricsReportingConfiguration) -> Union[Optional[MetricsReportingConfigurationResponse], bool]:
         result = await self.__do_request('POST', f'/provisioning-sessions/{provisioning_session_id}/metrics-reporting-configurations', json.dumps(metrics_reporting_config), 'application/json')
         if result['status_code'] == 201:
-            #return result['headers'].get('Location').rsplit('/',1)[1]
-            ret: MetricsReportingConfigurationResponse = self.__tag_and_date(result)
-            ret['MetricsReportingConfiguration'] = MetricsReportingConfiguration.fromJSON(result['body'])
-            return ret
-        elif result['status_code'] == 204:
-            return True
-        self.__default_response(result)
-        return None
+            mrc_id: ResourceId = result['headers'].get('location').rsplit('/', 1)[-1]
+            return await self.retrieveMetricsConfiguration(provisioning_session_id, mrc_id)
+        else:
+            self.__default_response(result)
+            return False
 
-    async def retrieveMetricsReportingConfiguration(self, provisioning_session_id: ResourceId, metrics_reporting_configuration_id: ResourceId) -> Optional[MetricsReportingConfigurationResponse]:
+    async def retrieveMetricsConfiguration(self, provisioning_session_id: ResourceId, metrics_reporting_configuration_id: ResourceId) -> Optional[MetricsReportingConfigurationResponse]:
         result = await self.__do_request('GET', f'/provisioning-sessions/{provisioning_session_id}/metrics-reporting-configurations/{metrics_reporting_configuration_id}', '', 'application/json')
         if result['status_code'] == 200:
             ret: MetricsReportingConfigurationResponse = self.__tag_and_date(result)
             ret['MetricsReportingConfiguration'] = MetricsReportingConfiguration.fromJSON(result['body'])
             return ret
-        elif result['status_code'] == 404:
+        if result['status_code'] == 404:
             return None
         self.__default_response(result)
         return None
     
-    #async def updateMetricsReportingConfiguration(self, provisioning_session_id: ResourceId, metrics_reporting_config_id: ResourceId, metrics_reporting_config: MetricsReportingConfiguration) -> bool:
+    async def updateMetricsReportingConfiguration(self, provisioning_session_id: ResourceId, metrics_reporting_config_id: ResourceId, metrics_reporting_config: MetricsReportingConfiguration) -> bool:
+        result = await self.__do_request('PUT', f'/provisioning-sessions/{provisioning_session_id}/metrics-reporting-configurations/{metrics_reporting_config_id}', json.dumps(metrics_reporting_config), 'application/json')
+        if result['status_code'] == 204:
+            return True
+        if result['status_code'] == 404:
+            return False
+        self.__default_response(result)
+        return False
+    
+    async def destroyMetricsReportingConfiguration(self, provisioning_session_id: ResourceId, metrics_reporting_config_id: ResourceId) -> bool:
+        result = await self.__do_request('DELETE', f'/provisioning-sessions/{provisioning_session_id}/metrics-reporting-configurations/{metrics_reporting_config_id}', '', 'application/json')
+        if result['status_code'] == 204:
+            return True
+        if result['status_code'] == 404:
+            return False
+        self.__default_response(result)
+        return False
+    
     #async def patchMetricsReportingConfiguration(self, provisioning_session_id: ResourceId, metrics_reporting_config_id: ResourceId, patch: str) -> MetricsReportingConfigurationResponse:
-    #sync def destroyMetricsReportingConfiguration(self, provisioning_session_id: ResourceId, metrics_reporting_config_id: ResourceId) -> bool:
 
     # TS26512_M1_PolicyTemplatesProvisioning
     async def createPolicyTemplate(self, provisioning_session_id: ResourceId, policy_template: PolicyTemplate) -> Optional[PolicyTemplateResponse]:
