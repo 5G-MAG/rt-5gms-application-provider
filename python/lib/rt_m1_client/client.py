@@ -667,9 +667,14 @@ class M1Client:
 
     async def activateMetricsReporting(self, provisioning_session_id: ResourceId, metrics_reporting_config: MetricsReportingConfiguration) -> Union[Optional[MetricsReportingConfigurationResponse], bool]:
         result = await self.__do_request('POST', f'/provisioning-sessions/{provisioning_session_id}/metrics-reporting-configurations', json.dumps(metrics_reporting_config), 'application/json')
+        
         if result['status_code'] == 201:
             mrc_id: ResourceId = result['headers'].get('location').rsplit('/', 1)[-1]
             return await self.retrieveMetricsConfiguration(provisioning_session_id, mrc_id)
+        elif result['status_code'] == 200:
+            ret: MetricsReportingConfigurationResponse = self.__tag_and_date(result)
+            ret['MetricsReportingConfiguration'] = MetricsReportingConfiguration.fromJSON(result['body'])
+            return ret
         else:
             self.__default_response(result)
             return False
@@ -703,8 +708,6 @@ class M1Client:
         self.__default_response(result)
         return False
     
-    #async def patchMetricsReportingConfiguration(self, provisioning_session_id: ResourceId, metrics_reporting_config_id: ResourceId, patch: str) -> MetricsReportingConfigurationResponse:
-
     # TS26512_M1_PolicyTemplatesProvisioning
     async def createPolicyTemplate(self, provisioning_session_id: ResourceId, policy_template: PolicyTemplate) -> Optional[PolicyTemplateResponse]:
         '''Create a new PolicyTemplate in a provisioning session

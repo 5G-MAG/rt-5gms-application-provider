@@ -895,7 +895,6 @@ class M1Session:
                 ps['consumption-reporting-configuration'] = None
 
     async def __cacheMetricsReportingConfigurations(self, provisioning_session_id: ResourceId):
-
         await self.__cacheProvisioningSession(provisioning_session_id)
         ps = self.__provisioning_sessions[provisioning_session_id]
         now = datetime.datetime.now(datetime.timezone.utc)

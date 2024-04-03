@@ -809,7 +809,7 @@ async def cmd_show_policy_template(args: argparse.Namespace, config: Configurati
     print(f'Failed to find policy template {pol_id} for provisioning session {ps_id}')
     return 1
 
-async def _make_metrics_reporting_configuration_from_args(args: argparse.Namespace,  metrics_reporting_configuration: Optional[MetricsReportingConfiguration] = None) -> Optional[MetricsReportingConfiguration]:
+async def _make_metrics_reporting_configuration_from_args(args: argparse.Namespace, metrics_reporting_configuration: Optional[MetricsReportingConfiguration] = None) -> Optional[MetricsReportingConfiguration]:
 
     if metrics_reporting_configuration is None:
         mrc = MetricsReportingConfiguration()
@@ -855,7 +855,7 @@ async def cmd_show_metrics_configuration(args: argparse.Namespace, config: Confi
     mrc_id = args.metrics_reporting_configuration_id
     result: Optional[MetricsReportingConfiguration] = await session.metricsReportingConfigurationGet(ps_id, mrc_id)
     if result is not None:
-        print(MetricsReportingConfiguration.format(result, indent=0))
+        print(MetricsReportingConfiguration.format(result, indent=2))
         return 0
     print(f'No Metrics Configuration with ID {mrc_id} found for provisioning session {ps_id}')
     return 1
@@ -869,6 +869,22 @@ async def cmd_del_metrics_configuration(args: argparse.Namespace, config: Config
         print(f'Metrics Configuration {mrc_id} removed from provisioning session {ps_id}')
         return 0
     print(f'Failed to delete metrics configuration with ID: {mrc_id}')
+    return 1
+
+async def cmd_update_metrics_configuration(args: argparse.Namespace, config: Configuration) -> int:
+    session = await get_session(config)
+    ps_id = args.provisioning_session
+    mrc_id = args.metrics_reporting_configuration_id
+    mrc: Optional[MetricsReportingConfiguration] = await session.metricsReportingConfigurationGet(ps_id, mrc_id)
+    if mrc is None:
+        print('Attempt to update a Metrics Configuration that does not exist')
+        return 1
+    mrc = await _make_metrics_reporting_configuration_from_args(args)
+    result: Optional[MetricsReportingConfiguration] = await session.metricsReportingConfigurationUpdate(ps_id, mrc_id, mrc)
+    if result is not None:
+        print(f'Updated Metrics Configuration for the provisioning session')
+        return 0
+    print(f'Update of Metrics Configuration {mrc_id} failed!')
     return 1
 
 async def parse_args() -> Tuple[argparse.Namespace,Configuration]:
@@ -1044,6 +1060,23 @@ async def parse_args() -> Tuple[argparse.Namespace,Configuration]:
                                             help='Provisioning session id to delete the metrics reporting configuration for')
     parser_del_metrics_reporting.add_argument('-mrcid', '--metrics-reporting-configuration-id', required=True,
                                             help='The metrics reporting configuration id to delete')
+    
+    #m1-session-cli update-metrics-config -p <provisioning-session-id> -mrc <metrics-reporting-configuration-id> [-sch <scheme>] [-dnn <dataNetworkName>] [-irp] [-rp <reportingInterval>] [-isp] [-sp <samplePercentage>] [-urlf <urlFilters>...] [-smp <samplingPeriod>] [-m <metrics>...]
+    parser_update_metrics_reporting = subparsers.add_parser('update-metrics-config', help='Update the metrics reporting configuration')
+    parser_update_metrics_reporting.set_defaults(command=cmd_update_metrics_configuration)
+    parser_update_metrics_reporting.add_argument('-p', '--provisioning-session', required=True,
+                                            help='Provisioning session id to update the metrics reporting configuration for')
+    parser_update_metrics_reporting.add_argument('-mrcid', '--metrics-reporting-configuration-id', required=True,
+                                            help='The metrics reporting configuration id to update')
+    parser_update_metrics_reporting.add_argument('-sch', '--scheme', help='The scheme for metrics reporting')
+    parser_update_metrics_reporting.add_argument('-dnn', '--dataNetworkName', help='The data network name for metrics reporting')
+    parser_update_metrics_reporting.add_argument('-irp', '--isReportingInterval', action='store_true', help='Flag to enable reporting interval')
+    parser_update_metrics_reporting.add_argument('-rp', '--reportingInterval', type=int, help='The reporting interval in seconds')
+    parser_update_metrics_reporting.add_argument('-isp', '--isSamplePercentage', action='store_true', help='Flag to enable sample percentage')
+    parser_update_metrics_reporting.add_argument('-sp', '--samplePercentage', type=float, help='The sample percentage')
+    parser_update_metrics_reporting.add_argument('-urlf', '--urlFilters', action='append', help='URL filter(s) to include in the reporting')
+    parser_update_metrics_reporting.add_argument('-smp', '--samplingPeriod', type=int, help='The sampling period in seconds')
+    parser_update_metrics_reporting.add_argument('-m', '--metrics', action='append', help='Metric(s) to include in the reporting')
         
 
     # m1-session-cli set-consumption-reporting -p <provisioning-session-id> [-i <interval>] [-s <sample-percent>] [-l] [-A]
