@@ -664,7 +664,26 @@ class M1Client:
     #async def destroyEventDataProcessingConfiguration(self, provisioning_session_id: ResourceId, event_data_processing_config_id: ResourceId) -> bool:
 
     # TS26512_M1_MetricsReportingProvisioning
-
+    '''
+    async def activateMetricsReporting(self, provisioning_session_id: ResourceId, metrics_reporting_config: MetricsReportingConfiguration) -> Union[Optional[dict], bool]:
+        result = await self.__do_request('POST', f'/provisioning-sessions/{provisioning_session_id}/metrics-reporting-configurations', json.dumps(metrics_reporting_config), 'application/json')
+        
+        if result['status_code'] == 201:
+            location_header = result['headers'].get('location')
+            if location_header:
+                mrc_id: ResourceId = location_header.rsplit('/', 1)[-1]
+                return {
+                    "MetricsReportingConfiguration": {
+                        "metricsReportingConfigurationId": mrc_id
+                    }
+                }
+            else:
+                return False
+        else:
+            self.__default_response(result)
+            return False
+    '''
+        
     async def activateMetricsReporting(self, provisioning_session_id: ResourceId, metrics_reporting_config: MetricsReportingConfiguration) -> Union[Optional[MetricsReportingConfigurationResponse], bool]:
         result = await self.__do_request('POST', f'/provisioning-sessions/{provisioning_session_id}/metrics-reporting-configurations', json.dumps(metrics_reporting_config), 'application/json')
         
