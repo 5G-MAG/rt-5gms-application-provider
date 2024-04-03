@@ -1012,8 +1012,7 @@ class M1Session:
         mrc_resp: Optional[MetricsReportingConfigurationResponse] = await self.__m1_client.activateMetricsReporting(provisioning_session_id, metrics_reporting_configuration)
         if mrc_resp is None:
             return None
-        mrc_id = mrc_resp['MetricsReportingConfiguration']['metricsConfigurationId']
-        #mrc_id = mrc_resp
+        mrc_id = mrc_resp['MetricsReportingConfiguration']['metricsReportingConfigurationId']
         ps = await self.__getProvisioningSessionCache(provisioning_session_id)
         if ps is not None:
             if 'metricsReportingConfigurations' not in ps or ps['metricsReportingConfigurations'] is None:

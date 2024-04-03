@@ -856,9 +856,9 @@ async def cmd_new_metrics_reporting_configuration(args: argparse.Namespace, conf
     mrc = await _make_metrics_reporting_configuration_from_args(args, extra_flags=False)
     result: Optional[ResourceId] = await session.metricsReportingConfigurationCreate(ps_id, mrc)
     if result is not None:
-        print(f'Created MetricsReportingConfiguration {result} to provisioning session')
+        print(f'Created Metrics Reporting Configuration with ID: {result}')
         return 0
-    print(f'Creation of MetricsReportingConfiguration to provisioning session failed!')
+    print(f'Creation of Metrics Reporting Configuration failed!')
     return 1
 
 
