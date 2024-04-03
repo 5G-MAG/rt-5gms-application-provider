@@ -903,7 +903,7 @@ class M1Session:
         if ps is None or 'metricsReportingConfigurations' not in ps or ps['metricsReportingConfigurations'] is None:
             return
         ret_err = None
-        for mrc_id,mrc in list(ps['metricsReportingConfigurations'].items()):
+        for mrc_id, mrc in list(ps['metricsReportingConfigurations'].items()):
             if mrc is None:
                 mrc = {'etag': None, 'last-modified': None, 'cache-until': None, 'metricsreportingconfiguration': None}
                 ps['metricsReportingConfigurations'][mrc_id] = mrc
