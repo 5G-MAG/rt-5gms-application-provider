@@ -528,6 +528,93 @@ class M1Session:
             return False
         await self.__connect()
         return await self.__m1_client.destroyPolicyTemplate(provisioning_session_id, policy_template_id)
+    
+    # Metrics Reporting Configuration methods
+               
+    async def metricsConfigurationIds(self, provisioning_session_id: ResourceId) -> Optional[List[ResourceId]]:
+        if provisioning_session_id not in self.__provisioning_sessions:
+            return None
+        await self.__cacheProvisioningSession(provisioning_session_id)
+        ps = self.__provisioning_sessions[provisioning_session_id]['provisioningsession']
+        if 'metricsConfigurationIds' not in ps:
+            return []
+        return ps['metricsConfigurationIds']
+    
+    async def metricsReportingConfigurationCreate(self, provisioning_session_id: ResourceId, metrics_reporting_configuration: MetricsReportingConfiguration) -> Optional[ResourceId]:
+        
+        if provisioning_session_id not in self.__provisioning_sessions:
+            return None
+        await self.__connect()
+        mrc_resp: Optional[MetricsReportingConfigurationResponse] = await self.__m1_client.activateMetricsReporting(provisioning_session_id, metrics_reporting_configuration)
+        
+        if mrc_resp is None:
+            return None
+
+        mrc_id = mrc_resp['MetricsReportingConfiguration']['metricsReportingConfigurationId']
+        ps = await self.__getProvisioningSessionCache(provisioning_session_id)
+    
+        if ps is not None:
+            if 'metricsReportingConfigurations' not in ps or ps['metricsReportingConfigurations'] is None:
+                # caching metrics
+                ps['metricsReportingConfigurations'] = {mrc_id: {k.lower(): v for k,v in mrc_resp.items()}}
+                #print("Direct cache access test:", ps['metricsReportingConfigurations'].get(mrc_id))
+            elif mrc_id not in ps['metricsReportingConfigurations'] or ps['metricsReportingConfigurations'][mrc_id] is None:
+                ps['metricsReportingConfigurations'][mrc_id] = {k.lower(): v for k,v in mrc_resp.items()}
+            # Update the metrics info
+            else:
+                if mrc_resp['MetricsReportingConfiguration'] is None:
+                    mrc_resp['MetricsReportingConfiguration'] = ps['metricsReportingConfigurations'][mrc_id]['metricsreportingconfiguration']
+                ps['metricsReportingConfigurations'][mrc_id] = {k.lower(): v for k,v in mrc_resp.items()}
+        
+        print("Vracam varijablu ps", ps)
+        return mrc_id
+    
+    async def checkContentInPsDictionary(self, provisioning_session_id: ResourceId) -> Optional[Dict]:
+        if provisioning_session_id not in self.__provisioning_sessions:
+            return None
+        await self.__cacheProvisioningSession(provisioning_session_id)
+        ps = self.__provisioning_sessions[provisioning_session_id]
+        return ps
+        
+    async def metricsReportingConfigurationGet(self, provisioning_session_id: ResourceId, metrics_reporting_configuration_id: ResourceId) -> Optional[MetricsReportingConfiguration]:
+        
+        if provisioning_session_id not in self.__provisioning_sessions:
+            return None
+        mrc_cache = await self.__cacheMetricsReportingConfigurations(provisioning_session_id)
+        print("MRC_cache", mrc_cache)
+        ps = await self.__getProvisioningSessionCache(provisioning_session_id)
+        print("Vracam varijablu ps", ps)
+
+        if ps is None or 'metricsReportingConfigurations' not in ps or ps['metricsReportingConfigurations'] is None or metrics_reporting_configuration_id not in ps['metricsReportingConfigurations']:
+            return None
+        return MetricsReportingConfiguration(ps['metricsReportingConfigurations'][metrics_reporting_configuration_id]['metricsreportingconfiguration'])
+
+    
+    '''
+    async def metricsReportingConfigurationGet(self, provisioning_session_id: ResourceId, metrics_reporting_configuration_id: ResourceId) -> Optional[MetricsReportingConfiguration]:
+        if provisioning_session_id not in self.__provisioning_sessions:
+            return None
+        await self.__connect()
+        metrics_reporting_configuration = await self.__m1_client.retrieveMetricsConfiguration(provisioning_session_id, metrics_reporting_configuration_id)
+        if metrics_reporting_configuration is None:
+            return None
+        # update metrics cache
+        await self.__cacheMetricsReportingConfigurations(provisioning_session_id)
+        return MetricsReportingConfiguration(metrics_reporting_configuration)
+    '''
+
+    async def metricsReportingConfigurationUpdate(self, provisioning_session_id: ResourceId, metrics_reporting_configuration_id: ResourceId, metrics_reporting_configuration: MetricsReportingConfiguration) -> Optional[bool]:
+        if provisioning_session_id not in self.__provisioning_sessions:
+            return False
+        await self.__connect()
+        return await self.__m1_client.updateMetricsReportingConfiguration(provisioning_session_id, metrics_reporting_configuration_id, metrics_reporting_configuration)
+
+    async def metricsReportingConfigurationDelete(self, provisioning_session_id: ResourceId, metrics_reporting_configuration_id: ResourceId) -> bool:
+        if provisioning_session_id not in self.__provisioning_sessions:
+            return False
+        await self.__connect()
+        return await self.__m1_client.destroyMetricsReportingConfiguration(provisioning_session_id, metrics_reporting_configuration_id)
+
 
     # Convenience methods
 
@@ -783,9 +870,9 @@ class M1Session:
                     'protocols': None,
                     'content-hosting-configuration': None,
                     'consumption-reporting-configuration': None,
-                    'metricsReportingConfigurations': None,
                     'certificates': None,
                     'policyTemplates': None,
+                    'metricsReportingConfigurations': None,
                     })
                 # initialise ServerCertificates cache with the available IDs
                 if 'serverCertificateIds' in ps['provisioningsession']:
@@ -895,29 +982,39 @@ class M1Session:
                 ps['consumption-reporting-configuration'] = None
 
     async def __cacheMetricsReportingConfigurations(self, provisioning_session_id: ResourceId):
+        '''Cache all metrics reporting configurations for the provisioning session
+
+        Will only cache if the old cache didn't exist or has expired.
+
+        :meta private:
+        :param provisioning_session_id: The id of provisioning session to cache the metrics reporting configurations for.
+        '''
+
         await self.__cacheProvisioningSession(provisioning_session_id)
         ps = self.__provisioning_sessions[provisioning_session_id]
         now = datetime.datetime.now(datetime.timezone.utc)
+        
 
         if ps is None or 'metricsReportingConfigurations' not in ps or ps['metricsReportingConfigurations'] is None:
-            return
+            ps['metricsReportingConfigurations'] = {}
+        
         ret_err = None
-        for mrc_id, mrc in list(ps['metricsReportingConfigurations'].items()):
+        for mrc_id,mrc in list(ps['metricsReportingConfigurations'].items()):
             if mrc is None:
                 mrc = {'etag': None, 'last-modified': None, 'cache-until': None, 'metricsreportingconfiguration': None}
-                ps['metricsReportingConfigurations'][mrc_id] = mrc
+                ps['metricsReportingConfigurations'][mrc_id] = mrc            
             if mrc['cache-until'] is None or mrc['cache-until'] < now:
                 await self.__connect()
                 try:
                     result = await self.__m1_client.retrieveMetricsConfiguration(provisioning_session_id, mrc_id)
                     if result is not None:
-                        mrc.update({k.lower(): v for k,v in result.items()})
+                        mrc.update({k.lower(): v for k, v in result.items()})
                 except M1Error as err:
                     if ret_err is None:
-                        ret_err = err
+                        ret_err = err        
         if ret_err is not None:
             raise ret_err
-        
+
     async def __cachePolicyTemplates(self, provisioning_session_id: ResourceId):
         '''Cache all policy templates for the provisioning session
 
@@ -992,61 +1089,6 @@ class M1Session:
         '''
         self.__log.debug(repr(self.__provisioning_sessions))
 
-
-    # MetricsReportingConfiguration methods
-        
-    async def metricsConfigurationIds(self, provisioning_session_id: ResourceId) -> Optional[List[ResourceId]]:
-        if provisioning_session_id not in self.__provisioning_sessions:
-            return None
-        await self.__cacheProvisioningSession(provisioning_session_id)
-        ps = self.__provisioning_sessions[provisioning_session_id]['provisioningsession']
-        if 'metricsConfigurationIds' not in ps:
-            return []
-        return ps['metricsConfigurationIds']
-    
-    async def metricsReportingConfigurationCreate(self, provisioning_session_id: ResourceId, metrics_reporting_configuration: MetricsReportingConfiguration) -> Optional[ResourceId]:
-        if provisioning_session_id not in self.__provisioning_sessions:
-            return None
-        await self.__connect()
-        mrc_resp: Optional[MetricsReportingConfigurationResponse] = await self.__m1_client.activateMetricsReporting(provisioning_session_id, metrics_reporting_configuration)
-        if mrc_resp is None:
-            return None
-        mrc_id = mrc_resp['MetricsReportingConfiguration']['metricsReportingConfigurationId']
-        ps = await self.__getProvisioningSessionCache(provisioning_session_id)
-        if ps is not None:
-            if 'metricsReportingConfigurations' not in ps or ps['metricsReportingConfigurations'] is None:
-                # caching metrics
-                ps['metricsReportingConfigurations'] = {mrc_id: {k.lower(): v for k,v in mrc_resp.items()}}
-            elif mrc_id not in ps['metricsReportingConfigurations'] or ps['metricsReportingConfigurations'][mrc_id] is None:
-                ps['metricsReportingConfigurations'][mrc_id] = {k.lower(): v for k,v in mrc_resp.items()}
-            else:
-                if mrc_resp['MetricsReportingConfiguration'] is None:
-                    mrc_resp['MetricsReportingConfiguration'] = ps['metricsReportingConfigurations'][mrc_id]['metricsreportingconfiguration']
-                ps['metricsReportingConfigurations'][mrc_id] = {k.lower(): v for k,v in mrc_resp.items()}
-        return mrc_id
-    
-    async def metricsReportingConfigurationGet(self, provisioning_session_id: ResourceId, metrics_reporting_configuration_id: ResourceId) -> Optional[MetricsReportingConfiguration]:
-        if provisioning_session_id not in self.__provisioning_sessions:
-            return None
-        await self.__cacheMetricsReportingConfigurations(provisioning_session_id)
-        ps = self.__provisioning_sessions[provisioning_session_id]
-        if ps is None or 'metricsReportingConfigurations' not in ps or ps['metricsReportingConfigurations'] is None or metrics_reporting_configuration_id not in ps['metricsReportingConfigurations']:
-            return None
-        return MetricsReportingConfiguration(ps['metricsReportingConfigurations'][metrics_reporting_configuration_id]['metricsreportingconfiguration'])
-
-    async def metricsReportingConfigurationUpdate(self, provisioning_session_id: ResourceId, metrics_reporting_configuration_id: ResourceId, metrics_reporting_configuration: MetricsReportingConfiguration) -> Optional[bool]:
-        if provisioning_session_id not in self.__provisioning_sessions:
-            return False
-        await self.__connect()
-        return await self.__m1_client.updateMetricsReportingConfiguration(provisioning_session_id, metrics_reporting_configuration_id, metrics_reporting_configuration)
-
-    async def metricsReportingConfigurationDelete(self, provisioning_session_id: ResourceId, metrics_reporting_configuration_id: ResourceId) -> bool:
-        if provisioning_session_id not in self.__provisioning_sessions:
-            return False
-        await self.__connect()
-        return await self.__m1_client.destroyMetricsReportingConfiguration(provisioning_session_id, metrics_reporting_configuration_id)
-
-    
 
 __all__ = [
         # Classes
