@@ -664,41 +664,39 @@ class M1Client:
     #async def destroyEventDataProcessingConfiguration(self, provisioning_session_id: ResourceId, event_data_processing_config_id: ResourceId) -> bool:
 
     # TS26512_M1_MetricsReportingProvisioning
-    '''
-    async def activateMetricsReporting(self, provisioning_session_id: ResourceId, metrics_reporting_config: MetricsReportingConfiguration) -> Union[Optional[dict], bool]:
+
+    async def activateMetricsReporting(self, provisioning_session_id: ResourceId, metrics_reporting_config: MetricsReportingConfiguration) -> Optional[MetricsReportingConfigurationResponse]:
+        '''Create a new MetricsReportingConfiguration in a provisioning session
+
+        :param ResourceId provisioning_session_id: The provisioning session to add the MetricsReportingConfiguration to.
+        :param MetricsReportingConfiguration metrics_reporting_config: The MetricsReportingConfiguration to add to the provisioning session.
+        :return: The MetricsReportingConfigurationResponse if successful.
+        :raise M1ClientError: if there was a problem with the request.
+        :raise M1ServerError: if there was a server side issue preventing the creation of the metrics reporting configuration.
+        '''
+        
         result = await self.__do_request('POST', f'/provisioning-sessions/{provisioning_session_id}/metrics-reporting-configurations', json.dumps(metrics_reporting_config), 'application/json')
         
-        if result['status_code'] == 201:
-            location_header = result['headers'].get('location')
-            if location_header:
-                mrc_id: ResourceId = location_header.rsplit('/', 1)[-1]
-                return {
-                    "MetricsReportingConfiguration": {
-                        "metricsReportingConfigurationId": mrc_id
-                    }
-                }
-            else:
-                return False
-        else:
-            self.__default_response(result)
-            return False
-    '''
-        
-    async def activateMetricsReporting(self, provisioning_session_id: ResourceId, metrics_reporting_config: MetricsReportingConfiguration) -> Union[Optional[MetricsReportingConfigurationResponse], bool]:
-        result = await self.__do_request('POST', f'/provisioning-sessions/{provisioning_session_id}/metrics-reporting-configurations', json.dumps(metrics_reporting_config), 'application/json')
-        
-        if result['status_code'] == 201:
-            mrc_id: ResourceId = result['headers'].get('location').rsplit('/', 1)[-1]
-            return await self.retrieveMetricsConfiguration(provisioning_session_id, mrc_id)
-        elif result['status_code'] == 200:
+        if result['status_code'] == 200:
             ret: MetricsReportingConfigurationResponse = self.__tag_and_date(result)
             ret['MetricsReportingConfiguration'] = MetricsReportingConfiguration.fromJSON(result['body'])
             return ret
-        else:
-            self.__default_response(result)
-            return False
+        if result['status_code'] == 201 or result['status_code'] == 204:
+            mrc_id: ResourceId = result['headers'].get('location').rsplit('/', 1)[-1]
+            return await self.retrieveMetricsConfiguration(provisioning_session_id, mrc_id)
+        self.__default_response(result)
+        return None
 
     async def retrieveMetricsConfiguration(self, provisioning_session_id: ResourceId, metrics_reporting_configuration_id: ResourceId) -> Optional[MetricsReportingConfigurationResponse]:
+        '''Retrieve a MetricsReportingConfiguration for a provisioning session
+
+        :param ResourceId provisioning_session_id: The provisioning session to retrieve the MetricsReportingConfiguration from.
+        :param ResourceId metrics_reporting_configuration_id: The MetricsReportingConfiguration Id of the MetricsReportingConfiguration to retrieve.
+        :return: A `MetricsReportingConfigurationResponse` which holds the `MetricsReportingConfiguration` and the caching metadata or `None` if the
+                 `MetricsReportingConfiguration` cannot be found.
+        :raise M1ClientError: if there was a problem with the request.
+        :raise M1ServerError: if there was a server side issue preventing the retrieval of the metrics configuartion.
+        '''
         result = await self.__do_request('GET', f'/provisioning-sessions/{provisioning_session_id}/metrics-reporting-configurations/{metrics_reporting_configuration_id}', '', 'application/json')
         if result['status_code'] == 200:
             ret: MetricsReportingConfigurationResponse = self.__tag_and_date(result)
@@ -710,6 +708,15 @@ class M1Client:
         return None
     
     async def updateMetricsReportingConfiguration(self, provisioning_session_id: ResourceId, metrics_reporting_config_id: ResourceId, metrics_reporting_config: MetricsReportingConfiguration) -> bool:
+        '''Update an existing MetricsReportingConfiguration in a provisioning session
+
+        :param ResourceId provisioning_session_id: The provisioning session to replace the MetricsReportingConfiguration in.
+        :param ResourceId metrics_reporting_configuration_id: The MetricsReportingConfiguration Id of the MetricsReportingConfiguration to replace.
+        :param MetricsReportingConfiguration metrics_reporting_configuration: The MetricsReportingConfiguration which will replace the existing one in the provisioning session.
+        :return: `True` if the update succeeded.
+        :raise M1ClientError: if there was a problem with the request.
+        :raise M1ServerError: if there was a server side issue preventing the update of the metrics configuration.
+        '''        
         result = await self.__do_request('PUT', f'/provisioning-sessions/{provisioning_session_id}/metrics-reporting-configurations/{metrics_reporting_config_id}', json.dumps(metrics_reporting_config), 'application/json')
         if result['status_code'] == 204:
             return True
@@ -719,6 +726,17 @@ class M1Client:
         return False
     
     async def destroyMetricsReportingConfiguration(self, provisioning_session_id: ResourceId, metrics_reporting_config_id: ResourceId) -> bool:
+        '''Destroy a MetricsReportingConfiguration in a provisioning session
+
+        :param ResourceId provisioning_session_id: The provisioning session to modify the MetricsReportingConfiguration for.
+        :param ResourceId metrics_reporting_configuration_id: The MetricsReportingConfiguration ID for the MetricsReportingConfiguration in the provisioning session.
+
+        :return: `True` if the MetricsReportingConfiguration was deleted or `False` if the MetricsReportingConfiguration didn't exist.
+
+        :raise M1ClientError: if there was a problem with the request.
+        :raise M1ServerError: if there was a server side issue preventing the deletion of the metrics configuration.
+        '''
+        
         result = await self.__do_request('DELETE', f'/provisioning-sessions/{provisioning_session_id}/metrics-reporting-configurations/{metrics_reporting_config_id}', '', 'application/json')
         if result['status_code'] == 204:
             return True
@@ -731,7 +749,7 @@ class M1Client:
     async def createPolicyTemplate(self, provisioning_session_id: ResourceId, policy_template: PolicyTemplate) -> Optional[PolicyTemplateResponse]:
         '''Create a new PolicyTemplate in a provisioning session
 
-        :param ResourceId provisioning_session_id: The provisioning session to add the PolicyTemaplet to.
+        :param ResourceId provisioning_session_id: The provisioning session to add the PolicyTemplate to.
         :param PolicyTemplate policy_template: The PolicyTemplate to add to the provisioning session.
         :return: The PolicyTemplateResponse if successful.
         :raise M1ClientError: if there was a problem with the request.
@@ -825,7 +843,7 @@ class M1Client:
         :return: `True` if the PolicyTemplate was deleted or `False` if the PolicyTemplate didn't exist.
 
         :raise M1ClientError: if there was a problem with the request.
-        :raise M1ServerError: if there was a server side issue preventing the deletion of the provisioning session.
+        :raise M1ServerError: if there was a server side issue preventing the deletion of the policy template.
         '''
         result = await self.__do_request('DELETE',
                 f'/provisioning-sessions/{provisioning_session_id}/policy-templates/{policy_template_id}',
