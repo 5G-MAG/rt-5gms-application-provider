@@ -508,7 +508,7 @@ async def cmd_metrics_update(args: argparse.Namespace) -> int:
 async def cmd_metrics_delete(args: argparse.Namespace) -> int:
     client = await getClient(args)
     ps_id: ResourceId = args.provisioning_session_id
-    mrc_id: ResourceId = args.policy_template_id
+    mrc_id: ResourceId = args.metrics_reporting_configuration_id
     resp: bool = await client.destroyMetricsReportingConfiguration(ps_id, mrc_id)
     if resp:
         print('Metrics Reporting Configuration deleted')
