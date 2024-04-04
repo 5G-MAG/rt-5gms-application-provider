@@ -467,16 +467,55 @@ async def cmd_consumption_delete(args: argparse.Namespace) -> int:
         print('ConsumptionReportingConfiguration failed to delete')
     return 0
 
+async def __metricsReportingConfigurationFromArgs(args: argparse.Namespace) -> MetricsReportingConfiguration:
+    with open(args.metrics_template, 'r') as metrics_file:
+        return MetricsReportingConfiguration.fromJSON(metrics_file.read())
+
+async def cmd_metrics_create(args: argparse.Namespace) -> int:
+    client = await getClient(args)
+    ps_id: ResourceId = args.provisioning_session_id
+    mrc: MetricsReportingConfiguration = await __metricsReportingConfigurationFromArgs(args)
+    resp: Optional[MetricsReportingConfigurationResponse] = await client.activateMetricsReporting(ps_id, mrc)
+    if resp is None:
+        print('Failed to create metrics configuration')
+    else:
+        print(f'Metrics configuration {resp["MetricsReportingConfiguration"]["metricsReportingConfigurationId"]} created')
+    return 0
+
 async def cmd_metrics_show(args: argparse.Namespace) -> int:
     client = await getClient(args)
-    provisioning_session_id: ResourceId = args.provisioning_session_id
-    metrics_reporting_configuration_id: ResourceId = args.metrics_reporting_configuration_id
-    resp: Optional[MetricsReportingConfigurationResponse] = await client.retrieveMetricsReportingConfiguration(provisioning_session_id, metrics_reporting_configuration_id)
+    ps_id: ResourceId = args.provisioning_session_id
+    mrc_id: ResourceId = args.metrics_reporting_configuration_id
+    resp: Optional[MetricsReportingConfigurationResponse] = await client.retrieveMetricsConfiguration(ps_id, mrc_id)
     if resp is None:
-        print(f'Metrics configuration "{metrics_reporting_configuration_id}" for provisioning session "{provisioning_session_id}" not found')
+        print(f'Metrics configuration "{mrc_id}" not found')
     else:
-        print('Metrics found.')
+        print('Metrics retrieved.')
     return 0
+
+async def cmd_metrics_update(args: argparse.Namespace) -> int:
+    client = await getClient(args)
+    ps_id: ResourceId = args.provisioning_session_id
+    mrc_id: ResourceId = args.metrics_reporting_configuration_id
+    mrc: MetricsReportingConfiguration = await __metricsReportingConfigurationFromArgs(args)
+    resp: bool = await client.updateMetricsReportingConfiguration(ps_id, mrc_id, mrc)
+    if resp:
+        print('Metrics Configuration updated successfully')
+    else:
+        print('Metrics Configuration update failed')
+    return 0
+
+async def cmd_metrics_delete(args: argparse.Namespace) -> int:
+    client = await getClient(args)
+    ps_id: ResourceId = args.provisioning_session_id
+    mrc_id: ResourceId = args.policy_template_id
+    resp: bool = await client.destroyMetricsReportingConfiguration(ps_id, mrc_id)
+    if resp:
+        print('Metrics Reporting Configuration deleted')
+    else:
+        print('Failed to delete Metrics Configuration {mrc_id}')
+    return 0
+
 
 async def __policyTemplateFromArgs(args: argparse.Namespace) -> PolicyTemplate:
     with open(args.policy_template,'r') as pol_file:
@@ -673,6 +712,40 @@ async def parse_args() -> argparse.Namespace:
     parser_consumption_delete = consumption_subparsers.add_parser('delete', parents=[parent_addr_prov],
                                                                   help='Delete the Consumption Reporting for a provisioning session')
     parser_consumption_delete.set_defaults(command=cmd_consumption_delete)
+
+    #m1-client metrics configuration...
+    parser_metrics = subparsers.add_parser('metrics', help='MetricsReportingProvisioning APIs')
+    metrics_subparsers = parser_metrics.add_subparsers(required=True)
+
+    # m1-client metrics create [-h] <address:port> <provisioning-session-id> <Metrics-JSON-file>
+    parser_metrics_create = metrics_subparsers.add_parser('create', parents=[parent_addr_prov],
+                                                            help='Create a Metrics Reporting Configuration for a provisioning session')
+    parser_metrics_create.set_defaults(command=cmd_metrics_create)
+    parser_metrics_create.add_argument('metrics_template', metavar='Metrics-JSON-file',
+                                        help='Path to a Metrics Reporting Configuration JSON file')
+    
+    # m1-client metrics show [-h] <address:port> <provisioning-session-id> <metrics-reporting-configuration-id>
+    parser_metrics_show = metrics_subparsers.add_parser('show', parents=[parent_addr_prov],
+                                                        help='Retrieve a Metrics Reporting Configuration for a provisioning session')
+    parser_metrics_show.set_defaults(command=cmd_metrics_show)
+    parser_metrics_show.add_argument('metrics_reporting_configuration_id', metavar='metrics-reporting-configuration-id',
+                                        help='The Metrics Reporting Configuration id to retrieve')
+    
+    # m1-client metrics update [-h] <address:port> <provisioning-session-id> <metrics-reporting-configuration-id> <Metrics-JSON-file>
+    parser_metrics_update = metrics_subparsers.add_parser('update', parents=[parent_addr_prov],
+                                                            help='Update a Metrics Reporting Configuration for a provisioning session')
+    parser_metrics_update.set_defaults(command=cmd_metrics_update)
+    parser_metrics_update.add_argument('metrics_reporting_configuration_id', metavar='metrics-reporting-configuration-id',
+                                        help='The Metrics Reporting Configuration id to update')
+    parser_metrics_update.add_argument('metrics_template', metavar='Metrics-JSON-file',
+                                        help='Path to a Metrics Reporting Configuration JSON file')
+    
+    # m1-client metrics delete [-h] <address:port> <provisioning-session-id> <metrics-reporting-configuration-id>
+    parser_metrics_delete = metrics_subparsers.add_parser('delete', parents=[parent_addr_prov],
+                                                            help='Delete a Metrics Reporting Configuration for a provisioning session')
+    parser_metrics_delete.set_defaults(command=cmd_metrics_delete)
+    parser_metrics_delete.add_argument('metrics_reporting_configuration_id', metavar='metrics-reporting-configuration-id',
+                                        help='The Metrics Reporting Configuration id to delete')
 
     # m1-client policy ...
     parser_policy = subparsers.add_parser('policy', help='PolicyTemplateProvisioning APIs')

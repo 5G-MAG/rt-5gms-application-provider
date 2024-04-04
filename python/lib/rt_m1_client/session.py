@@ -496,7 +496,6 @@ class M1Session:
                 if pol_resp['PolicyTemplate'] is None:
                     pol_resp['PolicyTemplate'] = ps['policyTemplates'][pol_id]['policytemplate']
                 ps['policyTemplates'][pol_id] = {k.lower(): v for k,v in pol_resp.items()}
-
         return pol_id
 
     async def policyTemplateGet(self, provisioning_session_id: ResourceId, policy_template_id: ResourceId) -> Optional[PolicyTemplate]:
@@ -506,7 +505,7 @@ class M1Session:
         if provisioning_session_id not in self.__provisioning_sessions:
             return None
         await self.__cachePolicyTemplates(provisioning_session_id)
-        ps = self.__provisioning_sessions[provisioning_session_id]
+        ps = self.__provisioning_sessions[provisioning_session_id]        
         if ps is None or 'policyTemplates' not in ps or ps['policyTemplates'] is None or policy_template_id not in ps['policyTemplates']:
             return None
         return PolicyTemplate(ps['policyTemplates'][policy_template_id]['policytemplate'])
@@ -532,6 +531,9 @@ class M1Session:
     # Metrics Reporting Configuration methods
                
     async def metricsConfigurationIds(self, provisioning_session_id: ResourceId) -> Optional[List[ResourceId]]:
+        ''' 
+        Gets a list of metrics configuration Ids       
+        '''
         if provisioning_session_id not in self.__provisioning_sessions:
             return None
         await self.__cacheProvisioningSession(provisioning_session_id)
@@ -541,7 +543,16 @@ class M1Session:
         return ps['metricsConfigurationIds']
     
     async def metricsReportingConfigurationCreate(self, provisioning_session_id: ResourceId, metrics_reporting_configuration: MetricsReportingConfiguration) -> Optional[ResourceId]:
-        
+        '''Create a new metrics configuration
+
+        This creates a new metrics configuration in the provisioning session and returns the new metrics configuration id.
+
+        :param provisioning_session_id: The provisioning session to create the new metrics configuration in.
+        :param metrics_reporting_configuration: The metrics configuration to create.
+
+        :return: the metrics configuration id of the new metrics configuration or ``None`` if the provisioning session does not exist or if
+                 there was no response from the M1 Server.
+        '''
         if provisioning_session_id not in self.__provisioning_sessions:
             return None
         await self.__connect()
@@ -555,61 +566,44 @@ class M1Session:
     
         if ps is not None:
             if 'metricsReportingConfigurations' not in ps or ps['metricsReportingConfigurations'] is None:
-                # caching metrics
+
                 ps['metricsReportingConfigurations'] = {mrc_id: {k.lower(): v for k,v in mrc_resp.items()}}
-                #print("Direct cache access test:", ps['metricsReportingConfigurations'].get(mrc_id))
             elif mrc_id not in ps['metricsReportingConfigurations'] or ps['metricsReportingConfigurations'][mrc_id] is None:
                 ps['metricsReportingConfigurations'][mrc_id] = {k.lower(): v for k,v in mrc_resp.items()}
-            # Update the metrics info
             else:
                 if mrc_resp['MetricsReportingConfiguration'] is None:
                     mrc_resp['MetricsReportingConfiguration'] = ps['metricsReportingConfigurations'][mrc_id]['metricsreportingconfiguration']
                 ps['metricsReportingConfigurations'][mrc_id] = {k.lower(): v for k,v in mrc_resp.items()}
-        
-        print("Vracam varijablu ps", ps)
         return mrc_id
-    
-    async def checkContentInPsDictionary(self, provisioning_session_id: ResourceId) -> Optional[Dict]:
-        if provisioning_session_id not in self.__provisioning_sessions:
-            return None
-        await self.__cacheProvisioningSession(provisioning_session_id)
-        ps = self.__provisioning_sessions[provisioning_session_id]
-        return ps
-        
+
+         
     async def metricsReportingConfigurationGet(self, provisioning_session_id: ResourceId, metrics_reporting_configuration_id: ResourceId) -> Optional[MetricsReportingConfiguration]:
-        
+        '''
+        Retrieve a metrics configuration
+        '''
         if provisioning_session_id not in self.__provisioning_sessions:
             return None
-        mrc_cache = await self.__cacheMetricsReportingConfigurations(provisioning_session_id)
-        print("MRC_cache", mrc_cache)
+        await self.__cacheMetricsReportingConfigurations(provisioning_session_id)
         ps = await self.__getProvisioningSessionCache(provisioning_session_id)
-        print("Vracam varijablu ps", ps)
 
         if ps is None or 'metricsReportingConfigurations' not in ps or ps['metricsReportingConfigurations'] is None or metrics_reporting_configuration_id not in ps['metricsReportingConfigurations']:
             return None
         return MetricsReportingConfiguration(ps['metricsReportingConfigurations'][metrics_reporting_configuration_id]['metricsreportingconfiguration'])
 
-    
-    '''
-    async def metricsReportingConfigurationGet(self, provisioning_session_id: ResourceId, metrics_reporting_configuration_id: ResourceId) -> Optional[MetricsReportingConfiguration]:
-        if provisioning_session_id not in self.__provisioning_sessions:
-            return None
-        await self.__connect()
-        metrics_reporting_configuration = await self.__m1_client.retrieveMetricsConfiguration(provisioning_session_id, metrics_reporting_configuration_id)
-        if metrics_reporting_configuration is None:
-            return None
-        # update metrics cache
-        await self.__cacheMetricsReportingConfigurations(provisioning_session_id)
-        return MetricsReportingConfiguration(metrics_reporting_configuration)
-    '''
 
     async def metricsReportingConfigurationUpdate(self, provisioning_session_id: ResourceId, metrics_reporting_configuration_id: ResourceId, metrics_reporting_configuration: MetricsReportingConfiguration) -> Optional[bool]:
+        '''
+        Update a metrics configuration
+        '''
         if provisioning_session_id not in self.__provisioning_sessions:
             return False
         await self.__connect()
         return await self.__m1_client.updateMetricsReportingConfiguration(provisioning_session_id, metrics_reporting_configuration_id, metrics_reporting_configuration)
 
     async def metricsReportingConfigurationDelete(self, provisioning_session_id: ResourceId, metrics_reporting_configuration_id: ResourceId) -> bool:
+        '''
+        Delete a metrics configuration
+        '''
         if provisioning_session_id not in self.__provisioning_sessions:
             return False
         await self.__connect()
@@ -989,7 +983,6 @@ class M1Session:
         :meta private:
         :param provisioning_session_id: The id of provisioning session to cache the metrics reporting configurations for.
         '''
-
         await self.__cacheProvisioningSession(provisioning_session_id)
         ps = self.__provisioning_sessions[provisioning_session_id]
         now = datetime.datetime.now(datetime.timezone.utc)

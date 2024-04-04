@@ -212,7 +212,7 @@ if os.path.isdir(installed_packages_dir) and installed_packages_dir not in sys.p
 from rt_m1_client.session import M1Session
 from rt_m1_client.exceptions import M1Error
 from rt_m1_client.data_store import JSONFileDataStore
-from rt_m1_client.types import ContentHostingConfiguration, DistributionConfiguration, IngestConfiguration, M1MediaEntryPoint, PathRewriteRule, ConsumptionReportingConfiguration, PolicyTemplate, M1QoSSpecification, ChargingSpecification, AppSessionContext, Snssai
+from rt_m1_client.types import ContentHostingConfiguration, DistributionConfiguration, IngestConfiguration, M1MediaEntryPoint, PathRewriteRule, ConsumptionReportingConfiguration, PolicyTemplate, M1QoSSpecification, ChargingSpecification, AppSessionContext, Snssai, MetricsReportingConfiguration
 from rt_m1_client.configuration import Configuration
 
 g_streams_config = os.path.join(os.path.sep, 'etc', 'rt-5gms', 'streams.json')

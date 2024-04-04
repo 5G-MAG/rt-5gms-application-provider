@@ -1062,7 +1062,7 @@ class ProblemDetail(TypedDict, total=False):
     
 class MetricsReportingConfiguration(TypedDict, total=False):
     '''
-    MetricsReportingConfiguration structure in TS 26.512
+    MetricsReportingConfiguration data model in TS 26.512
     '''
     metricsReportingConfigurationId: ResourceId
     scheme: str

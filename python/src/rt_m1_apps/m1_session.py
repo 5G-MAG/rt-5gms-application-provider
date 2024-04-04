@@ -84,6 +84,26 @@ Syntax:
     m1-session-cli show-policy-template -h
     m1-session-cli show-policy-template -p <provisioning-session-id> -t <policy-template-id>
 
+    m1-session-cli new-metrics-reporting -h
+    m1-session-cli new-metrics-reporting -p <provisioning-session-id> -sch <scheme> -dnn <dataNetworkName>
+                                      [-irp] -rp <interval-in-seconds> [-isp] -sp <sample-percentage>
+                                      -urlf <url-filter1> ... -smp <sampling-period-in-seconds>
+                                      -m <metrics>...
+
+
+    m1-session-cli show-metrics-config -h
+    m1-session-cli show-metrics-config -p <provisioning-session-id> -mrcid <metrics-reporting-configuration-id>
+
+    m1-session-cli update-metrics-config -h
+    m1-session-cli update-metrics-config -p <provisioning-session-id> -mrcid <metrics-reporting-configuration-id> -sch <scheme> -dnn <dataNetworkName>
+                                      [-irp] -rp <interval-in-seconds> [-isp] -sp <sample-percentage>
+                                      -urlf <url-filter1> ... -smp <sampling-period-in-seconds>
+                                      -m <metrics>...
+
+    m1-session-cli del-metrics-config -h
+    m1-session-cli del-metrics-config -p <provisioning-session-id> -mrcid <metrics-reporting-configuration-id>
+    
+
 Parameters:
     -a ID   --asp-id ID                      The application service provider id.
     -A      --access-reporting               Include access reporting.
@@ -115,6 +135,16 @@ Parameters:
             --chg-sponsor-none               Remove the charging sponsor flag on update.
             --gpsi GPSI                      A charging GPSI value (may be given multiple times).
             --no-gpsi                        Remove all charging GPSI values on update.
+    -mrcid  --metrics-reporting-configuration-id The metrics reporting configuration id to use.
+    -sch    --scheme                         The scheme for the metrics reporting configuration.
+    -dnn    --data-network-name              The data network name for the metrics reporting configuration.
+    -irp    --isReportingInterval            Include the reporting interval in the metrics reporting configuration.
+    -rp     --reportingInterval              The reporting interval in seconds for the metrics reporting configuration.
+    -isp    --isSamplePercentage             Include the sampling percentage in the metrics reporting configuration.
+    -sp     --samplePercentage               The sampling percentage for the metrics reporting configuration.
+    -urlf   --urlFilters                     The URL filters for the metrics reporting configuration.
+    -smp    --sampling-period                The sampling period in seconds for the metrics reporting configuration.
+    -m      --metrics                        The metric to include in the metrics reporting configuration.
 
 Arguments:
     certificate-PEM-file              The file path of a PEM holding a public certificate.
@@ -810,7 +840,8 @@ async def cmd_show_policy_template(args: argparse.Namespace, config: Configurati
     return 1
 
 async def _make_metrics_reporting_configuration_from_args(args: argparse.Namespace, metrics_reporting_configuration: Optional[MetricsReportingConfiguration] = None) -> Optional[MetricsReportingConfiguration]:
-
+    ''' This will parse metrics reporting configuration from the command line arguments.
+    '''
     if metrics_reporting_configuration is None:
         mrc = MetricsReportingConfiguration()
     else:
@@ -839,6 +870,9 @@ async def _make_metrics_reporting_configuration_from_args(args: argparse.Namespa
 
 
 async def cmd_new_metrics_reporting_configuration(args: argparse.Namespace, config: Configuration) -> int:
+    '''
+    Creates a new Metrics Reporting Configuration for a provisioning session using parsed command line arguments.
+    '''
     session = await get_session(config)
     ps_id = args.provisioning_session
     mrc = await _make_metrics_reporting_configuration_from_args(args)
@@ -850,18 +884,24 @@ async def cmd_new_metrics_reporting_configuration(args: argparse.Namespace, conf
     return 1
 
 async def cmd_show_metrics_configuration(args: argparse.Namespace, config: Configuration) -> int:
+    '''
+    Retrieve and display a Metrics Reporting Configuration for a provisioning session.
+    '''
     session = await get_session(config)
     ps_id = args.provisioning_session
     mrc_id = args.metrics_reporting_configuration_id
     result: Optional[MetricsReportingConfiguration] = await session.metricsReportingConfigurationGet(ps_id, mrc_id)
     if result is not None:
-        #print(MetricsReportingConfiguration.format(result, indent=2))
-        print(json.dumps(result, indent=2))
+        print(MetricsReportingConfiguration.format(result, indent=2))
+        #print(json.dumps(result, indent=2))
         return 0
     print(f'No Metrics Configuration with ID {mrc_id} found for provisioning session {ps_id}')
     return 1
 
 async def cmd_del_metrics_configuration(args: argparse.Namespace, config: Configuration) -> int:
+    '''
+    Removes a Metrics Reporting Configuration from a provisioning session.
+    '''
     session = await get_session(config)
     ps_id = args.provisioning_session
     mrc_id = args.metrics_reporting_configuration_id
@@ -873,6 +913,9 @@ async def cmd_del_metrics_configuration(args: argparse.Namespace, config: Config
     return 1
 
 async def cmd_update_metrics_configuration(args: argparse.Namespace, config: Configuration) -> int:
+    '''
+    Updates a Metrics Reporting Configuration for a provisioning session using updated parsed command line arguments.
+    '''
     session = await get_session(config)
     ps_id = args.provisioning_session
     mrc_id = args.metrics_reporting_configuration_id
@@ -887,12 +930,6 @@ async def cmd_update_metrics_configuration(args: argparse.Namespace, config: Con
         return 0
     print(f'Update of Metrics Configuration {mrc_id} failed!')
     return 1
-
-async def cmd_check_ps_dictionary(args: argparse.Namespace, config: Configuration) -> int:
-    session = await get_session(config)
-    ps_id = args.provisioning_session
-    result = await session.checkContentInPsDictionary(ps_id)
-    print(f'Content in PS Dictionary: {result}')
 
 async def parse_args() -> Tuple[argparse.Namespace,Configuration]:
     '''Parse command line options and load app configuration
@@ -1036,13 +1073,7 @@ async def parse_args() -> Tuple[argparse.Namespace,Configuration]:
     #parser_renewcert_filter.add_argument('ingesturl', metavar='ingest-URL', nargs='?', help='The ingest URL prefix to use')
     # The entry-point-path should go with ingest-URL, but argparser lacks the ability to do subgroups
     #parser_renewcert.add_argument('entrypoint', metavar='entry-point-path', nargs='?', help='The media player entry point suffix.')
-
-    #m1-session-cli check-ps-dictionary -p <provisioning-session-id>
-    parser_check_ps_dictionary = subparsers.add_parser('check-ps-dictionary', help='Check if the provisioning session has content in the PS dictionary')
-    parser_check_ps_dictionary.set_defaults(command=cmd_check_ps_dictionary)
-    parser_check_ps_dictionary.add_argument('-p', '--provisioning-session', required=True,
-                                             help='Provisioning session id to check')
-    
+  
     # m1-session-cli new-metrics-reporting -p <provisioning-session-id> -sch <scheme> -dnn <dataNetworkName> -irp -rp <reportingInterval> -isp -sp <samplePercentage> -urlf <urlFilters>... -smp <samplingPeriod> -m <metrics>...    
     parser_create_metrics_reporting = subparsers.add_parser('new-metrics-reporting', help='Add a new metrics reporting configuration')
     parser_create_metrics_reporting.set_defaults(command=cmd_new_metrics_reporting_configuration)
