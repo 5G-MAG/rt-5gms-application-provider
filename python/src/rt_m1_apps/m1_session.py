@@ -857,9 +857,7 @@ async def _make_metrics_reporting_configuration_from_args(args: argparse.Namespa
     
     mrc['scheme'] = args.scheme
     mrc['dataNetworkName'] = args.dataNetworkName
-    mrc['isReportingInterval'] = getattr(args, 'isReportingInterval', True)
     mrc['reportingInterval'] = getattr(args, 'reportingInterval', None)
-    mrc['isSamplePercentage'] = getattr(args, 'isSamplePercentage', True)
     mrc['samplePercentage'] = getattr(args, 'samplePercentage', None)
     
     url_filters = getattr(args, 'urlFilters', None)
@@ -867,8 +865,7 @@ async def _make_metrics_reporting_configuration_from_args(args: argparse.Namespa
         mrc['urlFilters'] = url_filters if isinstance(url_filters, list) else [url_filters]
     
     sampling_period = getattr(args, 'samplingPeriod', None)
-    if sampling_period is not None:
-        mrc['samplingPeriod'] = sampling_period
+    mrc['samplingPeriod'] = sampling_period
     
     metrics = getattr(args, 'metrics', None)
     if metrics is not None:
@@ -901,7 +898,6 @@ async def cmd_show_metrics_configuration(args: argparse.Namespace, config: Confi
     result: Optional[MetricsReportingConfiguration] = await session.metricsReportingConfigurationGet(ps_id, mrc_id)
     if result is not None:
         print(MetricsReportingConfiguration.format(result, indent=2))
-        #print(json.dumps(result, indent=2))
         return 0
     print(f'No Metrics Configuration with ID {mrc_id} found for provisioning session {ps_id}')
     return 1
