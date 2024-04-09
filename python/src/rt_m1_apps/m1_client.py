@@ -490,7 +490,7 @@ async def cmd_metrics_show(args: argparse.Namespace) -> int:
     if resp is None:
         print(f'Metrics configuration "{mrc_id}" not found')
     else:
-        print('Metrics retrieved.')
+        print(MetricsReportingConfiguration.format(resp["MetricsReportingConfiguration"]))
     return 0
 
 async def cmd_metrics_update(args: argparse.Namespace) -> int:

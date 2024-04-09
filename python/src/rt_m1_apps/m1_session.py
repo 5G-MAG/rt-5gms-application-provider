@@ -316,6 +316,14 @@ async def cmd_list_verbose(args: argparse.Namespace, config: Configuration) -> i
                 pol = await session.policyTemplateGet(ps_id, polid)
                 if pol is not None:
                     print(PolicyTemplate.format(pol, indent=6))
+        mrc = await session.metricsReportingConfigurationIds(ps_id)
+        if mrc is not None and len(mrc) > 0:
+            print('  MetricsReportingConfigurations:')
+            for mrcid in mrc:
+                print(f'    {mrcid}:')
+                mrc = await session.metricsReportingConfigurationGet(ps_id, mrcid)
+                if mrc is not None:
+                    print(MetricsReportingConfiguration.format(mrc, indent=6))
     return 0
 
 async def cmd_list(args: argparse.Namespace, config: Configuration) -> int:
@@ -926,7 +934,7 @@ async def cmd_update_metrics_configuration(args: argparse.Namespace, config: Con
     mrc = await _make_metrics_reporting_configuration_from_args(args)
     result: Optional[MetricsReportingConfiguration] = await session.metricsReportingConfigurationUpdate(ps_id, mrc_id, mrc)
     if result is not None:
-        print(f'Updated Metrics Configuration for the provisioning session')
+        print(f'Updated Metrics Configuration {mrc_id} for the provisioning session {ps_id}')
         return 0
     print(f'Update of Metrics Configuration {mrc_id} failed!')
     return 1

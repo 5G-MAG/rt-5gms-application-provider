@@ -680,6 +680,7 @@ class M1Client:
         if result['status_code'] == 200:
             ret: MetricsReportingConfigurationResponse = self.__tag_and_date(result)
             ret['MetricsReportingConfiguration'] = MetricsReportingConfiguration.fromJSON(result['body'])
+            ret['ProvisioningSessionId'] = provisioning_session_id
             return ret
         if result['status_code'] == 201 or result['status_code'] == 204:
             mrc_id: ResourceId = result['headers'].get('location').rsplit('/', 1)[-1]
@@ -701,6 +702,7 @@ class M1Client:
         if result['status_code'] == 200:
             ret: MetricsReportingConfigurationResponse = self.__tag_and_date(result)
             ret['MetricsReportingConfiguration'] = MetricsReportingConfiguration.fromJSON(result['body'])
+            ret['ProvisioningSessionId'] = provisioning_session_id
             return ret
         if result['status_code'] == 404:
             return None
