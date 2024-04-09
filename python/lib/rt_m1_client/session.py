@@ -530,7 +530,7 @@ class M1Session:
     
     # Metrics Reporting Configuration methods
                
-    async def metricsConfigurationIds(self, provisioning_session_id: ResourceId) -> Optional[List[ResourceId]]:
+    async def metricsReportingConfigurationIds(self, provisioning_session_id: ResourceId) -> Optional[List[ResourceId]]:
         ''' 
         Gets a list of metrics configuration Ids       
         '''
@@ -538,9 +538,9 @@ class M1Session:
             return None
         await self.__cacheProvisioningSession(provisioning_session_id)
         ps = self.__provisioning_sessions[provisioning_session_id]['provisioningsession']
-        if 'metricsConfigurationIds' not in ps:
+        if 'metricsReportingConfigurationIds' not in ps:
             return []
-        return ps['metricsConfigurationIds']
+        return ps['metricsReportingConfigurationIds']
     
     async def metricsReportingConfigurationCreate(self, provisioning_session_id: ResourceId, metrics_reporting_configuration: MetricsReportingConfiguration) -> Optional[ResourceId]:
         '''Create a new metrics configuration
@@ -875,8 +875,8 @@ class M1Session:
                 if 'policyTemplateIds' in ps['provisioningsession']:
                     ps['policyTemplates'] = {k: None for k in ps['provisioningsession']['policyTemplateIds']}
                 # initialise MetricsReportingConfiguration cache with the available IDs
-                if 'metricsConfigurationIds' in ps['provisioningsession']:
-                    ps['metricsReportingConfigurations'] = {k: None for k in ps['provisioningsession']['metricsConfigurationIds']}
+                if 'metricsReportingConfigurationIds' in ps['provisioningsession']:
+                    ps['metricsReportingConfigurations'] = {k: None for k in ps['provisioningsession']['metricsReportingConfigurationIds']}
 
     async def __cacheProtocols(self, provisioning_session_id: ResourceId):
         '''Cache the ContentProtocols for a provisioning session
@@ -986,10 +986,6 @@ class M1Session:
         await self.__cacheProvisioningSession(provisioning_session_id)
         ps = self.__provisioning_sessions[provisioning_session_id]
         now = datetime.datetime.now(datetime.timezone.utc)
-        
-
-        if ps is None or 'metricsReportingConfigurations' not in ps or ps['metricsReportingConfigurations'] is None:
-            ps['metricsReportingConfigurations'] = {}
         
         ret_err = None
         for mrc_id,mrc in list(ps['metricsReportingConfigurations'].items()):
