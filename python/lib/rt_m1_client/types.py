@@ -1060,7 +1060,7 @@ class ProblemDetail(TypedDict, total=False):
             ret += f"\n{prefix}NRF Id: {pd['nrfId']}"
         return ret[1:]
     
-class MetricsReportingConfigurationMandatory(TypedDict, total=False):
+class MetricsReportingConfigurationMandatory(TypedDict):
     '''
     Mandatory fields from MetricsReportingConfiguration structure in TS 26.512
     '''
