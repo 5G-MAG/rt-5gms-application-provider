@@ -85,23 +85,22 @@ Syntax:
     m1-session-cli show-policy-template -p <provisioning-session-id> -t <policy-template-id>
 
     m1-session-cli new-metrics-reporting -h
-    m1-session-cli new-metrics-reporting -p <provisioning-session-id> -sch <scheme> -dnn <dataNetworkName>
-                                      [-irp] -rp <interval-in-seconds> [-isp] -sp <sample-percentage>
-                                      -urlf <url-filter1> ... -smp <sampling-period-in-seconds>
-                                      -m <metrics>...
-
+    m1-session-cli new-metrics-reporting -p <provisioning-session-id> -s <scheme> -d <data-network-name>
+                                      [-i <interval-in-seconds>] [-P <sample-percentage>]
+                                      [-f <url-filter> ...] -S <sampling-period-in-seconds>
+                                      -m <metrics> [-m <metrics>...]
 
     m1-session-cli show-metrics-config -h
-    m1-session-cli show-metrics-config -p <provisioning-session-id> -mrcid <metrics-reporting-configuration-id>
+    m1-session-cli show-metrics-config -p <provisioning-session-id> -M <metrics-reporting-configuration-id>
 
     m1-session-cli update-metrics-config -h
-    m1-session-cli update-metrics-config -p <provisioning-session-id> -mrcid <metrics-reporting-configuration-id> -sch <scheme> -dnn <dataNetworkName>
-                                      [-irp] -rp <interval-in-seconds> [-isp] -sp <sample-percentage>
-                                      -urlf <url-filter1> ... -smp <sampling-period-in-seconds>
-                                      -m <metrics>...
+    m1-session-cli update-metrics-reporting -p <provisioning-session-id> -M <metrics-reporting-configuration-id>
+                                            -s <scheme> -d <data-network-name> [-i <interval-in-seconds>] [-P <sample-percentage>]
+                                      [-f <url-filter> ...] -S <sampling-period-in-seconds>
+                                      -m <metrics> [-m <metrics>...]
 
     m1-session-cli del-metrics-config -h
-    m1-session-cli del-metrics-config -p <provisioning-session-id> -mrcid <metrics-reporting-configuration-id>
+    m1-session-cli del-metrics-config -p <provisioning-session-id> -M <metrics-reporting-configuration-id>
     
 
 Parameters:
@@ -135,16 +134,14 @@ Parameters:
             --chg-sponsor-none               Remove the charging sponsor flag on update.
             --gpsi GPSI                      A charging GPSI value (may be given multiple times).
             --no-gpsi                        Remove all charging GPSI values on update.
-    -mrcid  --metrics-reporting-configuration-id The metrics reporting configuration id to use.
-    -sch    --scheme                         The scheme for the metrics reporting configuration.
-    -dnn    --data-network-name              The data network name for the metrics reporting configuration.
-    -irp    --isReportingInterval            Include the reporting interval in the metrics reporting configuration.
-    -rp     --reportingInterval              The reporting interval in seconds for the metrics reporting configuration.
-    -isp    --isSamplePercentage             Include the sampling percentage in the metrics reporting configuration.
-    -sp     --samplePercentage               The sampling percentage for the metrics reporting configuration.
-    -urlf   --urlFilters                     The URL filters for the metrics reporting configuration.
-    -smp    --sampling-period                The sampling period in seconds for the metrics reporting configuration.
-    -m      --metrics                        The metric to include in the metrics reporting configuration.
+    -M      --metrics-reporting-configuration-id The metrics reporting configuration id to use.
+    -s      --scheme                         The scheme for the metrics reporting configuration.
+    -d      --data-network-name              The data network name for the metrics reporting configuration.
+    -i      --reporting-interval             The reporting interval in seconds for the metrics reporting configuration.
+    -P      --sample-percentage              The sampling percentage for the metrics reporting configuration.
+    -f      --url-filters                    The URL filters for the metrics reporting configuration.
+    -S      --sampling-period                The sampling period in seconds for the metrics reporting configuration.
+    -m      --metrics                        The metrics to include in the metrics reporting configuration.
 
 Arguments:
     certificate-PEM-file              The file path of a PEM holding a public certificate.
@@ -856,15 +853,15 @@ async def _make_metrics_reporting_configuration_from_args(args: argparse.Namespa
         mrc = copy.deepcopy(metrics_reporting_configuration)
     
     mrc['scheme'] = args.scheme
-    mrc['dataNetworkName'] = args.dataNetworkName
-    mrc['reportingInterval'] = getattr(args, 'reportingInterval', None)
-    mrc['samplePercentage'] = getattr(args, 'samplePercentage', None)
+    mrc['dataNetworkName'] = args.data_network_name
+    mrc['reportingInterval'] = getattr(args, 'reporting_interval', None)
+    mrc['samplePercentage'] = getattr(args, 'sample_percentage', None)
     
-    url_filters = getattr(args, 'urlFilters', None)
+    url_filters = getattr(args, 'url_filters', None)
     if url_filters is not None:
         mrc['urlFilters'] = url_filters if isinstance(url_filters, list) else [url_filters]
     
-    sampling_period = getattr(args, 'samplingPeriod', None)
+    sampling_period = getattr(args, 'sampling_period', None)
     mrc['samplingPeriod'] = sampling_period
     
     metrics = getattr(args, 'metrics', None)
@@ -1078,53 +1075,55 @@ async def parse_args() -> Tuple[argparse.Namespace,Configuration]:
     # The entry-point-path should go with ingest-URL, but argparser lacks the ability to do subgroups
     #parser_renewcert.add_argument('entrypoint', metavar='entry-point-path', nargs='?', help='The media player entry point suffix.')
   
-    # m1-session-cli new-metrics-reporting -p <provisioning-session-id> -sch <scheme> -dnn <dataNetworkName> -irp -rp <reportingInterval> -isp -sp <samplePercentage> -urlf <urlFilters>... -smp <samplingPeriod> -m <metrics>...    
+    # m1-session-cli new-metrics-reporting -p <provisioning-session-id> -s <scheme> -d <data-network-name>
+    #                                 [-i <interval-in-seconds>] [-P <sample-percentage>]
+    #                                 [-f <url-filter> ...] -S <sampling-period-in-seconds>
+    #                                 -m <metrics> [-m <metrics>...]
     parser_create_metrics_reporting = subparsers.add_parser('new-metrics-reporting', help='Add a new metrics reporting configuration')
     parser_create_metrics_reporting.set_defaults(command=cmd_new_metrics_reporting_configuration)
     parser_create_metrics_reporting.add_argument('-p', '--provisioning-session', required=True,
                                         help='Provisioning session id to create the policy template for')
-    parser_create_metrics_reporting.add_argument('-sch', '--scheme', required=True, help='The scheme for metrics reporting')
-    parser_create_metrics_reporting.add_argument('-dnn', '--dataNetworkName', required=True, help='The data network name for metrics reporting')
-    parser_create_metrics_reporting.add_argument('-irp', '--isReportingInterval', action='store_true', help='Flag to enable reporting interval')
-    parser_create_metrics_reporting.add_argument('-rp', '--reportingInterval', type=int, required=True, help='The reporting interval in seconds')
-    parser_create_metrics_reporting.add_argument('-isp', '--isSamplePercentage', action='store_true', help='Flag to enable sample percentage')
-    parser_create_metrics_reporting.add_argument('-sp', '--samplePercentage', type=float, required=True, help='The sample percentage')
-    parser_create_metrics_reporting.add_argument('-urlf', '--urlFilters', action='append', required=True, help='URL filter(s) to include in the reporting')
-    parser_create_metrics_reporting.add_argument('-smp', '--samplingPeriod', type=int, required=True, help='The sampling period in seconds')
+    parser_create_metrics_reporting.add_argument('-s', '--scheme', required=True, help='The scheme for metrics reporting')
+    parser_create_metrics_reporting.add_argument('-d', '--data-network-name', required=True, dest='data_network_name', help='The data network name for metrics reporting')
+    parser_create_metrics_reporting.add_argument('-i', '--reporting-interval', type=int, required=True, dest='reporting_interval', help='The reporting interval in seconds')
+    parser_create_metrics_reporting.add_argument('-P', '--sample-percentage', type=float, required=True, dest='sample_percentage', help='The sample percentage')
+    parser_create_metrics_reporting.add_argument('-f', '--url-filters', action='append', required=True, dest='url_filters', help='URL filter(s) to include in the reporting')
+    parser_create_metrics_reporting.add_argument('-S', '--sampling-period', type=int, required=True, dest='sampling_period', help='The sampling period in seconds')
     parser_create_metrics_reporting.add_argument('-m', '--metrics', action='append', required=True, help='Metric(s) to include in the reporting')
 
-    #m1-session-cli show-metrics-config -p <provisioning-session-id> -mrc <metrics-reporting-configuration-id>
+    #m1-session-cli show-metrics-config -p <provisioning-session-id> -M <metrics-reporting-configuration-id>
     parser_show_metrics_reporting = subparsers.add_parser('show-metrics-config', help='Display the metrics reporting configuration')
     parser_show_metrics_reporting.set_defaults(command=cmd_show_metrics_configuration)
     parser_show_metrics_reporting.add_argument('-p', '--provisioning-session', required=True,
                                             help='Provisioning session id to get the metrics reporting configuration for')
-    parser_show_metrics_reporting.add_argument('-mrcid', '--metrics-reporting-configuration-id', required=True,
+    parser_show_metrics_reporting.add_argument('-M', '--metrics-reporting-configuration-id', required=True,
                                             help='The metrics reporting configuration id to get')
     
-    #m1-session-cli del-metrics-config -p <provisioning-session-id> -mrc <metrics-reporting-configuration-id>
-    parser_del_metrics_reporting = subparsers.add_parser('del-metrics-config', help='Delete the metrics reporting configuration')
-    parser_del_metrics_reporting.set_defaults(command=cmd_del_metrics_configuration)
-    parser_del_metrics_reporting.add_argument('-p', '--provisioning-session', required=True,
-                                            help='Provisioning session id to delete the metrics reporting configuration for')
-    parser_del_metrics_reporting.add_argument('-mrcid', '--metrics-reporting-configuration-id', required=True,
-                                            help='The metrics reporting configuration id to delete')
-    
-    #m1-session-cli update-metrics-config -p <provisioning-session-id> -mrc <metrics-reporting-configuration-id> [-sch <scheme>] [-dnn <dataNetworkName>] [-irp] [-rp <reportingInterval>] [-isp] [-sp <samplePercentage>] [-urlf <urlFilters>...] [-smp <samplingPeriod>] [-m <metrics>...]
+    # m1-session-cli update-metrics-reporting -p <provisioning-session-id> -s <scheme> -d <data-network-name>
+    #                                 [-i <interval-in-seconds>] [-P <sample-percentage>]
+    #                                 [-f <url-filter> ...] -S <sampling-period-in-seconds>
+    #                                 -m <metrics> [-m <metrics>...]
     parser_update_metrics_reporting = subparsers.add_parser('update-metrics-config', help='Update the metrics reporting configuration')
     parser_update_metrics_reporting.set_defaults(command=cmd_update_metrics_configuration)
     parser_update_metrics_reporting.add_argument('-p', '--provisioning-session', required=True,
                                             help='Provisioning session id to update the metrics reporting configuration for')
-    parser_update_metrics_reporting.add_argument('-mrcid', '--metrics-reporting-configuration-id', required=True,
+    parser_update_metrics_reporting.add_argument('-M', '--metrics-reporting-configuration-id', required=True,
                                             help='The metrics reporting configuration id to update')
-    parser_update_metrics_reporting.add_argument('-sch', '--scheme', help='The scheme for metrics reporting')
-    parser_update_metrics_reporting.add_argument('-dnn', '--dataNetworkName', help='The data network name for metrics reporting')
-    parser_update_metrics_reporting.add_argument('-irp', '--isReportingInterval', action='store_true', help='Flag to enable reporting interval')
-    parser_update_metrics_reporting.add_argument('-rp', '--reportingInterval', type=int, help='The reporting interval in seconds')
-    parser_update_metrics_reporting.add_argument('-isp', '--isSamplePercentage', action='store_true', help='Flag to enable sample percentage')
-    parser_update_metrics_reporting.add_argument('-sp', '--samplePercentage', type=float, help='The sample percentage')
-    parser_update_metrics_reporting.add_argument('-urlf', '--urlFilters', action='append', help='URL filter(s) to include in the reporting')
-    parser_update_metrics_reporting.add_argument('-smp', '--samplingPeriod', type=int, help='The sampling period in seconds')
+    parser_update_metrics_reporting.add_argument('-s', '--scheme', help='The scheme for metrics reporting')
+    parser_update_metrics_reporting.add_argument('-d', '--data-network-name', dest='data_network_name', help='The data network name for metrics reporting')
+    parser_update_metrics_reporting.add_argument('-i', '--reporting-interval', type=int, dest='reporting_interval', help='The reporting interval in seconds')
+    parser_update_metrics_reporting.add_argument('-P', '--sample-percentage', type=float, dest='sample_percentage', help='The sample percentage')
+    parser_update_metrics_reporting.add_argument('-f', '--url-filters', action='append', dest='url_filters', help='URL filter(s) to include in the reporting')
+    parser_update_metrics_reporting.add_argument('-S', '--sampling-period', type=int, dest='sampling_period', help='The sampling period in seconds')
     parser_update_metrics_reporting.add_argument('-m', '--metrics', action='append', help='Metric(s) to include in the reporting')
+    
+    #m1-session-cli del-metrics-config -p <provisioning-session-id> -M <metrics-reporting-configuration-id>
+    parser_del_metrics_reporting = subparsers.add_parser('del-metrics-config', help='Delete the metrics reporting configuration')
+    parser_del_metrics_reporting.set_defaults(command=cmd_del_metrics_configuration)
+    parser_del_metrics_reporting.add_argument('-p', '--provisioning-session', required=True,
+                                            help='Provisioning session id to delete the metrics reporting configuration for')
+    parser_del_metrics_reporting.add_argument('-M', '--metrics-reporting-configuration-id', required=True,
+                                            help='The metrics reporting configuration id to delete')
         
 
     # m1-session-cli set-consumption-reporting -p <provisioning-session-id> [-i <interval>] [-s <sample-percent>] [-l] [-A]
