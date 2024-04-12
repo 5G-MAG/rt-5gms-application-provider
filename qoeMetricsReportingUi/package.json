@@ -1,0 +1,16 @@
+{
+  "name": "qoemetricsreportingui",
+  "description": "A simple webpage to evaluate QoE metrics reported by a 5GMS client during a DASH streaming session",
+  "version": "1.0.0",
+  "private": true,
+  "license": "5G-MAG",
+  "stackblitz": {
+    "startCommand": "npm start"
+  },
+  "scripts": {
+    "start": "sirv --dev --no-clear --port 3000"
+  },
+  "devDependencies": {
+    "sirv-cli": "^2.0.2"
+  }
+}
