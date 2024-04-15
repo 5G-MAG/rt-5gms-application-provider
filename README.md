@@ -1,8 +1,10 @@
 <h1 align="center">5GMS Application Provider</h1>
-<p align="center">
-  <img src="https://img.shields.io/badge/Status-Under_Development-yellow" alt="Under Development">
+<p align="left">
+  <img src="https://img.shields.io/github/v/tag/5G-MAG/rt-5gms-application-provider?label=version" alt="Version">
   <img src="https://img.shields.io/github/v/tag/5G-MAG/rt-5gms-application-function?label=version" alt="Version">
-  <img src="https://img.shields.io/badge/License-5G--MAG%20Public%20License%20(v1.0)-blue" alt="License">
+  <img src="https://img.shields.io/badge/Status-Under_Development-yellow" alt="Under Development">
+  <img src="https://github.com/5G-MAG/rt-5gms-application-provider/actions/workflows/integration-test.yml/badge.svg" alt="Integration Test"><br>
+  <img src="https://img.shields.io/badge/License-5G--MAG%20Public%20License%20(v1.0)-blue" alt="License"><br>
 </p>
 
 # Introduction
@@ -11,82 +13,13 @@ This repository represents the 5GMS Application Provider side in a 3GPP complian
 architecture. It interacts with the [5GMS Application Function](https://github.com/5G-MAG/rt-5gms-application-function)
 via the interface at reference point M1. For that reason, this repository comes with multiple different tools:
 
-* Management-UI: Tbd
-* CLI: Tbd
-* Postman: Tbd
+* **CLI tool**: The Python-based Command Line Interface tool for 5GMS management is a set of executable wrapper modules built upon Python classes which interacts with the 5GMS Application Function's RESTful API at reference point M1 to provision 5GMS services. 
+* **Management UI**: This is a full stack application which utilizes the Python executable modules to interact with the 5GMS Application Function. Every M1 provisioning procedure is implemented as a corresponding web-server endpoint, supported with the graphical control dashboard.
+* **Postman**: Postman recipes to test the 5GMS Application Function's  API at reference point M1. This is a collection of predefined HTTP requests for every Application Function's RESTful endpoint, including environmental variables and requests payload.
 
-This application utilizes a Python library to interact with
-the [5GMS Application Function](https://github.com/5G-MAG/rt-5gms-application-function). Every M1 provisioning procedure
-is implemented as a related web-server's endpoint, supported with a graphical control dashboard.
+## Installing the Command Line Interface tool
 
-# Building and installing the GUI
-
-There are two ways to run this project. The recommendation is to use the **Docker Compose** service, because
-lightweight container building and activation will solve the entire scope of dependencies and the rest of the
-requirements.
-
-## Docker Compose
-
-To install this service follow the official [documentation](https://docs.docker.com/compose/install/). Next, clone this
-repository:
-
-```
-cd
-git clone https://github.com/5G-MAG/rt-5gms-application-provider
-cd ~/rt-5gms-application-provider
-```
-
-Building the Docker image will effectively install all dependencies for
-the [5GMS Application Function](https://github.com/5G-MAG/rt-5gms-application-function) and this application:
-
-```
-sudo docker-compose build
-```
-
-Upon successful completion, activate Application Provider with:
-
-```
-sudo docker-compose up
-```
-
-Open the module at: `localhost:8000`
-
-## Separate installation
-
-If you prefer to run the [5GMS Application Function](https://github.com/5G-MAG/rt-5gms-application-function) separately,
-without setting it up in the Docker environment, you have to build and install
-the [5GMS Application Function](https://github.com/5G-MAG/rt-5gms-application-function) as a local user. For that
-reason, please follow
-this [documentation](https://github.com/5G-MAG/rt-5gms-application-function/wiki/Testing-as-a-Local-User).
-
-Once installed and built, run the 5GMS Application Function:
-
-```
-~/rt-5gms-application-function/install/bin/open5gs-msafd
-```
-
-Subsequently, install the Python dependencies in order to run web-based GUI server:
-
-```
-cd ~/rt-5gms-application-provider
-python3 -m pip install ./python
-pip3 install -r requirements.txt
-```
-
-Activate GUI with the following command:
-
-```
-cd management-ui/
-uvicorn server:app --reload
-```
-
-The web application will be accessible at port `8000`, and it requires active communication with the 5GMS Application
-Function running as a separate process.
-
-# Building and installing the CLI program
-
-If you prefer to control 5GMS Application Function operations using a Command Line Interface (CLI), independently of the
-web-based GUI, run the following command in the `python` subdirectory:
+In order to use Python CLI tool to control 5GMS Application Function operations, compile `python` library:
 
 ```
 cd rt-5gms-application-provider
@@ -103,16 +36,76 @@ python3 -m venv venv
 venv/bin/python3 -m pip install ./python
 ```
 
-# Using the Postman Collection
-Tbd
+## Installing the Management UI
 
-## Testing and deployment
+There are two ways to run this application. The recommendation is to use the **Docker Compose** service, because
+lightweight container building and activation will solve the entire scope of dependencies and the rest of the
+requirements.
 
-This repository contains CI/CD workflows for building native Docker image, Docker Compose and integration test.
-Automated integration test is written to provide entire provisioning cycle starting with creation of provisioning
-session, activating realted procedures, and finalizing with deletion of resources.
+### 1. Docker Compose
 
-Run automated test:
+To install this service follow the official [documentation](https://docs.docker.com/compose/install/). Next, clone this
+repository:
+
+```
+cd
+git clone https://github.com/5G-MAG/rt-5gms-application-provider
+cd ~/rt-5gms-application-provider
+```
+
+Building the Docker image will effectively install all dependencies for
+the 5GMS Application Function and this application:
+
+```
+sudo docker-compose build
+```
+
+Upon successful completion, activate Application Provider with:
+
+```
+sudo docker-compose up
+```
+
+Access the module at: `localhost:8000`
+
+### 2. Separate installation
+
+If you prefer to run the 5GMS Application Function separately,
+without setting it up in the Docker environment, you have to build and install it as a local user. For that
+purpose, please follow
+this [documentation](https://github.com/5G-MAG/rt-5gms-application-function/wiki/Testing-as-a-Local-User).
+
+Once installed and built, run the 5GMS Application Function:
+
+```
+~/rt-5gms-application-function/install/bin/open5gs-msafd
+```
+
+Subsequently, install the Python dependencies required for Management UI:
+
+```
+cd ~/rt-5gms-application-provider
+python3 -m pip install ./python
+pip3 install -r requirements.txt
+```
+
+Activate application:
+
+```
+cd management-ui/
+uvicorn server:app --reload
+```
+
+The Management UI will be accessible at port `8000`.
+
+### Testing Management UI
+
+This repository contains CI/CD workflows for building native Docker image, Docker Compose and integration test for Management UI application.
+
+Automated integration test is written to provide entire provisioning cycle, starting with creation of provisioning
+session, activating all network procedures, and finalizing with deletion of all resources. It effectively conducts sequence of HTTP requests to every Management UI web server's endpoint.
+
+Run integration test :
 
 ```
 cd ~/rt-5gms-application-provider/management-ui/tests
@@ -120,3 +113,7 @@ pytest integration_test.py
 ```
 
 Please be aware that this procedure is already provided with the repository's CI/CD pipeline.
+
+## Using the Postman Collection
+Tbd
+
