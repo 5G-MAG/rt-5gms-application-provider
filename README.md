@@ -1,10 +1,9 @@
 <h1 align="center">5GMS Application Provider</h1>
 <p align="left">
-  <img src="https://img.shields.io/github/v/tag/5G-MAG/rt-5gms-application-provider?label=version" alt="Version">
   <img src="https://img.shields.io/github/v/tag/5G-MAG/rt-5gms-application-function?label=version" alt="Version">
   <img src="https://img.shields.io/badge/Status-Under_Development-yellow" alt="Under Development">
-  <img src="https://github.com/5G-MAG/rt-5gms-application-provider/actions/workflows/integration-test.yml/badge.svg" alt="Integration Test"><br>
-  <img src="https://img.shields.io/badge/License-5G--MAG%20Public%20License%20(v1.0)-blue" alt="License"><br>
+  <img src="https://github.com/5G-MAG/rt-5gms-application-provider/actions/workflows/integration-test.yml/badge.svg" alt="Integration Test">
+  <img src="https://img.shields.io/badge/License-5G--MAG%20Public%20License%20(v1.0)-blue" alt="License">
 </p>
 
 # Introduction
@@ -44,7 +43,7 @@ requirements.
 
 ### 1. Docker Compose
 
-To install this service follow the official [documentation](https://docs.docker.com/compose/install/). Next, clone this
+To install Docker Compose service follow the official [documentation](https://docs.docker.com/compose/install/). Next, clone this
 repository:
 
 ```
@@ -53,8 +52,7 @@ git clone https://github.com/5G-MAG/rt-5gms-application-provider
 cd ~/rt-5gms-application-provider
 ```
 
-Building the Docker image will effectively install all dependencies for
-the 5GMS Application Function and this application:
+Building the Docker image will effectively install all dependencies for the 5GMS Application Function and Management UI:
 
 ```
 sudo docker-compose build
@@ -89,7 +87,7 @@ python3 -m pip install ./python
 pip3 install -r requirements.txt
 ```
 
-Activate application:
+Activate the Management UI application:
 
 ```
 cd management-ui/
@@ -115,5 +113,4 @@ pytest integration_test.py
 Please be aware that this procedure is already provided with the repository's CI/CD pipeline.
 
 ## Using the Postman Collection
-Tbd
-
+A Postman collection comprises a set of predefined HTTP requests, each containing the necessary payloads for every M1 Application Function endpoint, along with environment variables for endpoint URLs. For detailed explanation on how to import, configure and use this collection please visit this [wiki page](https://github.com/5G-MAG/rt-5gms-application-function/wiki/Testing-with-Postman).
