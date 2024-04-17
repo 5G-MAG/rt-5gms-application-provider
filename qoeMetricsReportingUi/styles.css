@@ -1,0 +1,15 @@
+/*
+ * Custom CSS
+ */
+
+:root {
+  --bs-body-bg: var(--bs-gray-100);
+}
+
+body {
+  background-color: #ffffff;
+}
+
+.bg-5g-mag {
+  background-color: rgb(4, 81, 132);
+}
