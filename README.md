@@ -12,9 +12,13 @@ This repository represents the 5GMS Application Provider side in a 3GPP complian
 architecture. It interacts with the [5GMS Application Function](https://github.com/5G-MAG/rt-5gms-application-function)
 via the interface at reference point M1. For that reason, this repository comes with multiple different tools:
 
-* **CLI tool**: The Python-based Command Line Interface tool for 5GMS management is a set of executable wrapper modules built upon Python classes which interacts with the 5GMS Application Function's RESTful API at reference point M1 to provision 5GMS services. 
-* **Management UI**: This is a full stack application which utilizes the Python executable modules to interact with the 5GMS Application Function. Every M1 provisioning procedure is implemented as a corresponding web-server endpoint, supported with the graphical control dashboard.
-* **Postman**: Postman recipes to test the 5GMS Application Function's  API at reference point M1. This is a collection of predefined HTTP requests for every Application Function's RESTful endpoint, including environmental variables and requests payload.
+* **CLI tool**: The Python-based Command Line Interface tool for 5GMS management is a set of executable wrapper modules
+  built upon Python classes which interacts with the 5GMS Application Function's RESTful API at reference point M1 to
+  provision 5GMS services.
+* **Management UI**: A web-based Graphical User Interface for 5GMS management that uses the aforementioned Python classes.
+* **Postman**: Postman recipes to test the 5GMS Application Function's API at reference point M1. This is a collection
+  of predefined HTTP requests for every Application Function's RESTful endpoint, including environmental variables and
+  requests payload.
 
 ## Installing the Command Line Interface tool
 
@@ -43,7 +47,8 @@ requirements.
 
 ### 1. Docker Compose
 
-To install Docker Compose service follow the official [documentation](https://docs.docker.com/compose/install/). Next, clone this
+To install Docker Compose service follow the official [documentation](https://docs.docker.com/compose/install/). Next,
+clone this
 repository:
 
 ```
@@ -52,7 +57,7 @@ git clone https://github.com/5G-MAG/rt-5gms-application-provider
 cd ~/rt-5gms-application-provider
 ```
 
-Building the Docker image will effectively install all dependencies for the 5GMS Application Function and Management UI:
+Building the Docker image will effectively install all dependencies for the 5GMS Application Function and the Management UI:
 
 ```
 sudo docker-compose build
@@ -98,10 +103,12 @@ The Management UI will be accessible at port `8000`.
 
 ### Testing Management UI
 
-This repository contains CI/CD workflows for building native Docker image, Docker Compose and integration test for Management UI application.
+This repository contains CI/CD workflows for building native Docker image, Docker Compose and integration test for
+Management UI application.
 
 Automated integration test is written to provide entire provisioning cycle, starting with creation of provisioning
-session, activating all network procedures, and finalizing with deletion of all resources. It effectively conducts sequence of HTTP requests to every Management UI web server's endpoint.
+session, activating all network procedures, and finalizing with deletion of all resources. It effectively conducts
+sequence of HTTP requests to every Management UI web server's endpoint.
 
 Run integration test :
 
@@ -113,4 +120,8 @@ pytest integration_test.py
 Please be aware that this procedure is already provided with the repository's CI/CD pipeline.
 
 ## Using the Postman Collection
-A Postman collection comprises a set of predefined HTTP requests, each containing the necessary payloads for every M1 Application Function endpoint, along with environment variables for endpoint URLs. For detailed explanation on how to import, configure and use this collection please visit this [wiki page](https://github.com/5G-MAG/rt-5gms-application-function/wiki/Testing-with-Postman).
+
+A Postman collection comprises a set of predefined HTTP requests, each containing the necessary payloads for every M1
+Application Function endpoint, along with environment variables for endpoint URLs. For detailed explanation on how to
+import, configure and use this collection please visit
+this [wiki page](https://github.com/5G-MAG/rt-5gms-application-function/wiki/Testing-with-Postman).
