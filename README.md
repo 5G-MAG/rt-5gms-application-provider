@@ -19,7 +19,7 @@ visualize QoE Metrics Reports.
 The Python-based Command Line Interface tool for 5GMS management is a set of executable wrapper modules
 built upon Python classes which interacts with the 5GMS Application Function's RESTful API at reference point M1 to
 provision 5GMS services. The source files and the documentation are located in the `python` folder of
-this repository
+this repository.
 
 The installation instructions for the Command Line Interface Tool can be found [here](python/README.md).
 
@@ -27,7 +27,7 @@ The installation instructions for the Command Line Interface Tool can be found [
 
 A web-based Graphical User Interface for 5GMS management that uses the aforementioned Python
 classes and interacts with the 5GMS Application Function. The source files and the documentation are located in
-the `management-ui` folder of this repository
+the `management-ui` folder of this repository.
 
 The installation instructions for the Management UI can be found [here](management-ui/README.md).
 
@@ -35,7 +35,7 @@ The installation instructions for the Management UI can be found [here](manageme
 
 Postman recipes to test the 5GMS Application Function's API at reference point M1. This is a collection
 of predefined HTTP requests for every Application Function's RESTful endpoint, including environmental variables and
-requests payload. The source files and the documentation are located in the `postman` folder of this repository
+requests payload. The source files and the documentation are located in the `postman` folder of this repository.
 
 The installation instructions for the Postman Collection can be found [here](postman/README.md).
 
