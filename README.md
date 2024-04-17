@@ -9,119 +9,40 @@
 # Introduction
 
 This repository represents the 5GMS Application Provider side in a 3GPP compliant 5G Media Streaming
-architecture. It interacts with the [5GMS Application Function](https://github.com/5G-MAG/rt-5gms-application-function)
-via the interface at reference point M1. For that reason, this repository comes with multiple different tools:
+architecture. It provides multiple tools to interact with
+the [5GMS Application Function](https://github.com/5G-MAG/rt-5gms-application-function)
+via the interface at reference point M1. In addition, this repository contains a web-based graphical user interface to
+visualize QoE Metrics Reports.
 
-* **CLI tool**: The Python-based Command Line Interface tool for 5GMS management is a set of executable wrapper modules
-  built upon Python classes which interacts with the 5GMS Application Function's RESTful API at reference point M1 to
-  provision 5GMS services.
-* **Management UI**: A web-based Graphical User Interface for 5GMS management that uses the aforementioned Python classes.
-* **Postman**: Postman recipes to test the 5GMS Application Function's API at reference point M1. This is a collection
-  of predefined HTTP requests for every Application Function's RESTful endpoint, including environmental variables and
-  requests payload.
+# Command Line Interface Tool
 
-## Installing the Command Line Interface tool
+The Python-based Command Line Interface tool for 5GMS management is a set of executable wrapper modules
+built upon Python classes which interacts with the 5GMS Application Function's RESTful API at reference point M1 to
+provision 5GMS services. The source files and the documentation are located in the `python` folder of
+this repository
 
-In order to use Python CLI tool to control 5GMS Application Function operations, compile `python` library:
+The installation instructions for the Command Line Interface Tool can be found [here](python/README.md).
 
-```
-cd rt-5gms-application-provider
-python3 -m pip install ./python
-```
+# Management UI
 
-This will install the executables i.e. `m1-session`, `m1-client` and `msaf-configuration` and associated `rt_m1_client`
-python module.
-For testing use a venv so that you don't change system python modules, e.g.:
+A web-based Graphical User Interface for 5GMS management that uses the aforementioned Python
+classes and interacts with the 5GMS Application Function. The source files and the documentation are located in
+the `management-ui` folder of this repository
 
-```
-cd rt-5gms-application-provider
-python3 -m venv venv
-venv/bin/python3 -m pip install ./python
-```
+The installation instructions for the Management UI can be found [here](management-ui/README.md).
 
-## Installing the Management UI
+# Postman Collection
 
-There are two ways to run this application. The recommendation is to use the **Docker Compose** service, because
-lightweight container building and activation will solve the entire scope of dependencies and the rest of the
-requirements.
+Postman recipes to test the 5GMS Application Function's API at reference point M1. This is a collection
+of predefined HTTP requests for every Application Function's RESTful endpoint, including environmental variables and
+requests payload. The source files and the documentation are located in the `postman` folder of this repository
 
-### 1. Docker Compose
+The installation instructions for the Postman Collection can be found [here](postman/README.md).
 
-To install Docker Compose service follow the official [documentation](https://docs.docker.com/compose/install/). Next,
-clone this
-repository:
+# QoE Metrics Reporting UI
 
-```
-cd
-git clone https://github.com/5G-MAG/rt-5gms-application-provider
-cd ~/rt-5gms-application-provider
-```
+A web-based Graphical User Interface that parses a QoE Metrics Report provided in XML
+format and outputs its content in graphical and tabular form. The source files and the documentation are located in
+the `qoe-metrics-reporting-ui` folder of this repository.
 
-Building the Docker image will effectively install all dependencies for the 5GMS Application Function and the Management UI:
-
-```
-sudo docker-compose build
-```
-
-Upon successful completion, activate Application Provider with:
-
-```
-sudo docker-compose up
-```
-
-Access the module at: `localhost:8000`
-
-### 2. Separate installation
-
-If you prefer to run the 5GMS Application Function separately,
-without setting it up in the Docker environment, you have to build and install it as a local user. For that
-purpose, please follow
-this [documentation](https://github.com/5G-MAG/rt-5gms-application-function/wiki/Testing-as-a-Local-User).
-
-Once installed and built, run the 5GMS Application Function:
-
-```
-~/rt-5gms-application-function/install/bin/open5gs-msafd
-```
-
-Subsequently, install the Python dependencies required for Management UI:
-
-```
-cd ~/rt-5gms-application-provider
-python3 -m pip install ./python
-pip3 install -r requirements.txt
-```
-
-Activate the Management UI application:
-
-```
-cd management-ui/
-uvicorn server:app --reload
-```
-
-The Management UI will be accessible at port `8000`.
-
-### Testing Management UI
-
-This repository contains CI/CD workflows for building native Docker image, Docker Compose and integration test for
-Management UI application.
-
-Automated integration test is written to provide entire provisioning cycle, starting with creation of provisioning
-session, activating all network procedures, and finalizing with deletion of all resources. It effectively conducts
-sequence of HTTP requests to every Management UI web server's endpoint.
-
-Run integration test :
-
-```
-cd ~/rt-5gms-application-provider/management-ui/tests
-pytest integration_test.py
-```
-
-Please be aware that this procedure is already provided with the repository's CI/CD pipeline.
-
-## Using the Postman Collection
-
-A Postman collection comprises a set of predefined HTTP requests, each containing the necessary payloads for every M1
-Application Function endpoint, along with environment variables for endpoint URLs. For detailed explanation on how to
-import, configure and use this collection please visit
-this [wiki page](https://github.com/5G-MAG/rt-5gms-application-function/wiki/Testing-with-Postman).
+The installation instructions for the Management UI can be found [here](qoe-metrics-reporting-ui/README.md).
