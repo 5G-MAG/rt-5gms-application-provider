@@ -433,7 +433,7 @@
 						"header": [],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"scheme\": \"scheme\",\n    \"dataNetworkName\": \"dataNetworkName\",\n    \"reportingInterval\": 10,\n    \"samplePercentage\": 50.0,\n    \"urlFilters\": [],\n    \"samplingPeriod\": 10,\n    \"metrics\": []\n}",
+							"raw": "{\n    \"scheme\": \"\",\n    \"dataNetworkName\": \"\",\n    \"reportingInterval\": 10,\n    \"samplePercentage\": 100,\n    \"urlFilters\": [],\n    \"samplingPeriod\": 5,\n    \"metrics\": [\"urn:3GPP:ns:PSS:DASH:QM10#HTTPList\", \"urn:3GPP:ns:PSS:DASH:QM10#BufferLevel\", \"urn:3GPP:ns:PSS:DASH:QM10#RepSwitchList\", \"urn:3GPP:ns:PSS:DASH:QM10#MPDInformation\"]\n}",
 							"options": {
 								"raw": {
 									"language": "json"
