@@ -356,19 +356,14 @@ async def metrics_configuration_match(m1: Optional[MetricsReportingConfiguration
     if m1 is None or m2 is None:
         return False
 
-    if 'samplingPeriod' not in m1 or 'samplingPeriod' not in m2:
-        return False
-    if m1['samplingPeriod'] != m2['samplingPeriod']:
-        return False
-    
-    optional_fields = ["scheme", "reportingInterval", "samplePercentage"]
-    for field in optional_fields:
-        if field in m1 and field not in m2:
+    metrics_configuration_parameters = ['scheme', 'reportingInterval', 'samplePercentage', 'samplingPeriod']
+
+    for parameters in metrics_configuration_parameters:
+        values_first = getattr(m1, parameters, None)
+        values_second = getattr(m2, parameters, None)
+        if values_first != values_second:
             return False
-        if field in m2 and field not in m1:
-            return False
-        if field in m1 and field in m2 and m1[field] != m2[field]:
-            return False
+
     return True
 
 
@@ -492,7 +487,7 @@ async def sync_configuration(m1: M1Session, streams: dict) -> dict:
                 }
         crc = cfg.get('consumptionReporting', None)
         policies = cfg.get('policies', None)
-        metrics = cfg.get('metricsReporting', None)
+        metrics_configurations = cfg.get('metricsReporting', None)
         ps_id = await m1.createDownlinkPullProvisioningSession(streams.get('appId'), streams.get('aspId', None))
         if ps_id is None:
             log_error("Failed to create Provisioning Session for %r", cfg)
@@ -517,20 +512,15 @@ async def sync_configuration(m1: M1Session, streams: dict) -> dict:
             if crc is not None:
                 if not await m1.consumptionReportingConfigurationCreate(ps_id, crc):
                     log_error("Failed to activate ConsumptionReportingConfiguration for Provisioning Session %s")
-            
-            if metrics is not None:
-                if isinstance(metrics,dict):
-                    metrics_list = metrics.items()
-                elif isinstance(metrics,list):
-                    metrics_list = [(m.get('samplingPeriod', None), m) for m in metrics]
-                else:
+
+            if metrics_configurations is not None:
+                if not isinstance (metrics_configurations, list):
                     log_error(f'Configured metrics for provisioning session "{cfg_id}" should be an object or array')
-                    metrics_list = None
-                if metrics_list is not None:
-                    for sampling_period, metricsconfig in metrics_list:
-                        result = await m1.metricsReportingConfigurationCreate(ps_id, metricsconfig)
-                        if result is None:
-                            log_error(f'Failed to create metrics reporting configuration {sampling_period!r} in provisioning session {ps_id}')
+                    return            
+                for metrics_configuration in metrics_configurations:
+                    result = await m1.metricsReportingConfigurationCreate(ps_id, metrics_configuration)
+                    if result is None:
+                        log_error(f'Failed to create metrics reporting configuration in provisioning session {ps_id}')
             
             if policies is not None:
                 if isinstance(policies,dict):
@@ -570,60 +560,31 @@ async def sync_configuration(m1: M1Session, streams: dict) -> dict:
                     log_error("Failed to update ConsumptionReportingConfiguration for Provisioning Session %s", ps_id)
 
         # Check for MetricsReportingConfiguration changes in already configured sessions
-        del_metrics = []
-        have_metrics = []
-        new_metrics = List[MetricsReportingConfiguration] = []
-        old_metrics_ids = await m1.metricsReportingConfigurationIds(ps_id)
-        metrics_configs = cfg.get('metricsReporting', None)
-        metrics_list = None
+        existing_metrics_ids = await m1.metricsReportingConfigurationIds(ps_id)
+        metrics_configs = cfg.get('metricsReporting', [])
+        if not isinstance(metrics_configs, list):
+            log_error(f'Configured metrics for provisioning session "{ps_id}" should be a list')
+            return
+        existing_metrics = {mrc_id: await m1.metricsReportingConfigurationGet(ps_id, mrc_id) for mrc_id in existing_metrics_ids}
+        new_metrics_configurations = metrics_configs.copy()
+        # Assume deletion of all existing metrics
+        del_metrics = list(existing_metrics_ids)
 
-        if metrics_configs is not None:
-            if isinstance(metrics_configs, dict):
-                metrics_list = metrics_configs.items()
-            elif isinstance(metrics_configs, list):
-                metrics_list = [(m.get('samplingPeriod', None), m) for m in metrics_configs]
-            else:
-                log_error(f'Configured metrics for provisioning session "{ps_id}" should be an object or array')
+        for existing_id, existing_config in existing_metrics.items():
+            found = False
+            for new_config in new_metrics_configurations:
+                if await metrics_configuration_match(existing_config, new_config):
+                    new_metrics_configurations.remove(new_config)
+                    del_metrics.remove(existing_id)
+                    found = True
+                    break
 
-        if old_metrics_ids is None or len(old_metrics_ids) == 0:
-            if metrics_configs is not None:
-                if metrics_list is not None:
-                    for sampling_period, metrics_array in metrics_list:
-                        metricsconfig = dict()
-                        if sampling_period is not None:
-                            metricsconfig.update({'samplingPeriod': sampling_period})
-                        metricsconfig.update(metrics_array)
-                        new_metrics += [metricsconfig]
-        else:
-            new_metrics_left = metrics_list
-            for metrics_id in old_metrics_ids:
-                if new_metrics_left is None or len(new_metrics_left) == 0:
-                    del_metrics += [metrics_id]
-                else:
-                    old_metrics: Optional[MetricsReportingConfiguration] = await m1.metricsReportingConfigurationGet(ps_id, metrics_id)
-                    next_new_metrics_list = []
-                    found = False
-                    for sampling_period, new_metrics in new_metrics_left:
-                        if not found and await metrics_configuration_match(old_metrics, new_metrics):
-                            have_metrics += [metrics_id]
-                            found = True
-                        else:
-                            next_new_metrics_list += [(sampling_period, new_metrics)]
-                    if not found:
-                        del_metrics += [metrics_id]
-                    new_metrics_left = next_new_metrics_list
+        for mrc_id in del_metrics:
+            await m1.metricsReportingConfigurationDelete(ps_id, mrc_id)
 
-            for sampling_period, metrics in new_metrics_left:
-                metricsconfig = dict()
-                if sampling_period is not None:
-                    metricsconfig.update({'samplingPeriod': sampling_period})
-                metricsconfig.update(metrics)
-                new_metrics.append(metricsconfig)
-
-        for metrics_id in del_metrics:
-            await m1.metricsReportingConfigurationDelete(ps_id, metrics_id)
-        for metrics in new_metrics:
-            await m1.metricsReportingConfigurationCreate(ps_id, metrics)
+        for metrics_configuration in new_metrics_configurations:
+            if await m1.metricsReportingConfigurationCreate(ps_id, metrics_configuration) is None:
+                log_error(f'Failed to create new metrics reporting configuration in provisioning session {ps_id}')
 
         # Check PolicyTemplates for changes in the already configured sessions
         del_policy: List[ResourceId] = []
