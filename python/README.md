@@ -28,5 +28,5 @@ venv/bin/python3 -m pip install ./python
 ## Usage
 
 For detailed instructions on how to use the Command Line Interface Tool please refer to
-the [Wiki](https://github.com/5G-MAG/rt-5gms-application-function/wiki) of
+the [Documentation](https://github.com/5G-MAG/rt-5gms-application-function/blob/main/README.md#testing) of
 the [5GMS Application Function](https://github.com/5G-MAG/rt-5gms-application-function)
