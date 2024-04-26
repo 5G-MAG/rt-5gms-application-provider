@@ -1,5 +1,5 @@
 <h1 align="center">5GMS Application Provider</h1>
-<p align="left">
+<p align="center">
   <img src="https://img.shields.io/github/v/tag/5G-MAG/rt-5gms-application-provider?label=version" alt="Version">
   <img src="https://img.shields.io/badge/Status-Under_Development-yellow" alt="Under Development">
   <img src="https://github.com/5G-MAG/rt-5gms-application-provider/actions/workflows/integration-test.yml/badge.svg" alt="Integration Test">
