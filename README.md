@@ -14,6 +14,8 @@ the [5GMS Application Function](https://github.com/5G-MAG/rt-5gms-application-fu
 via the interface at reference point M1. In addition, this repository contains a web-based graphical user interface to
 visualize QoE Metrics Reports.
 
+Additional information can be found at: https://5g-mag.github.io/Getting-Started/pages/5g-media-streaming/
+
 ## Command Line Interface Tool
 
 The Python-based Command Line Interface tool for 5GMS management is a set of executable wrapper modules
