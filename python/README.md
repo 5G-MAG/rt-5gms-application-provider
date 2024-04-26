@@ -1,10 +1,12 @@
 # Command Line Interface Tool
 
+## Introduction
+
 The Python-based Command Line Interface tool for 5GMS management is a set of executable wrapper modules built upon
 Python classes which interacts with the 5GMS Application Function's RESTful API at reference point M1 to provision 5GMS
 services.
 
-# Installation
+## Installation
 
 In order to install the Python CLI tool to control 5GMS Application Function operations, compile the `python` library:
 
@@ -23,8 +25,8 @@ python3 -m venv venv
 venv/bin/python3 -m pip install ./python
 ```
 
-# Usage
+## Usage
 
 For detailed instructions on how to use the Command Line Interface Tool please refer to
-the [Wiki](https://github.com/5G-MAG/rt-5gms-application-function/wiki) of
+the [Documentation](https://github.com/5G-MAG/rt-5gms-application-function/blob/main/README.md#testing) of
 the [5GMS Application Function](https://github.com/5G-MAG/rt-5gms-application-function)
