@@ -557,7 +557,7 @@ class M1Client:
             ret: ConsumptionReportingConfigurationResponse = self.__tag_and_date(result)
             ret['ConsumptionReportingConfiguration'] = ConsumptionReportingConfiguration.fromJSON(result['body'])
             return ret
-        elif result['status_code'] == 204:
+        elif result['status_code'] in [201, 204]:
             return True
         self.__default_response(result)
         return None
