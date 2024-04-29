@@ -557,7 +557,9 @@ class M1Client:
             ret: ConsumptionReportingConfigurationResponse = self.__tag_and_date(result)
             ret['ConsumptionReportingConfiguration'] = ConsumptionReportingConfiguration.fromJSON(result['body'])
             return ret
-        elif result['status_code'] == 204:
+        elif result['status_code'] in [201, 204]:
+            # Versions of the Application Function prior to v1.4.1 returned an incorrect 204 to indicate success, since AF v1.4.1
+            # the return code was corrected to 201 as per TS 26.512 Clause 4.3.8.2. We accept both for backward compatibility.
             return True
         self.__default_response(result)
         return None

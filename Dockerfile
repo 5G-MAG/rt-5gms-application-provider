@@ -10,7 +10,7 @@ RUN apt-get update && apt-get install -y \
     libmongoc-dev libbson-dev libyaml-dev libnghttp2-dev libmicrohttpd-dev \
     libcurl4-gnutls-dev libnghttp2-dev libtins-dev libtalloc-dev cmake
 
-RUN pip3 install --upgrade pip && pip3 install meson
+RUN apt-get update && apt-get install -y meson python3-venv python3-pip
 
 # AF build & install
 RUN git clone -b development --recurse-submodules https://github.com/5G-MAG/rt-5gms-application-function.git
@@ -21,10 +21,12 @@ RUN rm -f install/etc/open5gs/msaf.yaml
 RUN meson install -C build --no-rebuild
 
 # UI server
+RUN python3 -m venv /opt/venv
 COPY . /ui
 WORKDIR /ui
+ENV PATH="/opt/venv/bin:$PATH"
+RUN pip3 install --upgrade pip
 RUN pip3 install -r management-ui/requirements.txt
-RUN pip3 install uvicorn
 RUN pip3 install ./python
 
 EXPOSE 8000

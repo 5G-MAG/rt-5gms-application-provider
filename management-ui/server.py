@@ -28,11 +28,12 @@ from rt_m1_client.configuration import Configuration
 from rt_m1_client.session import M1Session
 from rt_m1_client.data_store import JSONFileDataStore
 
-OPTIONS_ENDPOINT = os.getenv("OPTIONS_ENDPOINT", "http://127.0.0.23:7777/3gpp-m1/v2/provisioning-sessions/")
+config = Configuration()
+
+OPTIONS_ENDPOINT = os.getenv("OPTIONS_ENDPOINT", "http://" + config.get('m1_address', 'localhost') + ":" + config.get('m1_port',7777) + "/3gpp-m1/v2/provisioning-sessions/")
 CORS_ORIGINS = os.getenv("CORS_ORIGINS", "http://0.0.0.0:8000,http://127.0.0.1:8000,http://localhost:8000").split(',')
 
 app = FastAPI()
-config = Configuration()
 _m1_session = None
 
 

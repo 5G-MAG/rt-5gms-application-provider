@@ -98,6 +98,25 @@ This file defines the streams to configure and is located at
                 "locationReporting": true,
                 "accessReporting": true,
             },
+            "metricsReporting":[
+            {
+               "scheme":"scheme1",
+               "reportingInterval":5,
+               "samplePercentage":33,
+               "samplingPeriod":1
+            },
+            {
+               "reportingInterval":10,
+               "samplePercentage":66,
+               "samplingPeriod":2
+            },
+            {
+               "scheme":"scheme3",
+               "reportingInterval":15,
+               "samplePercentage":99,
+               "samplingPeriod":3
+            }
+            ],
             "policies": {
                 "policy-external-ref-1": {
                     "applicationSessionContext": {
@@ -185,7 +204,7 @@ the M8 interface). If a stream contains *entryPoint* fields in the
 *distributionConfigurations* then these will be advertised via M5 only and will
 not appear in the M8 entry points. The *consumptionReporting* parameters, if
 present, will configure consumption reporting for the Provisioning Session. See
-3GPP TS 26.512 for a discription of what may appear in a
+3GPP TS 26.512 for a description of what may appear in a
 DistributionConfiguration or the ConsumptionReportingConfiguration.
 
 The *vodMedia* list is for describing media and their entry points that use a
@@ -212,7 +231,7 @@ if os.path.isdir(installed_packages_dir) and installed_packages_dir not in sys.p
 from rt_m1_client.session import M1Session
 from rt_m1_client.exceptions import M1Error
 from rt_m1_client.data_store import JSONFileDataStore
-from rt_m1_client.types import ContentHostingConfiguration, DistributionConfiguration, IngestConfiguration, M1MediaEntryPoint, PathRewriteRule, ConsumptionReportingConfiguration, PolicyTemplate, M1QoSSpecification, ChargingSpecification, AppSessionContext, Snssai
+from rt_m1_client.types import ContentHostingConfiguration, DistributionConfiguration, IngestConfiguration, M1MediaEntryPoint, PathRewriteRule, ConsumptionReportingConfiguration, PolicyTemplate, M1QoSSpecification, ChargingSpecification, AppSessionContext, Snssai, MetricsReportingConfiguration
 from rt_m1_client.configuration import Configuration
 
 g_streams_config = os.path.join(os.path.sep, 'etc', 'rt-5gms', 'streams.json')
@@ -330,6 +349,23 @@ async def consumption_reporting_equal(a: Optional[ConsumptionReportingConfigurat
         if i in a and a[i] != b[i]:
             return False
     return True
+
+async def metrics_configuration_match(m1: Optional[MetricsReportingConfiguration], m2: Optional[MetricsReportingConfiguration]) -> bool:
+    if m1 is None and m2 is None:
+        return True
+    if m1 is None or m2 is None:
+        return False
+
+    metrics_configuration_parameters = ['scheme', 'reportingInterval', 'samplePercentage', 'samplingPeriod']
+
+    for parameters in metrics_configuration_parameters:
+        values_first = getattr(m1, parameters, None)
+        values_second = getattr(m2, parameters, None)
+        if values_first != values_second:
+            return False
+
+    return True
+
 
 async def snssai_match(sai1: Optional[Snssai], sai2: Optional[Snssai]) -> bool:
     if sai1 is None and sai2 is None:
@@ -451,6 +487,7 @@ async def sync_configuration(m1: M1Session, streams: dict) -> dict:
                 }
         crc = cfg.get('consumptionReporting', None)
         policies = cfg.get('policies', None)
+        metrics_configurations = cfg.get('metricsReporting', None)
         ps_id = await m1.createDownlinkPullProvisioningSession(streams.get('appId'), streams.get('aspId', None))
         if ps_id is None:
             log_error("Failed to create Provisioning Session for %r", cfg)
@@ -475,6 +512,16 @@ async def sync_configuration(m1: M1Session, streams: dict) -> dict:
             if crc is not None:
                 if not await m1.consumptionReportingConfigurationCreate(ps_id, crc):
                     log_error("Failed to activate ConsumptionReportingConfiguration for Provisioning Session %s")
+
+            if metrics_configurations is not None:
+                if not isinstance (metrics_configurations, list):
+                    log_error(f'Configured metrics for provisioning session "{cfg_id}" should be an array')
+                    return            
+                for metrics_configuration in metrics_configurations:
+                    result = await m1.metricsReportingConfigurationCreate(ps_id, metrics_configuration)
+                    if result is None:
+                        log_error(f'Failed to create metrics reporting configuration in provisioning session {ps_id}')
+            
             if policies is not None:
                 if isinstance(policies,dict):
                     pol_list = policies.items()
@@ -511,6 +558,34 @@ async def sync_configuration(m1: M1Session, streams: dict) -> dict:
                 # The CRC has changed, update it
                 if not await m1.consumptionReportingConfigurationUpdate(ps_id, new_crc):
                     log_error("Failed to update ConsumptionReportingConfiguration for Provisioning Session %s", ps_id)
+
+        # Check for MetricsReportingConfiguration changes in already configured sessions
+        existing_metrics_ids = await m1.metricsReportingConfigurationIds(ps_id)
+        metrics_configs = cfg.get('metricsReporting', [])
+        if not isinstance(metrics_configs, list):
+            log_error(f'Configured metrics for provisioning session "{ps_id}" should be a list')
+            return
+        existing_metrics = {mrc_id: await m1.metricsReportingConfigurationGet(ps_id, mrc_id) for mrc_id in existing_metrics_ids}
+        new_metrics_configurations = metrics_configs.copy()
+        # Assume deletion of all existing metrics
+        del_metrics = list(existing_metrics_ids)
+
+        for existing_id, existing_config in existing_metrics.items():
+            found = False
+            for new_config in new_metrics_configurations:
+                if await metrics_configuration_match(existing_config, new_config):
+                    new_metrics_configurations.remove(new_config)
+                    del_metrics.remove(existing_id)
+                    found = True
+                    break
+
+        for mrc_id in del_metrics:
+            await m1.metricsReportingConfigurationDelete(ps_id, mrc_id)
+
+        for metrics_configuration in new_metrics_configurations:
+            if await m1.metricsReportingConfigurationCreate(ps_id, metrics_configuration) is None:
+                log_error(f'Failed to create new metrics reporting configuration in provisioning session {ps_id}')
+
         # Check PolicyTemplates for changes in the already configured sessions
         del_policy: List[ResourceId] = []
         have_policy: List[ResourceId] = []
