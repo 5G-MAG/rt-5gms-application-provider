@@ -515,7 +515,7 @@ async def sync_configuration(m1: M1Session, streams: dict) -> dict:
 
             if metrics_configurations is not None:
                 if not isinstance (metrics_configurations, list):
-                    log_error(f'Configured metrics for provisioning session "{cfg_id}" should be an object or array')
+                    log_error(f'Configured metrics for provisioning session "{cfg_id}" should be an array')
                     return            
                 for metrics_configuration in metrics_configurations:
                     result = await m1.metricsReportingConfigurationCreate(ps_id, metrics_configuration)
