@@ -1,6 +1,6 @@
-fastapi==0.104.0
-uvicorn==0.23.2
-pydantic==1.9.0
+fastapi>=0.109.1
+uvicorn>=0.23.2
+pydantic>=1.10.13
 pytest
 pytest-asyncio
 httpx
