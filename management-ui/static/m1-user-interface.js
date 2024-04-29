@@ -413,7 +413,7 @@ async function setDynamicPolicy(session_id) {
     <br><br><p>Application Session Context:</p>
       <input id="sst" class="swal2-input" type="number" placeholder="SST">
       <input id="sd" class="swal2-input" placeholder="SD">
-      <input id="dnn" class="swal2-input" placeholder="DNN">
+      <input id="dnn" class="swal2-input" type="text" placeholder="DNN">
 
       <br><br><p font-weight="bold">QoS Specification:</p>
       <input id="qosReference" class="swal2-input" placeholder="QoS Reference"><br>
@@ -439,7 +439,11 @@ async function setDynamicPolicy(session_id) {
 
       <br><br><p>Charging Specification</p>
       <input id="sponId" class="swal2-input" placeholder="Sponsor ID">
-      <input id="sponStatus" class="swal2-input" placeholder="Sponsor Status">
+      <select id="sponStatus" class="swal2-input">
+        <option value="">Select Sponsor Status</option>
+        <option value="SPONSOR_ENABLED">ENABLED</option>
+        <option value="SPONSOR_DISABLED">DISABLED</option>
+      </select>
       <input id="gpsi" class="swal2-input" placeholder="GPSI">
 
 
@@ -457,6 +461,27 @@ async function setDynamicPolicy(session_id) {
         Swal.showValidationMessage('External Policy ID is required');
         return false;
       }
+
+      if (document.getElementById('sponStatus').value === "") {
+        Swal.showValidationMessage('Please select a valid Sponsor Status');
+        return false;
+      }
+
+      const sstValue = document.getElementById('sst').value;
+      const sstNumber = parseInt(sstValue);
+
+      if (sstValue === "" || isNaN(sstNumber) || sstNumber < 0 || sstNumber > 255) {
+        Swal.showValidationMessage('SST must be between 0 and 255 inclusive');
+        return false;
+      }
+
+      const sdValue = document.getElementById('sd').value;
+      const hexRegex = /^[0-9A-Fa-f]{6}$/;
+      if (!hexRegex.test(sdValue)) {
+        Swal.showValidationMessage('SD must be a 6-digit hexadecimal string');
+        return false;
+      }
+      
 
       const capitalizeUnit = (unit) => {
         switch (unit.toLowerCase()) {
@@ -502,11 +527,7 @@ async function setDynamicPolicy(session_id) {
         }
       };
     
-      console.log("Formatted maxAuthBtrUl:", policyData.qoSSpecification.maxAuthBtrUl);
-      console.log("Formatted maxAuthBtrDl:", policyData.qoSSpecification.maxAuthBtrDl);
-
       const cleanPolicyData = JSON.parse(JSON.stringify(policyData, (key, value) => (value === "" || value === undefined) ? undefined : value));
-    
       return cleanPolicyData;
     },
     showCancelButton: true,
