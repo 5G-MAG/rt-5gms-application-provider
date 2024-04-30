@@ -2,4 +2,4 @@ __pycache__
 .pytest_cache
 vscode
 .env
-qoeMetricsReportingUi/node_modules
+qoe-metrics-reporting-ui/node_modules
