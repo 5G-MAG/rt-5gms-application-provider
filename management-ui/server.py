@@ -23,7 +23,7 @@ from utils import lib_to_sys_path
 load_dotenv()
 lib_to_sys_path()
 
-from rt_m1_client.types import ResourceId, ApplicationId, ConsumptionReportingConfiguration, PolicyTemplate
+from rt_m1_client.types import ResourceId, ApplicationId, ConsumptionReportingConfiguration, PolicyTemplate, MetricsReportingConfiguration
 from rt_m1_client.configuration import Configuration
 from rt_m1_client.session import M1Session
 from rt_m1_client.data_store import JSONFileDataStore
@@ -355,6 +355,87 @@ async def delete_policy_template(provisioning_session_id: str, policy_template_i
         return Response(status_code=204)
     else:
         raise HTTPException(status_code=404, detail="PolicyTemplate not found or could not be deleted")
+    
+"""
+Endpoint: Create metrics reporting for provisioning session
+HTTP Method: POST
+Path: /create_metrics/{provisioning_session_id}
+Description: This endpoint will create metrics reporting for a particular provisioning session.
+"""
+@app.post("/create_metrics/{provisioning_session_id}")
+async def create_metrics(provisioning_session_id: str, request: Request):
+    
+    session = await get_session(config)
+    request_body = await request.json()
+    
+    try:
+        metrics_reporting_configuration = MetricsReportingConfiguration.fromJSON(json.dumps(request_body))
+    except Exception as e:
+        raise HTTPException(status_code=422, detail=f"Error processing metrics reporting data: {str(e)}")
+    
+    metrics_reporting_configuration_id = await session.metricsReportingConfigurationCreate(provisioning_session_id, metrics_reporting_configuration)
+
+    if metrics_reporting_configuration_id is not None:
+        return {"metrics_reporting_configuration_id": metrics_reporting_configuration_id}
+    else:
+        raise HTTPException(status_code=400, detail="Addition of MetricsReportingConfiguration to provisioning session failed!")
+    
+"""
+Endpoint: Retrieve metrics reporting for provisioning session
+HTTP Method: GET
+Path: /show_metrics/{provisioning_session_id}/{metrics_reporting_configuration_id}
+Description: This endpoint will retrieve metrics reporting data for a particular provisioning session.
+"""
+@app.get("/show_metrics/{provisioning_session_id}/{metrics_reporting_configuration_id}")
+async def show_metrics(provisioning_session_id: str, metrics_reporting_configuration_id: str):
+    
+    session = await get_session(config)
+    metrics_reporting_configuration: Optional[MetricsReportingConfiguration] = await session.metricsReportingConfigurationGet(provisioning_session_id, metrics_reporting_configuration_id)
+    if metrics_reporting_configuration is None:
+        raise HTTPException(status_code=404, detail="MetricsReportingConfiguration not found")
+    
+    return metrics_reporting_configuration
+  
+"""
+Endpoint: Update metrics reporting for provisioning session
+HTTP Method: PUT
+Path: /update_metrics/{provisioning_session_id}/{metrics_reporting_configuration_id}
+Description: This endpoint will update metrics reporting for a particular provisioning session.
+"""
+@app.put("/update_metrics/{provisioning_session_id}/{metrics_reporting_configuration_id}")
+async def update_metrics(provisioning_session_id: str, metrics_reporting_configuration_id: str, request: Request):
+    
+    session = await get_session(config)
+    request_body = await request.json()
+    
+    try:
+        metrics_reporting_configuration = MetricsReportingConfiguration.fromJSON(json.dumps(request_body))
+    except Exception as e:
+        raise HTTPException(status_code=422, detail=f"Error processing metrics reporting data: {str(e)}")
+    
+    result = await session.metricsReportingConfigurationUpdate(provisioning_session_id, metrics_reporting_configuration_id, metrics_reporting_configuration)
+    
+    if result is not None:
+        return Response(status_code=200)
+    else:
+        raise HTTPException(status_code=404, detail="MetricsReportingConfiguration not found or could not be updated")
+    
+"""
+Endpoint: Delete metrics reporting for provisioning session
+HTTP Method: DELETE
+Path: /delete_metrics/{provisioning_session_id}/{metrics_reporting_configuration_id}
+Description: This endpoint will remove metrics reporting for a particular provisioning session.
+"""
+@app.delete("/delete_metrics/{provisioning_session_id}/{metrics_reporting_configuration_id}")
+async def delete_metrics(provisioning_session_id: str, metrics_reporting_configuration_id: str):
+    
+    session = await get_session(config)
+    deletion: bool = await session.metricsReportingConfigurationDelete(provisioning_session_id, metrics_reporting_configuration_id)
+    
+    if deletion:
+        return Response(status_code=204)
+    else:
+        raise HTTPException(status_code=404, detail="MetricsReportingConfiguration not found or could not be deleted")
 
 """
 Endpoint: Connection checker
