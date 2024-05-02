@@ -106,7 +106,7 @@ button {
   padding: 8px;
   color: white;
   text-align: center;
-  width: 12.5%;
+  width: 11.1%;
   word-wrap: break-word;
   vertical-align: middle;
 }
@@ -234,20 +234,42 @@ button {
   margin: 12px;
 }  
 
+.swal2-popup {
+  font-size: 16px;
+  font-family: 'Poppins ExtraLight', sans-serif;
+}
+
 /* Consumption reporting prompt window */
 .consumption-swall {
-  width: 380px; 
-  height: 450px;
+  width: 630px; 
+  height: 550px;
+  font-family: 'Poppins ExtraLight', sans-serif; 
+  font-size: 14px;
 }
 
 /* Dynamic Policies prompt window */
 .policies-swall {
   width: 900px; 
+  font-family: 'Poppins ExtraLight', sans-serif; 
+  font-size: 12px;
 }
 
 .swal2-popup .swal2-input::placeholder {
   color: black;
 }
+
+/* Metrics prompt window */
+.metrics-swall {
+  width: 650px;
+  height: 850px;
+  font-family: 'Poppins ExtraLight', sans-serif; 
+  font-size: 14px;
+}
+
+.metrics-swall input[type="checkbox"] {
+  margin-right: 10px; 
+}
+
 
 @font-face {
   font-family: 'Poppins ExtraLight';
