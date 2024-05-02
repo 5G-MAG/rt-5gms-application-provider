@@ -11,6 +11,7 @@ import os
 import json
 import requests
 import asyncio
+import httpx
 from dotenv import load_dotenv
 from typing import Optional
 from fastapi import FastAPI, Query, Depends, HTTPException, Response, Request
@@ -436,6 +437,43 @@ async def delete_metrics(provisioning_session_id: str, metrics_reporting_configu
         return Response(status_code=204)
     else:
         raise HTTPException(status_code=404, detail="MetricsReportingConfiguration not found or could not be deleted")
+    
+"""
+Endpoint: Retrieve list metrics reporting IDs for provisioning session
+HTTP Method: GET
+Path: /list_metrics_ids/{provisioning_session_id}
+Description: This endpoint will retrieve a list of metrics reporting IDs for a particular provisioning session.
+"""
+@app.get("/list_metrics_ids/{provisioning_session_id}")
+async def list_metrics_ids(provisioning_session_id: str):
+    provisionig_session_url = f"{OPTIONS_ENDPOINT}/{provisioning_session_id}"
+    try:
+        async with httpx.AsyncClient() as client:
+            response = await client.get(provisionig_session_url)
+            response.raise_for_status() 
+    except httpx.HTTPStatusError as e:
+        raise HTTPException(status_code=e.response.status_code, detail=f"Error when listing metrics IDs: {str(e)}")
+    except httpx.RequestError as e:
+        raise HTTPException(status_code=500, detail="Connection error to M1 interface")
+
+    all_data = response.json()
+    metrics_ids = all_data.get("metricsReportingConfigurationIds")
+    if not metrics_ids:
+        raise HTTPException(status_code=404, detail="No MetricsReportingConfiguration found")
+
+    return metrics_ids
+
+"""
+@app.get("/list_metrics_ids/{provisioning_session_id}")
+async def list_metrics_ids(provisioning_session_id: str):
+    
+    session = await get_session(config)
+    metrics_reporting_configuration_ids: Optional[list] = await session.metricsReportingConfigurationIds(provisioning_session_id)
+    
+    if metrics_reporting_configuration_ids is None:
+        raise HTTPException(status_code=404, detail="No MetricsReportingConfiguration found")
+    return metrics_reporting_configuration_ids
+"""
 
 """
 Endpoint: Connection checker

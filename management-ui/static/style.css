@@ -270,6 +270,18 @@ button {
   margin-right: 10px; 
 }
 
+.metrics-swall .swal2-confirm {
+  margin-top: 10px;
+  width: 100%;
+  font-size: 16px;
+}
+
+.metrics-ids-swall {
+  width: 700px;
+  height: 300px;
+  font-family: 'Poppins ExtraLight', sans-serif; 
+  font-size: 12px;
+}
 
 @font-face {
   font-family: 'Poppins ExtraLight';
