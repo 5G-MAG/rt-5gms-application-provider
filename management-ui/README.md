@@ -44,7 +44,7 @@ Access the module at: `localhost:8000`
 If you prefer to run the 5GMS Application Function separately,
 without setting it up in the Docker environment, you have to build and install it as a local user. For that
 purpose, please follow
-this [documentation](https://github.com/5G-MAG/rt-5gms-application-function/wiki/Testing-as-a-Local-User).
+this [documentation](https://5g-mag.github.io/Getting-Started/pages/5g-media-streaming/usage/application-function/installation-local-user-5GMSAF.html).
 
 Once installed and built, run the 5GMS Application Function:
 
