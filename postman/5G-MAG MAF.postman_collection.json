@@ -1,0 +1,29 @@
+{
+	"info": {
+		"_postman_id": "946c2d35-4aef-4fc3-922d-2a0bf9a903f5",
+		"name": "5G-MAG MAF",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "1951126"
+	},
+	"item": [
+		{
+			"name": "enumerateProvisioningSessions",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{maf_url}}/5gmag-rt-management/v1/provisioning-sessions",
+					"host": [
+						"{{maf_url}}"
+					],
+					"path": [
+						"5gmag-rt-management",
+						"v1",
+						"provisioning-sessions"
+					]
+				}
+			},
+			"response": []
+		}
+	]
+}
