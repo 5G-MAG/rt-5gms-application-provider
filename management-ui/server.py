@@ -159,6 +159,18 @@ async def get_session_details(session, ps_id):
     crc = await session.consumptionReportingConfigurationGet(ps_id)
     details["ConsumptionReportingConfiguration"] = crc if crc else "Not defined"
 
+    pt_ids = await session.policyTemplateIds(ps_id)
+    details["PolicyTemplates"] = {}
+    for pt_id in pt_ids:
+        pt = await session.policyTemplateGet(ps_id, pt_id)
+        details["PolicyTemplates"][pt_id] = pt if pt else "PolicyTemplate not found"
+
+    mrc_ids = await session.metricsReportingConfigurationIds(ps_id)
+    details["MetricsReportingConfigurations"] = {}
+    for mrc_id in mrc_ids:
+        mrc = await session.metricsReportingConfigurationGet(ps_id, mrc_id)
+        details["MetricsReportingConfiguration"][mrc_id] = mrc if mrc else "MetricsReportingConfiguration not found"
+
     return ps_id, details
 
 @app.get("/details")
