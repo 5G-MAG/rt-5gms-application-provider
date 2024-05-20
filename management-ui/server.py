@@ -320,10 +320,10 @@ Description: This endpoint will create a dynamic policy for a particular provisi
 async def create_policy_template(provisioning_session_id: str, request: Request):
 
     session = await get_session(config)
-    request_body = await request.json()
+    request_body = await request.body()
 
     try:
-        policy_template = PolicyTemplate.fromJSON(json.dumps(request_body))
+        policy_template = PolicyTemplate.fromJSON(request_body)
     except Exception as e:
         raise HTTPException(status_code=422, detail=f"Error processing policy template data: {str(e)}")
 
@@ -379,10 +379,11 @@ Description: This endpoint will create metrics reporting for a particular provis
 async def create_metrics(provisioning_session_id: str, request: Request):
     
     session = await get_session(config)
-    request_body = await request.json()
+    request_body = await request.body()
     
     try:
-        metrics_reporting_configuration = MetricsReportingConfiguration.fromJSON(json.dumps(request_body))
+        metrics_reporting_configuration = MetricsReportingConfiguration.fromJSON(request_body)
+
     except Exception as e:
         raise HTTPException(status_code=422, detail=f"Error processing metrics reporting data: {str(e)}")
     
@@ -419,10 +420,10 @@ Description: This endpoint will update metrics reporting for a particular provis
 async def update_metrics(provisioning_session_id: str, metrics_reporting_configuration_id: str, request: Request):
     
     session = await get_session(config)
-    request_body = await request.json()
+    request_body = await request.body()
     
     try:
-        metrics_reporting_configuration = MetricsReportingConfiguration.fromJSON(json.dumps(request_body))
+        metrics_reporting_configuration = MetricsReportingConfiguration.fromJSON(request_body)
     except Exception as e:
         raise HTTPException(status_code=422, detail=f"Error processing metrics reporting data: {str(e)}")
     
@@ -474,18 +475,6 @@ async def list_metrics_ids(provisioning_session_id: str):
         raise HTTPException(status_code=404, detail="No MetricsReportingConfiguration found")
 
     return metrics_ids
-
-"""
-@app.get("/list_metrics_ids/{provisioning_session_id}")
-async def list_metrics_ids(provisioning_session_id: str):
-    
-    session = await get_session(config)
-    metrics_reporting_configuration_ids: Optional[list] = await session.metricsReportingConfigurationIds(provisioning_session_id)
-    
-    if metrics_reporting_configuration_ids is None:
-        raise HTTPException(status_code=404, detail="No MetricsReportingConfiguration found")
-    return metrics_reporting_configuration_ids
-"""
 
 """
 Endpoint: Connection checker
