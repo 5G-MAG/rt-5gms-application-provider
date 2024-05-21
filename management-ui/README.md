@@ -69,6 +69,12 @@ uvicorn server:app --reload
 
 The Management UI will be accessible at port `8000`.
 
+In case that you're receving any kind of web proxy errors, you can bypass that by using empty `http` and `https` proxy flags when running the server:
+```
+cd management-ui/
+http_proxy= https_proxy= uvicorn server:app --reload
+```
+
 ## Testing
 
 This repository contains CI/CD workflows for building native Docker image, Docker Compose and integration test for

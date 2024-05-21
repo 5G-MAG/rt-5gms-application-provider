@@ -92,6 +92,44 @@ async def test_provisioning_session_lifecycle():
         create_policy_url = f"{FASTAPI_URL}/create_policy_template/{provisioning_session_id}"
         create_policy_response = await client.post(create_policy_url, json={"externalReference": "111", "sst":"200"})
         assert create_policy_response.status_code == 200
+        set_policy_response_json = create_policy_response.json()
+        assert "policy_template_id" in set_policy_response_json
+        policy_template_id = set_policy_response_json["policy_template_id"]
+        assert is_uuid_valid(policy_template_id)
+        
+        # Show Dynamic Policy
+        show_policy_url = f"{FASTAPI_URL}/show_policy_template/{provisioning_session_id}/{policy_template_id}"
+        show_policy_response = await client.get(show_policy_url)
+        assert show_policy_response.status_code == 200
+
+        # Delete Dynamic Policy
+        delete_policy_url = f"{FASTAPI_URL}/delete_policy_template/{provisioning_session_id}/{policy_template_id}"
+        delete_policy_response = await client.delete(delete_policy_url)
+        assert delete_policy_response.status_code == 204
+
+        # Create Metrics Configuration
+        create_metrics_url = f"{FASTAPI_URL}/create_metrics/{provisioning_session_id}"
+        create_metrics_response = await client.post(create_metrics_url, json={ "dataNetworkName": "dataNetworkName", "reportingInterval": 10, "samplePercentage": 5, "urlFilters": ["a","b"], "samplingPeriod": 5, "metrics": ["metrica", "metricb"] })
+        assert create_metrics_response.status_code == 200
+        set_metrics_response_json = create_metrics_response.json()
+        assert "metrics_reporting_configuration_id" in set_metrics_response_json
+        metrics_reporting_configuration_id = set_metrics_response_json["metrics_reporting_configuration_id"]
+        assert is_uuid_valid(metrics_reporting_configuration_id)
+
+        # Show Metrics Configuration
+        show_metrics_url = f"{FASTAPI_URL}/show_metrics/{provisioning_session_id}/{metrics_reporting_configuration_id}"
+        show_metrics_response = await client.get(show_metrics_url)
+        assert show_metrics_response.status_code == 200
+
+        # Update Metrics Configuration
+        update_metrics_url = f"{FASTAPI_URL}/update_metrics/{provisioning_session_id}/{metrics_reporting_configuration_id}"
+        update_metrics_response = await client.put(update_metrics_url, json={ "dataNetworkName": "updated_dataNetworkName", "reportingInterval": 15, "samplePercentage": 15, "urlFilters": [ "updated_a", "updated_b" ], "samplingPeriod": 15, "metrics": [ "updated_metrica", "updated_metricb" ] })
+        assert update_metrics_response.status_code == 200
+
+        # Delete Metrics Configuration
+        delete_metrics_url = f"{FASTAPI_URL}/delete_metrics/{provisioning_session_id}/{metrics_reporting_configuration_id}"
+        delete_metrics_response = await client.delete(delete_metrics_url)
+        assert delete_metrics_response.status_code == 204
 
         # Delete Provisioning Session
         delete_url = f"{FASTAPI_URL}/delete_session/{provisioning_session_id}"

@@ -10,11 +10,8 @@ https://drive.google.com/file/d/1cinCiA778IErENZ3JN52VFW-1ffHpx7Z/view
 // Auxiliary function to clear storage when the connection is lost
 
 let isStorageCleared = false;
-
 function clearStorage() {
-
   localStorage.clear();
-
   let session_table = document.getElementById('session_table');
   for (let i = session_table.rows.length - 1; i > 0; i--) {
     session_table.deleteRow(i);
@@ -34,34 +31,27 @@ function checkAFstatus() {
   fetch('http://127.0.0.1:8000/connection_checker')
   .then(response => {
     if (!response.ok && !isStorageCleared) {
-
       document.getElementById('AFStatus').innerText = 'Connection with Application Function: ❌';
       clearStorage();
       showConnectionLostAlert();
       isStorageCleared = true;
-
     } else if (response.ok) {
-
       document.getElementById('AFStatus').innerText = 'Connection with Application Function: ✅';
-      isStorageCleared = false;
-    }
+      isStorageCleared = false;}
   })
-
   .catch(error => {
     console.error('Error:', error);
     if (!isStorageCleared) {
       document.getElementById('AFStatus').innerText = 'Connection with AF interrupted.';
       clearStorage();
       showConnectionLostAlert();
-      isStorageCleared = true;
-    }
+      isStorageCleared = true;}
   });
 }
 
 function addSessionToTable(sessionId) {
   const sessionData = JSON.parse(localStorage.getItem(sessionId));
   const session_table = document.getElementById('session_table');
-
   let row = session_table.insertRow(-1);
 
   let cell1 = row.insertCell(0); // Session ID
@@ -71,158 +61,145 @@ function addSessionToTable(sessionId) {
   let cell5 = row.insertCell(4); // Consumption Reporting (Set, Show, Delete)
   let cell6 = row.insertCell(5); // Dynamic Policies
   let cell7 = row.insertCell(6); // Show Session Details
-  let cell8 = row.insertCell(7); // Delete session
+  let cell8 = row.insertCell(7); // Metrics Reporting Configuration
+  let cell9 = row.insertCell(8); // Delete session
 
   cell1.innerHTML = sessionId;
-
   cell2.innerHTML = `<button onclick="createChcFromJson('${sessionId}')" class="btn btn-primary table-button">Create</button>`;
-
   cell3.innerHTML = `<button onclick="createNewCertificate('${sessionId}')" class="btn btn-primary table-button">Create</button>
-                      <button onclick="showCertificateDetails('${sessionId}', '${sessionData.certificate_id}')" class="btn btn-warning table-button">Show</button>`
-
+                      <button onclick="showCertificateDetails('${sessionId}', '${sessionData.certificate_id}')" class="btn btn-info table-button">Show</button>`
   cell4.innerHTML = `<button onclick="getProtocols('${sessionId}')" class="btn btn-info table-button">Show</button>`;
-
   cell5.innerHTML = `<button onclick="setConsumptionReporting('${sessionId}')" class="btn btn-primary table-button">Set</button>
                       <button onclick="showConsumptionReporting('${sessionId}')" class="btn btn-info table-button">Show</button>
                       <button onclick="deleteConsumptionReporting('${sessionId}')" class="btn btn-danger table-button">Delete</button>`;
-
   cell6.innerHTML = `<button onclick="setDynamicPolicy('${sessionId}')" class="btn btn-primary table-button">Set</button>
                     <button onclick="showDynamicPolicies('${sessionId}', '${sessionData.policy_template_id}')" class="btn btn-info table-button">Show</button>
                     <button onclick="deleteDynamicPolicy('${sessionId}', '${sessionData.policy_template_id}')" class="btn btn-danger table-button">Delete</button>`;
-
   cell7.innerHTML = `<button onclick="getProvisioningSessionDetails()" class="btn btn-info table-button">Show</button>`;
-
-  cell8.innerHTML = `<button onclick="deleteProvisioningSession('${sessionId}')" class="btn btn-danger table-button">Remove</button>`;
-
+  cell8.innerHTML = `<button onclick="createMetricsJson('${sessionId}')" class="btn btn-primary table-button">Create</button>
+                      <button onclick="showMetricsReporting('${sessionId}')" class="btn btn-info table-button">Show</button>
+                      <button onclick="deleteMetricsConfiguration('${sessionId}')" class="btn btn-danger table-button">Delete</button>`;
+  cell9.innerHTML = `<button onclick="deleteProvisioningSession('${sessionId}')" class="btn btn-danger table-button">Remove</button>`;
 }
 
 async function createNewSession() {
   const response = await fetch('/create_session', { method: 'POST' });
-
   if (!response.ok) {
     Swal.fire({
-      title: 'Application Provider says:',
-      text: 'Failed to create new session. Make sure that AF is running!',
+      title: 'Failed to create new session!',
+      text: 'Please, make sure that Application Function is running!',
       icon: 'error',
       confirmButtonText: 'OK'
     });
-    return;
-  }
+    return;}
 
   const data = await response.json();
   Swal.fire({
-    title: 'Application Provider says:',
-    text: `Created provisioning session with the ID: ${data.provisioning_session_id}`,
+    title: 'Created Provisioning Session',
+    text: `ID: ${data.provisioning_session_id}`,
     icon: 'success',
     confirmButtonText: 'OK'
   });
-
   localStorage.setItem(data.provisioning_session_id, JSON.stringify({
     certificate_id: 'not yet created'
   }));
-
   addSessionToTable(data.provisioning_session_id);
 }
 
-function removeSessionFromTableAndStorage(provisioning_session_id) {
+function removeSessionFromTableAndStorage(sessionId) {
   let session_table = document.getElementById('session_table');
   for (let i = 1; i < session_table.rows.length; i++) {
-    if (session_table.rows[i].cells[0].innerHTML === provisioning_session_id) {
+    if (session_table.rows[i].cells[0].innerHTML === sessionId) {
       session_table.deleteRow(i);
       break;
     }
   }
-  localStorage.removeItem(provisioning_session_id);
-  localStorage.removeItem(provisioning_session_id + "-cert");
+  localStorage.removeItem(sessionId);
+  localStorage.removeItem(sessionId + "-cert");
 }
 
-async function deleteProvisioningSession(provisioning_session_id) {
+async function deleteProvisioningSession(sessionId) {
   const result = await Swal.fire({
     title: 'Delete Provisioning Session?',
-    text: "Are you sure? You won't be able to revert this.",
+    text: "Permanently remove provisioning session?",
     icon: 'warning',
     showCancelButton: true,
     confirmButtonText: 'Yes',
     cancelButtonText: 'No'
   });
-
   if (result.value) {
-    const response = await fetch(`/delete_session/${provisioning_session_id}`, {
+    const response = await fetch(`/delete_session/${sessionId}`, {
       method: 'DELETE'
     });
 
     if (!response.ok) {
       if (response.status === 404) {
-        removeSessionFromTableAndStorage(provisioning_session_id);
+        removeSessionFromTableAndStorage(sessionId);
       } else {
         Swal.fire({
-          title: 'Application Provider says:',
-          text: 'Failed to delete the provisioning session.',
+          title: 'Failed to delete the provisioning session.',
+          text: '',
           icon: 'error',
           confirmButtonText: 'OK'
         });
       }
       return;
     }
-
     Swal.fire({
-      title: 'Application Provider says:',
-      text: `Provisioning session ${provisioning_session_id} deleted with all resources`,
+      title: `Deleted Provisioning session`,
+      text: `${sessionId} deleted with all resources`,
       icon: 'success',
       confirmButtonText: 'OK'
     });
-
-    removeSessionFromTableAndStorage(provisioning_session_id);
+    removeSessionFromTableAndStorage(sessionId);
   }
 }
 
-async function createChcFromJson(provisioning_session_id) {
-  const response = await fetch(`/set_stream/${provisioning_session_id}`, {
+async function createChcFromJson(sessionId) {
+  const response = await fetch(`/set_stream/${sessionId}`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json'
     }
   });
-
   if (!response.ok) {
     Swal.fire({
-      title: 'Application Provider says:',
-      text: 'Failed to set hosting for the provisioning session.',
+      title: 'Failed to set hosting for the provisioning session.',
+      text: '',
       icon: 'error',
       confirmButtonText: 'OK'
     });
     return;
-  }
-  
+  }  
   const data = await response.json();
   Swal.fire({
-    title: 'Application Provider says:',
-    text: data.message,
+    title: data.message,
+    text: "",
     icon: 'success',
     confirmButtonText: 'OK'
   });
 }
 
-function getProvisioningSessionDetails() {
+async function getProvisioningSessionDetails() {
   window.open('http://127.0.0.1:8000/details', '_blank');
 }
 
-async function createNewCertificate(provisioning_session_id) {
+async function createNewCertificate(sessionId) {
   try {
-      const response = await fetch(`/certificate/${provisioning_session_id}`, {
+      const response = await fetch(`/certificate/${sessionId}`, {
           method: 'POST'
       });
       const data = await response.json();
       if (response.ok) {
 
-        // Storing response data (certificate_id) to the local storage
-        let session_data = JSON.parse(localStorage.getItem(provisioning_session_id)) || {};
+        // Storing certificate_id to the local storage
+        let session_data = JSON.parse(localStorage.getItem(sessionId)) || {};
         session_data.certificate_id = data.certificate_id;
-        localStorage.setItem(provisioning_session_id, JSON.stringify(session_data));
+        localStorage.setItem(sessionId, JSON.stringify(session_data));
 
           Swal.fire({
-              title: 'All set!',
-              text: `Certificate created successfully with ID: ${data.certificate_id}`,
+              title: 'Certificate created successfully!',
+              text: `ID: ${data.certificate_id}`,
               icon: 'success',
               confirmButtonText: 'OK'
           }); 
@@ -230,10 +207,10 @@ async function createNewCertificate(provisioning_session_id) {
           let session_table = document.getElementById('session_table');
 
           for (let i = 1; i < session_table.rows.length; i++) {
-            if (session_table.rows[i].cells[0].innerHTML === provisioning_session_id) {
+            if (session_table.rows[i].cells[0].innerHTML === sessionId) {
                 let cell = session_table.rows[i].cells[2];
-                cell.innerHTML = `<button onclick="createNewCertificate('${provisioning_session_id}')" class="btn btn-primary table-button">Create</button>
-                                  <button onclick="showCertificateDetails('${provisioning_session_id}', '${data.certificate_id}')" class="btn btn-warning table-button">Show</button>`;
+                cell.innerHTML = `<button onclick="createNewCertificate('${sessionId}')" class="btn btn-primary table-button">Create</button>
+                                  <button onclick="showCertificateDetails('${sessionId}', '${data.certificate_id}')" class="btn btn-info table-button">Show</button>`;
             }
         }
 
@@ -252,18 +229,18 @@ async function createNewCertificate(provisioning_session_id) {
           icon: 'error',
           confirmButtonText: 'OK'
       });
-  }
+    }
 }
 
-function showCertificateDetails(provisioning_session_id) {
-  let session_data = JSON.parse(localStorage.getItem(provisioning_session_id));
+function showCertificateDetails(sessionId) {
+  let session_data = JSON.parse(localStorage.getItem(sessionId));
   let certificate_id = session_data.certificate_id;
-  window.open(`http://127.0.0.1:8000/show_certificate/${provisioning_session_id}/${certificate_id}`, '_blank');l
+  window.open(`http://127.0.0.1:8000/show_certificate/${sessionId}/${certificate_id}`, '_blank');l
 }
 
 
-function getProtocols(provisioning_session_id) {
-  window.open(`http://127.0.0.1:8000/show_protocol/${provisioning_session_id}`, '_blank');
+function getProtocols(sessionId) {
+  window.open(`http://127.0.0.1:8000/show_protocol/${sessionId}`, '_blank');
 }
 
 
@@ -292,17 +269,14 @@ async function setConsumptionReporting(session_id) {
       let reportingInterval = document.getElementById('swal-input1').value;
       let samplePercentage = document.getElementById('swal-input2').value;
 
-      // Errors checking
       if (!reportingInterval || !samplePercentage || isNaN(reportingInterval) || isNaN(samplePercentage)) {
         Swal.showValidationMessage("Set all parameters with valid numerical values!");
         return false;
       }
-
       if (samplePercentage < 0 || samplePercentage > 100) {
         Swal.showValidationMessage("Sample percentage must be between 0 and 100 %");
         return false;
       }
-
       return {
         reportingInterval: parseInt(reportingInterval),
         samplePercentage: parseFloat(samplePercentage),
@@ -346,12 +320,12 @@ async function setConsumptionReporting(session_id) {
   }
 }
 
-async function showConsumptionReporting(provisioning_session_id){
-  const url = `http://127.0.0.1:8000/show_consumption/${provisioning_session_id}`;
+async function showConsumptionReporting(sessionId){
+  const url = `http://127.0.0.1:8000/show_consumption/${sessionId}`;
   window.open(url, '_blank');
 }
 
-async function deleteConsumptionReporting(session_id) {
+async function deleteConsumptionReporting(sessionId) {
   const result = await Swal.fire({
     title: 'Delete Consumption Reporting?',
     text: "Are you sure? You won't be able to revert this.",
@@ -363,13 +337,13 @@ async function deleteConsumptionReporting(session_id) {
 
   if (result.isConfirmed) {
     try {
-      const response = await fetch(`/del_consumption/${session_id}`, {
+      const response = await fetch(`/del_consumption/${sessionId}`, {
         method: 'DELETE'
       });
 
       if (response.status === 204) {
         await Swal.fire({
-          title: 'Deleted!',
+          title: 'Deleted Consumption Reporting!',
           text: 'The consumption reporting has been deleted.',
           icon: 'success',
           confirmButtonText: 'OK'
@@ -391,7 +365,6 @@ async function deleteConsumptionReporting(session_id) {
         });
       }
     } catch (error) {
-
       await Swal.fire({
         title: 'Error',
         text: 'Network error or server not responding.',
@@ -402,8 +375,7 @@ async function deleteConsumptionReporting(session_id) {
   }
 }
 
-async function setDynamicPolicy(session_id) {
-
+async function setDynamicPolicy(sessionId) {
   const { value: formValues, dismiss } = await Swal.fire({
     title: 'Create Dynamic Policy',
     html: 
@@ -453,7 +425,6 @@ async function setDynamicPolicy(session_id) {
   customClass:{
     popup: 'policies-swall'
   },
-
     focusConfirm: false,
     preConfirm: () => {
       const externalReference = document.getElementById('externalReference').value;
@@ -461,7 +432,6 @@ async function setDynamicPolicy(session_id) {
         Swal.showValidationMessage('External Policy ID is required');
         return false;
       }
-
       if (document.getElementById('sponStatus').value === "") {
         Swal.showValidationMessage('Please select a valid Sponsor Status');
         return false;
@@ -469,20 +439,16 @@ async function setDynamicPolicy(session_id) {
 
       const sstValue = document.getElementById('sst').value;
       const sstNumber = parseInt(sstValue);
-
       if (sstValue === "" || isNaN(sstNumber) || sstNumber < 0 || sstNumber > 255) {
         Swal.showValidationMessage('SST must be between 0 and 255 inclusive');
         return false;
       }
-
       const sdValue = document.getElementById('sd').value;
       const hexRegex = /^[0-9A-Fa-f]{6}$/;
       if (!hexRegex.test(sdValue)) {
         Swal.showValidationMessage('SD must be a 6-digit hexadecimal string');
         return false;
       }
-      
-
       const capitalizeUnit = (unit) => {
         switch (unit.toLowerCase()) {
           case "bps":
@@ -499,7 +465,6 @@ async function setDynamicPolicy(session_id) {
             return unit;
         }
       };
-
       const policyData = {
         externalReference: externalReference,
         applicationSessionContext: {
@@ -526,32 +491,27 @@ async function setDynamicPolicy(session_id) {
           type: document.getElementById('type').value
         }
       };
-    
       const cleanPolicyData = JSON.parse(JSON.stringify(policyData, (key, value) => (value === "" || value === undefined) ? undefined : value));
       return cleanPolicyData;
     },
     showCancelButton: true,
   });
-
   if (formValues) {
     try {
-      const response = await fetch(`/create_policy_template/${session_id}`, {
+      const response = await fetch(`/create_policy_template/${sessionId}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
         },
         body: JSON.stringify(formValues)
       });
-
       if (!response.ok) {
         const errorData = await response.json();
         Swal.fire('Error', errorData.detail || 'An error occurred while creating the policy template.', 'error');
         return;
       }
-
       const data = await response.json();
-      localStorage.setItem(`policyTemplateId_${session_id}`, data.policy_template_id);
-
+      localStorage.setItem(`policyTemplateId_${sessionId}`, data.policy_template_id);
       Swal.fire('Success', `Created Dynamic Policies with ID: "${data.policy_template_id}"`, 'success');
     } catch (error) {
       console.error('Error:', error);
@@ -560,11 +520,10 @@ async function setDynamicPolicy(session_id) {
   }
 }
 
-async function showDynamicPolicies(provisioning_session_id) {
-
-  const policy_template_id = localStorage.getItem(`policyTemplateId_${provisioning_session_id}`);
+async function showDynamicPolicies(sessionId) {
+  const policy_template_id = localStorage.getItem(`policyTemplateId_${sessionId}`);
   if (policy_template_id && policy_template_id !== 'undefined') {
-      const url = `http://127.0.0.1:8000/show_policy_template/${provisioning_session_id}/${policy_template_id}`;
+      const url = `http://127.0.0.1:8000/show_policy_template/${sessionId}/${policy_template_id}`;
       window.open(url, '_blank');
   } else {
       Swal.fire({
@@ -575,9 +534,8 @@ async function showDynamicPolicies(provisioning_session_id) {
   }
 }
 
-async function deleteDynamicPolicy(provisioning_session_id) {
-  const policyTemplateId = localStorage.getItem(`policyTemplateId_${provisioning_session_id}`);
-
+async function deleteDynamicPolicy(sessionId) {
+  const policyTemplateId = localStorage.getItem(`policyTemplateId_${sessionId}`);
   if (!policyTemplateId || policyTemplateId === 'undefined') {
     await Swal.fire({
       title: 'Error',
@@ -587,7 +545,6 @@ async function deleteDynamicPolicy(provisioning_session_id) {
     });
     return;
   }
-
   const result = await Swal.fire({
     title: 'Delete Policy Template?',
     text: `Are you sure you want to delete the policy template with ID: ${policyTemplateId}?`,
@@ -596,15 +553,12 @@ async function deleteDynamicPolicy(provisioning_session_id) {
     confirmButtonText: 'Yes',
     cancelButtonText: 'No',
   });
-
   if (result.isConfirmed) {
     try {
-      const response = await fetch(`/delete_policy_template/${provisioning_session_id}/${policyTemplateId}`, {
+      const response = await fetch(`/delete_policy_template/${sessionId}/${policyTemplateId}`, {
         method: 'DELETE'
       });
-
       if (response.status === 204) {
-
         await Swal.fire({
           title: 'Deleted!',
           text: `The policy template with ID: ${policyTemplateId} has been deleted.`,
@@ -612,8 +566,7 @@ async function deleteDynamicPolicy(provisioning_session_id) {
           confirmButtonText: 'OK'
         });
 
-
-        localStorage.removeItem(`policyTemplateId_${provisioning_session_id}`);
+        localStorage.removeItem(`policyTemplateId_${sessionId}`);
       } else {
         let data;
         try {
@@ -621,8 +574,6 @@ async function deleteDynamicPolicy(provisioning_session_id) {
         } catch (error) {
           data = { detail: "Unknown error occurred." };
         }
-
-
         await Swal.fire({
           title: 'Failed to Delete',
           text: data.detail,
@@ -631,7 +582,6 @@ async function deleteDynamicPolicy(provisioning_session_id) {
         });
       }
     } catch (error) {
-
       await Swal.fire({
         title: 'Error',
         text: 'Network error or server not responding.',
@@ -642,44 +592,194 @@ async function deleteDynamicPolicy(provisioning_session_id) {
   }
 }
 
-window.onload = function() {
-  
-  setInterval(checkAFstatus, 5000);
+async function createMetricsJson(sessionId) {
+  const { value: formValues } = await Swal.fire({
+      title: 'Create Metrics Reporting Configuration',
+      html: `
+          <input id="scheme" class="swal2-input" placeholder="Scheme">
+          <input id="dataNetworkName" class="swal2-input" type='text' placeholder="Data Network Name" required>
+          <input id="reportingInterval" class="swal2-input" type="number" placeholder="Reporting Interval (in seconds)" required>
+          <input id="samplePercentage" class="swal2-input" type="number" placeholder="Sample Percentage (in seconds)" required>
+          <input id="urlFilters" class="swal2-input" placeholder="URL Filters (comma-separated)" required>
+          <input id="samplingPeriod" class="swal2-input" type="number" placeholder="Sampling Period (in seconds)" required>
+          <div>
+          <br><p>Select Metrics to report:</p>
+            <input type="checkbox" id="metric1" value="urn:3GPP:ns:PSS:DASH:QM10#HTTPList"><label for="metric1">HTTP List</label><br>
+            <input type="checkbox" id="metric2" value="urn:3GPP:ns:PSS:DASH:QM10#BufferLevel"><label for="metric2">Buffer Level</label><br>
+            <input type="checkbox" id="metric3" value="urn:3GPP:ns:PSS:DASH:QM10#RepSwitchList"><label for="metric3">Representation Switch List</label><br>
+            <input type="checkbox" id="metric4" value="urn:3GPP:ns:PSS:DASH:QM10#MPDInformation"><label for="metric4">MPD Information</label><br>
+            <input type="checkbox" id="metric5" value="urn:3gpp:metadata:2020:VR:metrics#RenderedViewports"><label for="metric5">Rendered Viewports</label>
+          </div>
+      `,
+      customClass:{
+        popup: 'metrics-swall'
+      },
+      focusConfirm: false,
+      showCancelButton: true,
+      preConfirm: () => {
+          if (!document.getElementById('samplingPeriod').value) {
+              Swal.showValidationMessage('Sampling Period is mandatory value');
+              return false;
+          }
+          if (document.getElementById('samplingPeriod').value <= 0) {
+            Swal.showValidationMessage('Sampling Period must be positive value.');
+            return false;
+          }
+          if (document.getElementById('reportingInterval').value <= 0) {
+            Swal.showValidationMessage('Reporting Interval must be a positive value');
+            return false;
+          }
 
-  let session_table = document.getElementById('session_table');
+          const metrics = [];
+          ['metric1', 'metric2', 'metric3', 'metric4', 'metric5'].forEach(metricId => {
+              if (document.getElementById(metricId).checked) {
+                  metrics.push(document.getElementById(metricId).value);
+              }
+          });
+          return {
+              scheme: document.getElementById('scheme').value,
+              dataNetworkName: document.getElementById('dataNetworkName').value,
+              reportingInterval: parseInt(document.getElementById('reportingInterval').value),
+              samplePercentage: parseInt(document.getElementById('samplePercentage').value),
+              urlFilters: document.getElementById('urlFilters').value.split(',').map(item => item.trim()),
+              samplingPeriod: parseInt(document.getElementById('samplingPeriod').value),
+              metrics: metrics
+          };
+      }
+  });
+
+  if (formValues) {
+      postMetricsData(sessionId, formValues);
+  }
+}
+
+async function postMetricsData(sessionId, metricsConfiguration) {
+  try {
+      const response = await fetch(`/create_metrics/${sessionId}`, {
+          method: 'POST',
+          headers: {
+              'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(metricsConfiguration)
+      });
+
+      if (!response.ok) {
+          const errorData = await response.json();
+          Swal.fire('Error', errorData.detail || 'An error occurred while creating the metrics reporting configuration.', 'error');
+      } else {
+          const result = await response.json();
+          Swal.fire(`Metrics Reporting Configuration successfully created`, `ID: ${result.metrics_reporting_configuration_id}`, 'success');
+      }
+  } catch (error) {
+      console.error('Error:', error);
+      Swal.fire('Error', 'An unexpected error occurred.', 'error');
+  }
+}
+
+async function showMetricsReporting(sessionId) {
+  try {
+      const metricsIDs = await fetchMetricsConfigurationIDs(sessionId);
+      if (metricsIDs.length === 0) {
+          Swal.fire('No Metrics Configurations', 'There are no metrics configurations available for this session.', 'info');
+          return;
+      }
+      const linksHtml = metricsIDs.map(id => 
+          `<button class="swal2-confirm swal2-styled" onclick="window.open('/show_metrics/${sessionId}/${id}', '_blank')">${id}</button>`
+      ).join('<br>');
+
+      Swal.fire({
+          title: 'Select Metrics Configuration to display:',
+          html: linksHtml,
+          showCancelButton: true,
+          showConfirmButton: false,
+          customClass: {
+              popup: 'metrics-ids-swall'
+          }
+      });
+  } catch (error) {
+      console.error('Error:', error);
+      Swal.fire('No provisioned Metrics Reporting Configurations', '', 'error');
+  }
+}
+
+async function fetchMetricsConfigurationIDs(sessionId) {
+  const response = await fetch(`/list_metrics_ids/${sessionId}`);
+  if (!response.ok) {
+      throw new Error('Failed to fetch metrics configurations');
+  }
+  return await response.json();
+}
+
+async function deleteMetricsConfiguration(sessionId) {
+  try {
+      const metricsIDs = await fetchMetricsConfigurationIDs(sessionId);
+      if (metricsIDs.length === 0) {
+          Swal.fire('No Metrics Configurations', 'There are no metrics configurations available for this session.', 'info');
+          return;
+      }
+      const linksHtml = metricsIDs.map(id => 
+          `<button class="swal2-confirm swal2-styled" onclick="confirmDeletion('${sessionId}', '${id}')">${id}</button>`
+      ).join('<br>');
+
+      Swal.fire({
+          title: 'Select Metrics Configuration to delete:',
+          html: linksHtml,
+          showCancelButton: true,
+          showConfirmButton: false,
+          customClass: {
+              popup: 'metrics-ids-swall'
+          }
+      });
+  } catch (error) {
+      console.error('Error:', error);
+      Swal.fire('No provisioned Metrics Reporting Configurations', '', 'error');
+  }
+}
+
+async function confirmDeletion(sessionId, metricsId) {
+  Swal.fire({
+      title: 'Delete Metrics Configuration?',
+      text: `Configuration ${metricsId} will be deleted permanently.`,
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#3085d6',
+      cancelButtonColor: '#d33',
+      confirmButtonText: 'Yes'
+  }).then((result) => {
+      if (result.isConfirmed) {
+          deleteMetrics(sessionId, metricsId);
+      }
+  });
+}
+
+async function deleteMetrics(sessionId, metricsId) {
+  try {
+      const response = await fetch(`/delete_metrics/${sessionId}/${metricsId}`, {
+          method: 'DELETE'
+      });
+      if (response.ok) {
+          Swal.fire(
+              'Deleted!',
+              `The metrics configuration ${metricsId} has been deleted.`,
+              'success'
+          ).then(() => {
+            Swal.close();
+          });
+      } else {
+          throw new Error('Failed to delete the metrics configuration');
+      }
+  } catch (error) {
+      console.error('Error:', error);
+      Swal.fire('Error', error.message, 'error');
+  }
+}
+
+window.onload = function() {
+
+  setInterval(checkAFstatus, 5000);
+  
   for (let i = 0; i < localStorage.length; i++) {
     let session_id = localStorage.key(i);
-    let session_data = JSON.parse(localStorage.getItem(session_id));
-    let row = session_table.insertRow(-1);
-
-    let cell1 = row.insertCell(0); // Session ID
-    let cell2 = row.insertCell(1); // Create CHC from JSON
-    let cell3 = row.insertCell(2); // Create and show certificate
-    let cell4 = row.insertCell(3); // Show Protocols button
-    let cell5 = row.insertCell(4); // Consumption Reporting (Set, Show, Delete)
-    let cell6 = row.insertCell(5); // Dynamic Policies
-    let cell7 = row.insertCell(6); // Show Session Details
-    let cell8 = row.insertCell(7); // Delete session
-
-    cell1.innerHTML = session_id;
-
-    cell2.innerHTML = `<button onclick="createChcFromJson('${session_id}')" class="btn btn-primary table-button">Create</button>`;
-
-    cell3.innerHTML = `<button onclick="createNewCertificate('${session_id}')" class="btn btn-primary table-button">Create</button>
-                        <button onclick="showCertificateDetails('${session_id}', '${session_data ? session_data.certificate_id : ''}')" class="btn btn-warning table-button">Show</button>`;
-
-    cell4.innerHTML = `<button onclick="getProtocols('${session_id}')" class="btn btn-info table-button">Show</button>`;
-
-    cell5.innerHTML = `<button onclick="setConsumptionReporting('${session_id}')" class="btn btn-primary table-button">Set</button>
-                        <button onclick="showConsumptionReporting('${session_id}')" class="btn btn-info table-button">Show</button>
-                        <button onclick="deleteConsumptionReporting('${session_id}')" class="btn btn-danger table-button">Delete</button>`;
-
-    cell6.innerHTML = `<button onclick="setDynamicPolicy('${session_id}')" class="btn btn-primary table-button">Set</button>
-                        <button onclick="showDynamicPolicies('${session_id}', '${session_data ? session_data.policy_template_id : ''}')" class="btn btn-info table-button">Show</button>
-                        <button onclick="deleteDynamicPolicy('${session_id}', '${session_data ? session_data.policy_template_id : ''}')" class="btn btn-danger table-button">Delete</button>`;
-
-    cell7.innerHTML = `<button onclick="getProvisioningSessionDetails()" class="btn btn-info table-button">Show</button>`;
-
-    cell8.innerHTML = `<button onclick="deleteProvisioningSession('${session_id}')" class="btn btn-danger table-button">Remove</button>`;
+    addSessionToTable(session_id);
   }
 }
