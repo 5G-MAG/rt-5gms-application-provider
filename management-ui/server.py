@@ -169,7 +169,7 @@ async def get_session_details(session, ps_id):
     details["MetricsReportingConfigurations"] = {}
     for mrc_id in mrc_ids:
         mrc = await session.metricsReportingConfigurationGet(ps_id, mrc_id)
-        details["MetricsReportingConfiguration"][mrc_id] = mrc if mrc else "MetricsReportingConfiguration not found"
+        details["MetricsReportingConfigurations"][mrc_id] = mrc if mrc else "MetricsReportingConfiguration not found"
 
     return ps_id, details
 
