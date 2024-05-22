@@ -8,7 +8,7 @@ import '@fontsource/roboto/700.css';
 
 import { RouterProvider, createBrowserRouter } from 'react-router-dom';
 import Overview from './app/pages/overview/Overview';
-import DetailPage from './app/pages/detailPage/DetailPage';
+import DetailPage from './app/pages/detail-page/DetailPage';
 import App from './app/app';
 
 const router = createBrowserRouter([
