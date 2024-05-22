@@ -1,6 +1,11 @@
 import React from 'react';
-import Overview from './pages/overview/Overview';
+import { Outlet } from 'react-router-dom';
 
 export default function App() {
-  return <Overview />;
+  return (
+    <div>
+      <div id="navigation-bar">NavBar tbd</div>
+      <Outlet></Outlet>
+    </div>
+  );
 }

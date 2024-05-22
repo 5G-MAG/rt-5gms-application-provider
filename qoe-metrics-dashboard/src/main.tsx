@@ -9,15 +9,30 @@ import '@fontsource/roboto/700.css';
 import { RouterProvider, createBrowserRouter } from 'react-router-dom';
 import Overview from './app/pages/overview/Overview';
 import DetailPage from './app/pages/detailPage/DetailPage';
+import App from './app/app';
 
 const router = createBrowserRouter([
   {
     path: '/',
-    element: <Overview></Overview>,
-  },
-  {
-    path: '/:metricsId',
-    element: <DetailPage></DetailPage>,
+    element: <App></App>,
+    children: [
+      {
+        path: 'metrics',
+        element: <Overview></Overview>,
+      },
+      {
+        path: 'metrics/:metricsId',
+        element: <DetailPage></DetailPage>,
+      },
+      {
+        path: 'consumption',
+        element: <Overview></Overview>,
+      },
+      {
+        path: 'consumption/:consumptionId',
+        element: <DetailPage></DetailPage>,
+      },
+    ],
   },
 ]);
 
