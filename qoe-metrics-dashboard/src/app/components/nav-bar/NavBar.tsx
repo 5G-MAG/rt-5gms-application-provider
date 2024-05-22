@@ -1,7 +1,72 @@
-import React from 'react';
+import { Link, useLocation } from 'react-router-dom';
+import { AppBar, Box, Container, Toolbar, useTheme } from '@mui/material';
+import { styled } from '@mui/material/styles';
+
+import logo from '../../../assets/Logo_5G_MAG.png';
+import './NavBar.scss';
+
+const pages = [
+  { label: 'Metrics Reports', route: '/metrics' },
+  { label: 'Consumption Reports', route: '/consumption' },
+];
+
+const CustomNavLink = styled(Link, {
+  name: 'MuiCustomNavLink',
+  slot: 'root',
+})<{ isactive: string }>(({ theme, isactive }) => ({
+  padding: '1rem',
+  textDecoration: 'none',
+  color: theme.palette.background.default,
+  textTransform: 'uppercase',
+  fontFamily: 'Roboto',
+  fontSize: 'smaller',
+  ...(isactive === 'true' && {
+    background: theme.palette.background.default,
+    color: theme.palette.text.primary,
+    borderRadius: '2rem',
+  }),
+}));
 
 function NavBar() {
-  return <div>NavBar</div>;
+  const theme = useTheme();
+  const location = useLocation();
+  return (
+    <AppBar position="static" sx={{ paddingY: '0.5rem' }}>
+      <Container maxWidth="xl">
+        <Toolbar disableGutters>
+          <Box
+            sx={{
+              flexGrow: 1,
+              display: { xs: 'none', md: 'flex' },
+              gap: '1rem',
+            }}
+          >
+            {pages.map((page) => (
+              <CustomNavLink
+                key={page.route}
+                to={page.route}
+                isactive={(location.pathname === page.route).toString()}
+              >
+                {page.label}
+              </CustomNavLink>
+            ))}
+          </Box>
+          <Box
+            sx={{
+              background: theme.palette.background.default,
+              padding: '0.5rem',
+              borderRadius: '0.5rem',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}
+          >
+            <img src={logo} className="logo" alt="The 5G MAG logo"></img>
+          </Box>
+        </Toolbar>
+      </Container>
+    </AppBar>
+  );
 }
 
 export default NavBar;

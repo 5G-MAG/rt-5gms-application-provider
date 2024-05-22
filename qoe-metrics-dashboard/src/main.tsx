@@ -10,6 +10,8 @@ import { RouterProvider, createBrowserRouter } from 'react-router-dom';
 import Overview from './app/pages/overview/Overview';
 import DetailPage from './app/pages/detail-page/DetailPage';
 import App from './app/app';
+import { theme } from './theme';
+import { ThemeProvider } from '@mui/material';
 
 const router = createBrowserRouter([
   {
@@ -41,6 +43,8 @@ const root = ReactDOM.createRoot(
 );
 root.render(
   <StrictMode>
-    <RouterProvider router={router} />
+    <ThemeProvider theme={theme}>
+      <RouterProvider router={router} />
+    </ThemeProvider>
   </StrictMode>
 );
