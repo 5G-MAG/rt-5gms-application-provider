@@ -13,14 +13,15 @@ const pages = [
 const CustomNavLink = styled(Link, {
   name: 'MuiCustomNavLink',
   slot: 'root',
-})<{ isactive: string }>(({ theme, isactive }) => ({
+  shouldForwardProp: (prop) => prop !== 'isActive',
+})<{ isActive: boolean }>(({ theme, isActive }) => ({
   padding: '1rem',
   textDecoration: 'none',
   color: theme.palette.background.default,
   textTransform: 'uppercase',
   fontFamily: 'Roboto',
   fontSize: 'smaller',
-  ...(isactive === 'true' && {
+  ...(isActive && {
     background: theme.palette.background.default,
     color: theme.palette.text.primary,
     borderRadius: '2rem',
@@ -30,7 +31,7 @@ const CustomNavLink = styled(Link, {
 function NavBar() {
   const theme = useTheme();
   const location = useLocation();
-  
+
   return (
     <AppBar position="static" sx={{ paddingY: '0.5rem' }}>
       <Container maxWidth="xl">
@@ -46,7 +47,7 @@ function NavBar() {
               <CustomNavLink
                 key={page.route}
                 to={page.route}
-                isactive={(location.pathname === page.route).toString()}
+                isActive={location.pathname === page.route}
               >
                 {page.label}
               </CustomNavLink>
