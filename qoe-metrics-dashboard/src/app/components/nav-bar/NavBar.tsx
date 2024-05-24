@@ -30,6 +30,7 @@ const CustomNavLink = styled(Link, {
 function NavBar() {
   const theme = useTheme();
   const location = useLocation();
+  
   return (
     <AppBar position="static" sx={{ paddingY: '0.5rem' }}>
       <Container maxWidth="xl">
