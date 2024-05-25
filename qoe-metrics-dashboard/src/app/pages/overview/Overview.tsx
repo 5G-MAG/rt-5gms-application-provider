@@ -11,7 +11,7 @@ import './Overview.scss';
 import { useEffect, useState } from 'react';
 import { ChevronLeft, ChevronRight } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
-import ApiController from 'src/app/api/ApiController';
+import ApiController from '../../api/ApiController';
 
 const ROWS_PER_PAGE = 20;
 
@@ -65,15 +65,17 @@ function Overview() {
             className="table-checkbox"
             sx={{ visibility: 'hidden' }}
           ></Checkbox>
-          <Typography component={'span'} fontWeight={'bold'}>
-            Name
-          </Typography>
-          <Typography component={'span'} fontWeight={'bold'}>
-            Provisioning ID
-          </Typography>
-          <Typography component={'span'} fontWeight={'bold'}>
-            Date
-          </Typography>
+          <div>
+            <Typography component={'span'} fontWeight={'bold'}>
+              Name
+            </Typography>
+            <Typography component={'span'} fontWeight={'bold'}>
+              Provisioning ID
+            </Typography>
+            <Typography component={'span'} fontWeight={'bold'}>
+              Date
+            </Typography>
+          </div>
         </Box>
         <Divider></Divider>
         <Box className="table-body">
@@ -82,17 +84,24 @@ function Overview() {
               key={i}
               className="table-row spacer"
               component={'div'}
-              onClick={() => handleClickMetric(i)}
+              sx={{
+                '&:hover': {
+                  backgroundColor: 'primary.light',
+                },
+              }}
             >
               <Checkbox
                 className="table-checkbox"
                 onClick={() => handleSelectMetricsReport(i)}
               ></Checkbox>
-              <Typography component={'span'}>{row.name}</Typography>
-              <Typography component={'span'}>{row.provisioningId}</Typography>
-              <Typography component={'span'}>
-                {row.date.toUTCString()}
-              </Typography>
+
+              <Box component={'div'} onClick={() => handleClickMetric(i)}>
+                <Typography component={'span'}>{row.name}</Typography>
+                <Typography component={'span'}>{row.provisioningId}</Typography>
+                <Typography component={'span'}>
+                  {row.date.toUTCString()}
+                </Typography>
+              </Box>
             </Box>
           ))}
         </Box>
