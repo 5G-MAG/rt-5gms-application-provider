@@ -33,9 +33,9 @@ function NavBar() {
   const location = useLocation();
 
   return (
-    <AppBar position="static" sx={{ paddingY: '0.5rem' }}>
-      <Container maxWidth="xl">
-        <Toolbar disableGutters>
+    <AppBar position="static" sx={{ height: '5rem' }}>
+      <Container maxWidth="xl" sx={{ height: '5rem' }}>
+        <Toolbar disableGutters sx={{ height: '5rem' }}>
           <Box
             sx={{
               flexGrow: 1,
