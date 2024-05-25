@@ -11,15 +11,7 @@ import './Overview.scss';
 import { useEffect, useState } from 'react';
 import { ChevronLeft, ChevronRight } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
-
-const rows = new Array(101)
-  .fill(null)
-  .map((_, i) => i + 1)
-  .map((i) => ({
-    name: 'Metrics Report ' + i,
-    date: new Date('2024-05-21'),
-    provisioningId: 'owihgnpo2pom134',
-  }));
+import ApiController from 'src/app/api/ApiController';
 
 const ROWS_PER_PAGE = 20;
 
@@ -33,17 +25,19 @@ function Overview() {
   >([]);
 
   useEffect(() => {
-    const reports = getMetricsReports(currentPage);
-    if (reports.length === 0) {
-      setCurrentPage(currentPage - 1);
-    } else {
-      setMetricsReports(reports);
+    async function getMetricsReports(page: number): Promise<void> {
+      const reports = await ApiController.getMetricsReportsList(
+        page,
+        ROWS_PER_PAGE
+      );
+      if (reports.length === 0) {
+        setCurrentPage(currentPage - 1);
+      } else {
+        setMetricsReports(reports);
+      }
     }
+    getMetricsReports(currentPage);
   }, [currentPage]);
-
-  function getMetricsReports(page: number): any[] {
-    return rows.slice(page * ROWS_PER_PAGE, (page + 1) * ROWS_PER_PAGE);
-  }
 
   function handleChangePage(page: number): void {
     setCurrentPage(page);
