@@ -1,17 +1,18 @@
 import { StrictMode } from 'react';
 import * as ReactDOM from 'react-dom/client';
+import { createBrowserRouter,RouterProvider } from 'react-router-dom';
+
+import { ThemeProvider } from '@mui/material';
+
+import App from './app/app';
+import DetailPage from './app/pages/detail-page/DetailPage';
+import Overview from './app/pages/overview/Overview';
+import { theme } from './theme';
 
 import '@fontsource/roboto/300.css';
 import '@fontsource/roboto/400.css';
 import '@fontsource/roboto/500.css';
 import '@fontsource/roboto/700.css';
-
-import { RouterProvider, createBrowserRouter } from 'react-router-dom';
-import Overview from './app/pages/overview/Overview';
-import DetailPage from './app/pages/detail-page/DetailPage';
-import App from './app/app';
-import { theme } from './theme';
-import { ThemeProvider } from '@mui/material';
 
 const router = createBrowserRouter([
   {
