@@ -1,8 +1,10 @@
 import { Link, useLocation } from 'react-router-dom';
+
 import { AppBar, Box, Container, Toolbar, useTheme } from '@mui/material';
 import { styled } from '@mui/material/styles';
 
 import logo from '../../../assets/Logo_5G_MAG.png';
+
 import './NavBar.scss';
 
 const pages = [
