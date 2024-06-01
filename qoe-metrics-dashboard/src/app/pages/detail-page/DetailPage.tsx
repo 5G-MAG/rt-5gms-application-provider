@@ -4,6 +4,7 @@ import { Box } from '@mui/material';
 
 import ApiController from '../../api/ApiController';
 import BufferLevelChart from '../../components/buffer-level-chart/BufferLevelChart';
+import HttpListChart from '../../components/http-list-chart/HttpListChart';
 import { QoEMetricsReport } from '../../types/qoe-report.type';
 
 function DetailPage({ reportId }: { reportId: string }) {
@@ -28,6 +29,18 @@ function DetailPage({ reportId }: { reportId: string }) {
           )?.BufferLevel
         }
       ></BufferLevelChart>
+      <div
+        style={{
+          height: '2rem',
+        }}
+      ></div>
+      <HttpListChart
+        httpList={
+          report?.ReceptionReport.QoeReport.QoeMetric.find(
+            (metric) => metric.HttpList
+          )?.HttpList
+        }
+      ></HttpListChart>
     </Box>
   );
 }
