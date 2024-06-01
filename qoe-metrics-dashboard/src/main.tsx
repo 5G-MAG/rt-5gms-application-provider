@@ -1,6 +1,10 @@
 import { StrictMode } from 'react';
 import * as ReactDOM from 'react-dom/client';
-import { createBrowserRouter,RouterProvider } from 'react-router-dom';
+import {
+  createBrowserRouter,
+  Navigate,
+  RouterProvider,
+} from 'react-router-dom';
 
 import { ThemeProvider } from '@mui/material';
 
@@ -19,6 +23,11 @@ const router = createBrowserRouter([
     path: '/',
     element: <App></App>,
     children: [
+      {
+        path: '',
+        index: true,
+        element: <Navigate to="metrics" replace />,
+      },
       {
         path: 'metrics',
         element: <Overview></Overview>,
