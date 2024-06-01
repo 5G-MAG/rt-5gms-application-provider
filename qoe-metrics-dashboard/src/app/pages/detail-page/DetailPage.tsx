@@ -1,23 +1,35 @@
-import React from 'react';
-import { LineChart, Line, CartesianGrid, XAxis, YAxis } from 'recharts';
+import { useEffect, useState } from 'react';
 
-const data = [
-  { name: 'Page A', uv: 400, pv: 2400, amt: 2400 },
-  { name: 'Page B', uv: 300, pv: 2400, amt: 2400 },
-  { name: 'Page C', uv: 100, pv: 2400, amt: 2400 },
-  { name: 'Page D', uv: 200, pv: 2400, amt: 2400 },
-];
+import { Box } from '@mui/material';
 
-function DetailPage() {
-  const renderLineChart = (
-    <LineChart width={600} height={300} data={data}>
-      <Line type="monotone" dataKey="uv" stroke="#8884d8" />
-      <CartesianGrid stroke="#ccc" />
-      <XAxis dataKey="name" />
-      <YAxis />
-    </LineChart>
+import ApiController from '../../api/ApiController';
+import BufferLevelChart from '../../components/buffer-level-chart/BufferLevelChart';
+import { QoEMetricsReport } from '../../types/qoe-report.type';
+
+function DetailPage({ reportId }: { reportId: string }) {
+  const [report, setReport] = useState<QoEMetricsReport | null>(null);
+
+  useEffect(() => {
+    async function getMetricsReport(reportId: string): Promise<void> {
+      const report = await ApiController.getMetricsReport(reportId);
+      if (report) {
+        setReport(report);
+      }
+    }
+    getMetricsReport(reportId);
+  }, [reportId]);
+
+  return (
+    <Box padding={'2rem'} component={'div'} overflow={'scroll'}>
+      <BufferLevelChart
+        bufferLevel={
+          report?.ReceptionReport.QoeReport.QoeMetric.find(
+            (metric) => metric.BufferLevel
+          )?.BufferLevel
+        }
+      ></BufferLevelChart>
+    </Box>
   );
-  return <div>{renderLineChart}</div>;
 }
 
 export default DetailPage;

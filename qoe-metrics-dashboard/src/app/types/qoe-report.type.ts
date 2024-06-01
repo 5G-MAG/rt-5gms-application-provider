@@ -1,137 +1,84 @@
+export interface QoEMetricsReport {
+  ReceptionReport: ReceptionReport;
+}
+
 export interface ReceptionReport {
+  clientID: string;
   contentURI: string;
-  clientID?: string;
-  qoeReports?: QoeReport[]; // Zero or more QoE reports
+  'xsi:schemaLocation': string;
+  'xmlns:sv': string;
+  xmlns: string;
+  'xmlns:xsi': string;
+  QoeReport: QoeReport;
 }
 
 export interface QoeReport {
+  recordingSessionId: string;
+  reportPeriod: string;
+  reportTime: string;
   periodID: string;
-  reportTime: Date; // Assuming you want to use JavaScript Date objects
-  reportPeriod: number;
-  qoeMetrics: QoeMetric[]; // One or more QoE metrics
+  QoeMetric: QoeMetric[];
+  'sv:delimiter': string;
 }
 
-export type QoeMetric = HttpList | RepSwitchList | AvgThroughput[] | number | BufferLevel | PlayList | MpdInformation[] ;
-
-export interface HttpList {
-  httpListEntries?: HttpListEntry[];
-}
-
-export interface HttpListEntry {
-  tcpid?: number;
-  type?: ExtensibleHttpEntryResourceType;
-  url: string;
-  actualUrl?: string;
-  range?: string;
-  trequest: Date;
-  tresponse: Date;
-  responsecode?: number;
-  interval?: number;
-  traces?: HttpThroughputTrace[];
-}
-
-export interface HttpThroughputTrace {
-  s: Date;
-  d: number;
-  b: number[]; 
+export interface QoeMetric {
+  BufferLevel?: BufferLevel;
+  HttpList?: HttpList;
+  MPDInformation?: MPDInformation[];
+  RepSwitchList?: RepSwitchList;
 }
 
 export interface RepSwitchList {
-  repSwitchEvents?: RepSwitchEvent[];
+  RepSwitchEvent: RepSwitchEvent[];
 }
 
 export interface RepSwitchEvent {
+  mt: string;
+  t: string;
   to: string;
-  mt?: number;
-  t?: Date;
 }
 
-export interface AvgThroughput {
-  numBytes: number;
-  activityTime: number;
-  t: Date;
-  duration: number;
-  accessbearer?: string;
-  inactivityType?: InactivityType;
+export interface MPDInformation {
+  representationId: string;
+  Mpdinfo: Mpdinfo;
+}
+
+export interface Mpdinfo {
+  bandwidth: string;
+  codecs: string;
+  mimeType: string;
+  frameRate?: string;
+  height?: string;
+  width?: string;
+}
+
+export interface HttpList {
+  HttpListEntry: HttpListEntry[];
+}
+
+export interface HttpListEntry {
+  actualurl: string;
+  interval: string;
+  range: string;
+  responsecode: string;
+  trequest: string;
+  tresponse: string;
+  type: string;
+  url: string;
+  Trace: Trace;
+}
+
+export interface Trace {
+  b: string;
+  d: string;
+  s: string;
 }
 
 export interface BufferLevel {
-  bufferLevelEntries?: BufferLevelEntry[];
+  BufferLevelEntry: BufferLevelEntry[];
 }
 
 export interface BufferLevelEntry {
-  t: Date;
-  level: number;
-}
-
-export interface PlayList {
-  traces?: PlayListEntry[];
-}
-
-export interface PlayListEntry {
-  start: Date;
-  mstart: number;
-  startType: StartType;
-  traceEntries?: PlayListTraceEntry[];
-}
-
-export interface PlayListTraceEntry {
-  representationId?: string;
-  subrepLevel?: number;
-  start: Date;
-  mstart: number;
-  duration: number;
-  playbackSpeed?: number;
-  stopReason?: StopReasonType;
-  stopReasonOther?: string;
-}
-
-export interface MpdInformation {
-  representationId: string;
-  subrepLevel?: number;
-  mpdinfos?: Representation[];
-}
-
-export interface Representation {
-  codecs: string;
-  bandwidth: number;
-  qualityRanking?: number;
-  frameRate?: number;
-  width?: number;
-  height?: number;
-  mimeType: string;
-}
-
-export enum HttpEntryResourceType {
-  MPD = "MPD",
-  MPDDeltaFile = "MPDDeltaFile",
-  XLinkExpansion = "XLinkExpansion",
-  InitializationSegment = "InitializationSegment",
-  IndexSegment = "IndexSegment",
-  MediaSegment = "MediaSegment"
-}
-
-export type ExtensibleHttpEntryResourceType = HttpEntryResourceType | `x:${string}`;
-export enum InactivityType {
-  Pause = "Pause",
-  BufferControl = "BufferControl",
-  Error = "Error"
-}
-
-export enum StartType {
-  NewPlayoutRequest = "NewPlayoutRequest",
-  Resume = "Resume",
-  OtherUserRequest = "OtherUserRequest",
-  StartOfMetricsCollectionPeriod = "StartOfMetricsCollectionPeriod"
-}
-
-export enum StopReasonType {
-  RepresentationSwitch = "RepresentationSwitch",
-  Rebuffering = "Rebuffering",
-  UserRequest = "UserRequest",
-  EndOfPeriod = "EndOfPeriod",
-  EndOfContent = "EndOfContent",
-  EndOfMetricsCollectionPeriod = "EndOfMetricsCollectionPeriod",
-  Failure = "Failure",
-  Other = "Other"
+  level: string;
+  t: string;
 }

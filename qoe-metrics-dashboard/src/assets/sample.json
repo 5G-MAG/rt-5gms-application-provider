@@ -1,0 +1,786 @@
+{
+  "ReceptionReport": {
+    "clientID": "ccbb0e79-b058-4e14-99a4-8fb3a19eaa4a",
+    "contentURI": "http://192.168.2.7/m4d/provisioning-session-79317e40-f187-41ee-97be-037bee82f205/elephants_dream/1/client_manifest-all.mpd",
+    "xsi:schemaLocation": "urn:3gpp:metadata:2011:HSD:receptionreport DASH-QoE-Report.xsd",
+    "xmlns:sv": "urn:3gpp:metadata:2016:PSS:schemaVersion",
+    "xmlns": "urn:3gpp:metadata:2011:HSD:receptionreport",
+    "xmlns:xsi": "http://www.w3.org/2001/XMLSchema-instance",
+    "QoeReport": {
+      "recordingSessionId": "419e55f3350c466fabd4407343202680",
+      "reportPeriod": "10",
+      "reportTime": "2024-04-03T07:38:12.361Z",
+      "periodID": "",
+      "QoeMetric": [
+        {
+          "BufferLevel": {
+            "BufferLevelEntry": [
+              {
+                "level": "0",
+                "t": "2024-04-03T07:38:00.737Z"
+              },
+              {
+                "level": "0",
+                "t": "2024-04-03T07:38:00.755Z"
+              },
+              {
+                "level": "0",
+                "t": "2024-04-03T07:38:01.331Z"
+              },
+              {
+                "level": "0",
+                "t": "2024-04-03T07:38:01.481Z"
+              },
+              {
+                "level": "0",
+                "t": "2024-04-03T07:38:01.533Z"
+              },
+              {
+                "level": "0",
+                "t": "2024-04-03T07:38:01.534Z"
+              },
+              {
+                "level": "0",
+                "t": "2024-04-03T07:38:01.613Z"
+              },
+              {
+                "level": "3591",
+                "t": "2024-04-03T07:38:02.353Z"
+              },
+              {
+                "level": "3591",
+                "t": "2024-04-03T07:38:02.356Z"
+              },
+              {
+                "level": "7082",
+                "t": "2024-04-03T07:38:02.664Z"
+              },
+              {
+                "level": "6961",
+                "t": "2024-04-03T07:38:02.814Z"
+              },
+              {
+                "level": "10182",
+                "t": "2024-04-03T07:38:03.386Z"
+              },
+              {
+                "level": "10154",
+                "t": "2024-04-03T07:38:03.454Z"
+              },
+              {
+                "level": "13578",
+                "t": "2024-04-03T07:38:03.836Z"
+              },
+              {
+                "level": "13555",
+                "t": "2024-04-03T07:38:03.895Z"
+              },
+              {
+                "level": "17127",
+                "t": "2024-04-03T07:38:04.155Z"
+              },
+              {
+                "level": "17050",
+                "t": "2024-04-03T07:38:04.234Z"
+              },
+              {
+                "level": "20687",
+                "t": "2024-04-03T07:38:04.410Z"
+              },
+              {
+                "level": "20673",
+                "t": "2024-04-03T07:38:04.457Z"
+              },
+              {
+                "level": "24138",
+                "t": "2024-04-03T07:38:04.793Z"
+              },
+              {
+                "level": "24103",
+                "t": "2024-04-03T07:38:04.860Z"
+              },
+              {
+                "level": "27129",
+                "t": "2024-04-03T07:38:05.641Z"
+              },
+              {
+                "level": "27091",
+                "t": "2024-04-03T07:38:05.719Z"
+              },
+              {
+                "level": "27402",
+                "t": "2024-04-03T07:38:05.728Z"
+              },
+              {
+                "level": "30238",
+                "t": "2024-04-03T07:38:06.404Z"
+              },
+              {
+                "level": "30177",
+                "t": "2024-04-03T07:38:06.472Z"
+              },
+              {
+                "level": "33285",
+                "t": "2024-04-03T07:38:07.167Z"
+              },
+              {
+                "level": "33248",
+                "t": "2024-04-03T07:38:07.236Z"
+              },
+              {
+                "level": "36496",
+                "t": "2024-04-03T07:38:07.837Z"
+              },
+              {
+                "level": "36435",
+                "t": "2024-04-03T07:38:07.888Z"
+              },
+              {
+                "level": "39863",
+                "t": "2024-04-03T07:38:08.267Z"
+              },
+              {
+                "level": "39836",
+                "t": "2024-04-03T07:38:08.329Z"
+              },
+              {
+                "level": "43380",
+                "t": "2024-04-03T07:38:08.586Z"
+              },
+              {
+                "level": "43989",
+                "t": "2024-04-03T07:38:08.655Z"
+              },
+              {
+                "level": "46951",
+                "t": "2024-04-03T07:38:08.861Z"
+              },
+              {
+                "level": "46903",
+                "t": "2024-04-03T07:38:08.943Z"
+              },
+              {
+                "level": "50237",
+                "t": "2024-04-03T07:38:09.419Z"
+              },
+              {
+                "level": "50234",
+                "t": "2024-04-03T07:38:09.775Z"
+              },
+              {
+                "level": "53289",
+                "t": "2024-04-03T07:38:10.239Z"
+              },
+              {
+                "level": "52798",
+                "t": "2024-04-03T07:38:10.729Z"
+              }
+            ]
+          }
+        },
+        {
+          "HttpList": {
+            "HttpListEntry": [
+              {
+                "actualurl": "http://192.168.2.7/m4d/provisioning-session-79317e40-f187-41ee-97be-037bee82f205/redir-b119ba2e-c488-48b9-a25c-0a3773e2fed3/client_manifest-all.mpd",
+                "interval": "585",
+                "range": "",
+                "responsecode": "200",
+                "trequest": "2024-04-03T07:38:00.744Z",
+                "tresponse": "2024-04-03T07:38:00.746Z",
+                "type": "MPD",
+                "url": "http://192.168.2.7/m4d/provisioning-session-79317e40-f187-41ee-97be-037bee82f205/redir-b119ba2e-c488-48b9-a25c-0a3773e2fed3/client_manifest-all.mpd",
+                "Trace": {
+                  "b": "3324",
+                  "d": "585",
+                  "s": "2024-04-03T07:38:00.746Z"
+                }
+              },
+              {
+                "actualurl": "https://vod-dash-ww-rd-live.akamaized.net/elephants_dream/1/audio/128kbps/IS.mp4",
+                "interval": "73",
+                "range": "",
+                "responsecode": "200",
+                "trequest": "2024-04-03T07:38:01.407Z",
+                "tresponse": "2024-04-03T07:38:01.407Z",
+                "type": "InitializationSegment",
+                "url": "https://vod-dash-ww-rd-live.akamaized.net/elephants_dream/1/audio/128kbps/IS.mp4",
+                "Trace": {
+                  "b": "600",
+                  "d": "73",
+                  "s": "2024-04-03T07:38:01.407Z"
+                }
+              },
+              {
+                "actualurl": "https://vod-dash-ww-rd-live.akamaized.net/elephants_dream/1/avc3/1920x1080p25/IS.mp4",
+                "interval": "128",
+                "range": "",
+                "responsecode": "200",
+                "trequest": "2024-04-03T07:38:01.404Z",
+                "tresponse": "2024-04-03T07:38:01.404Z",
+                "type": "InitializationSegment",
+                "url": "https://vod-dash-ww-rd-live.akamaized.net/elephants_dream/1/avc3/1920x1080p25/IS.mp4",
+                "Trace": {
+                  "b": "627",
+                  "d": "128",
+                  "s": "2024-04-03T07:38:01.404Z"
+                }
+              },
+              {
+                "actualurl": "https://vod-dash-ww-rd-live.akamaized.net/elephants_dream/1/audio/128kbps/000001.m4s",
+                "interval": "44",
+                "range": "",
+                "responsecode": "200",
+                "trequest": "2024-04-03T07:38:01.490Z",
+                "tresponse": "2024-04-03T07:38:01.490Z",
+                "type": "MediaSegment",
+                "url": "https://vod-dash-ww-rd-live.akamaized.net/elephants_dream/1/audio/128kbps/000001.m4s",
+                "Trace": {
+                  "b": "60973",
+                  "d": "44",
+                  "s": "2024-04-03T07:38:01.490Z"
+                }
+              },
+              {
+                "actualurl": "https://vod-dash-ww-rd-live.akamaized.net/elephants_dream/1/audio/128kbps/000002.m4s",
+                "interval": "71",
+                "range": "",
+                "responsecode": "200",
+                "trequest": "2024-04-03T07:38:01.542Z",
+                "tresponse": "2024-04-03T07:38:01.542Z",
+                "type": "MediaSegment",
+                "url": "https://vod-dash-ww-rd-live.akamaized.net/elephants_dream/1/audio/128kbps/000002.m4s",
+                "Trace": {
+                  "b": "61049",
+                  "d": "71",
+                  "s": "2024-04-03T07:38:01.542Z"
+                }
+              },
+              {
+                "actualurl": "https://vod-dash-ww-rd-live.akamaized.net/elephants_dream/1/avc3/1920x1080p25/000001.m4s",
+                "interval": "546",
+                "range": "",
+                "responsecode": "200",
+                "trequest": "2024-04-03T07:38:01.807Z",
+                "tresponse": "2024-04-03T07:38:01.807Z",
+                "type": "MediaSegment",
+                "url": "https://vod-dash-ww-rd-live.akamaized.net/elephants_dream/1/avc3/1920x1080p25/000001.m4s",
+                "Trace": {
+                  "b": "2687816",
+                  "d": "546",
+                  "s": "2024-04-03T07:38:01.807Z"
+                }
+              },
+              {
+                "actualurl": "https://vod-dash-ww-rd-live.akamaized.net/elephants_dream/1/audio/128kbps/000003.m4s",
+                "interval": "32",
+                "range": "",
+                "responsecode": "200",
+                "trequest": "2024-04-03T07:38:02.323Z",
+                "tresponse": "2024-04-03T07:38:02.324Z",
+                "type": "MediaSegment",
+                "url": "https://vod-dash-ww-rd-live.akamaized.net/elephants_dream/1/audio/128kbps/000003.m4s",
+                "Trace": {
+                  "b": "61048",
+                  "d": "32",
+                  "s": "2024-04-03T07:38:02.324Z"
+                }
+              },
+              {
+                "actualurl": "https://vod-dash-ww-rd-live.akamaized.net/elephants_dream/1/avc3/1920x1080p25/000002.m4s",
+                "interval": "573",
+                "range": "",
+                "responsecode": "200",
+                "trequest": "2024-04-03T07:38:02.090Z",
+                "tresponse": "2024-04-03T07:38:02.091Z",
+                "type": "MediaSegment",
+                "url": "https://vod-dash-ww-rd-live.akamaized.net/elephants_dream/1/avc3/1920x1080p25/000002.m4s",
+                "Trace": {
+                  "b": "2461324",
+                  "d": "573",
+                  "s": "2024-04-03T07:38:02.091Z"
+                }
+              },
+              {
+                "actualurl": "https://vod-dash-ww-rd-live.akamaized.net/elephants_dream/1/audio/128kbps/000004.m4s",
+                "interval": "124",
+                "range": "",
+                "responsecode": "200",
+                "trequest": "2024-04-03T07:38:02.689Z",
+                "tresponse": "2024-04-03T07:38:02.689Z",
+                "type": "MediaSegment",
+                "url": "https://vod-dash-ww-rd-live.akamaized.net/elephants_dream/1/audio/128kbps/000004.m4s",
+                "Trace": {
+                  "b": "61044",
+                  "d": "124",
+                  "s": "2024-04-03T07:38:02.689Z"
+                }
+              },
+              {
+                "actualurl": "https://vod-dash-ww-rd-live.akamaized.net/elephants_dream/1/avc3/1920x1080p25/000003.m4s",
+                "interval": "705",
+                "range": "",
+                "responsecode": "200",
+                "trequest": "2024-04-03T07:38:02.680Z",
+                "tresponse": "2024-04-03T07:38:02.680Z",
+                "type": "MediaSegment",
+                "url": "https://vod-dash-ww-rd-live.akamaized.net/elephants_dream/1/avc3/1920x1080p25/000003.m4s",
+                "Trace": {
+                  "b": "1804175",
+                  "d": "705",
+                  "s": "2024-04-03T07:38:02.680Z"
+                }
+              },
+              {
+                "actualurl": "https://vod-dash-ww-rd-live.akamaized.net/elephants_dream/1/audio/128kbps/000005.m4s",
+                "interval": "32",
+                "range": "",
+                "responsecode": "200",
+                "trequest": "2024-04-03T07:38:03.420Z",
+                "tresponse": "2024-04-03T07:38:03.421Z",
+                "type": "MediaSegment",
+                "url": "https://vod-dash-ww-rd-live.akamaized.net/elephants_dream/1/audio/128kbps/000005.m4s",
+                "Trace": {
+                  "b": "61030",
+                  "d": "32",
+                  "s": "2024-04-03T07:38:03.421Z"
+                }
+              },
+              {
+                "actualurl": "https://vod-dash-ww-rd-live.akamaized.net/elephants_dream/1/avc3/1920x1080p25/000004.m4s",
+                "interval": "428",
+                "range": "",
+                "responsecode": "200",
+                "trequest": "2024-04-03T07:38:03.407Z",
+                "tresponse": "2024-04-03T07:38:03.407Z",
+                "type": "MediaSegment",
+                "url": "https://vod-dash-ww-rd-live.akamaized.net/elephants_dream/1/avc3/1920x1080p25/000004.m4s",
+                "Trace": {
+                  "b": "1988462",
+                  "d": "428",
+                  "s": "2024-04-03T07:38:03.407Z"
+                }
+              },
+              {
+                "actualurl": "https://vod-dash-ww-rd-live.akamaized.net/elephants_dream/1/audio/128kbps/000006.m4s",
+                "interval": "37",
+                "range": "",
+                "responsecode": "200",
+                "trequest": "2024-04-03T07:38:03.855Z",
+                "tresponse": "2024-04-03T07:38:03.856Z",
+                "type": "MediaSegment",
+                "url": "https://vod-dash-ww-rd-live.akamaized.net/elephants_dream/1/audio/128kbps/000006.m4s",
+                "Trace": {
+                  "b": "61003",
+                  "d": "37",
+                  "s": "2024-04-03T07:38:03.856Z"
+                }
+              },
+              {
+                "actualurl": "https://vod-dash-ww-rd-live.akamaized.net/elephants_dream/1/avc3/1920x1080p25/000005.m4s",
+                "interval": "308",
+                "range": "",
+                "responsecode": "200",
+                "trequest": "2024-04-03T07:38:03.847Z",
+                "tresponse": "2024-04-03T07:38:03.847Z",
+                "type": "MediaSegment",
+                "url": "https://vod-dash-ww-rd-live.akamaized.net/elephants_dream/1/avc3/1920x1080p25/000005.m4s",
+                "Trace": {
+                  "b": "2379033",
+                  "d": "308",
+                  "s": "2024-04-03T07:38:03.847Z"
+                }
+              },
+              {
+                "actualurl": "https://vod-dash-ww-rd-live.akamaized.net/elephants_dream/1/audio/128kbps/000007.m4s",
+                "interval": "42",
+                "range": "",
+                "responsecode": "200",
+                "trequest": "2024-04-03T07:38:04.191Z",
+                "tresponse": "2024-04-03T07:38:04.191Z",
+                "type": "MediaSegment",
+                "url": "https://vod-dash-ww-rd-live.akamaized.net/elephants_dream/1/audio/128kbps/000007.m4s",
+                "Trace": {
+                  "b": "61030",
+                  "d": "42",
+                  "s": "2024-04-03T07:38:04.191Z"
+                }
+              },
+              {
+                "actualurl": "https://vod-dash-ww-rd-live.akamaized.net/elephants_dream/1/avc3/1920x1080p25/000006.m4s",
+                "interval": "228",
+                "range": "",
+                "responsecode": "200",
+                "trequest": "2024-04-03T07:38:04.180Z",
+                "tresponse": "2024-04-03T07:38:04.181Z",
+                "type": "MediaSegment",
+                "url": "https://vod-dash-ww-rd-live.akamaized.net/elephants_dream/1/avc3/1920x1080p25/000006.m4s",
+                "Trace": {
+                  "b": "1418718",
+                  "d": "228",
+                  "s": "2024-04-03T07:38:04.181Z"
+                }
+              },
+              {
+                "actualurl": "https://vod-dash-ww-rd-live.akamaized.net/elephants_dream/1/audio/128kbps/000008.m4s",
+                "interval": "36",
+                "range": "",
+                "responsecode": "200",
+                "trequest": "2024-04-03T07:38:04.420Z",
+                "tresponse": "2024-04-03T07:38:04.421Z",
+                "type": "MediaSegment",
+                "url": "https://vod-dash-ww-rd-live.akamaized.net/elephants_dream/1/audio/128kbps/000008.m4s",
+                "Trace": {
+                  "b": "61062",
+                  "d": "36",
+                  "s": "2024-04-03T07:38:04.421Z"
+                }
+              },
+              {
+                "actualurl": "https://vod-dash-ww-rd-live.akamaized.net/elephants_dream/1/avc3/1920x1080p25/000007.m4s",
+                "interval": "372",
+                "range": "",
+                "responsecode": "200",
+                "trequest": "2024-04-03T07:38:04.419Z",
+                "tresponse": "2024-04-03T07:38:04.420Z",
+                "type": "MediaSegment",
+                "url": "https://vod-dash-ww-rd-live.akamaized.net/elephants_dream/1/avc3/1920x1080p25/000007.m4s",
+                "Trace": {
+                  "b": "2088356",
+                  "d": "372",
+                  "s": "2024-04-03T07:38:04.420Z"
+                }
+              },
+              {
+                "actualurl": "https://vod-dash-ww-rd-live.akamaized.net/elephants_dream/1/audio/128kbps/000009.m4s",
+                "interval": "49",
+                "range": "",
+                "responsecode": "200",
+                "trequest": "2024-04-03T07:38:04.809Z",
+                "tresponse": "2024-04-03T07:38:04.810Z",
+                "type": "MediaSegment",
+                "url": "https://vod-dash-ww-rd-live.akamaized.net/elephants_dream/1/audio/128kbps/000009.m4s",
+                "Trace": {
+                  "b": "61025",
+                  "d": "49",
+                  "s": "2024-04-03T07:38:04.810Z"
+                }
+              },
+              {
+                "actualurl": "https://vod-dash-ww-rd-live.akamaized.net/elephants_dream/1/avc3/1920x1080p25/000008.m4s",
+                "interval": "837",
+                "range": "",
+                "responsecode": "200",
+                "trequest": "2024-04-03T07:38:04.803Z",
+                "tresponse": "2024-04-03T07:38:04.803Z",
+                "type": "MediaSegment",
+                "url": "https://vod-dash-ww-rd-live.akamaized.net/elephants_dream/1/avc3/1920x1080p25/000008.m4s",
+                "Trace": {
+                  "b": "6631971",
+                  "d": "837",
+                  "s": "2024-04-03T07:38:04.803Z"
+                }
+              },
+              {
+                "actualurl": "https://vod-dash-ww-rd-live.akamaized.net/elephants_dream/1/audio/128kbps/000010.m4s",
+                "interval": "40",
+                "range": "",
+                "responsecode": "200",
+                "trequest": "2024-04-03T07:38:05.677Z",
+                "tresponse": "2024-04-03T07:38:05.678Z",
+                "type": "MediaSegment",
+                "url": "https://vod-dash-ww-rd-live.akamaized.net/elephants_dream/1/audio/128kbps/000010.m4s",
+                "Trace": {
+                  "b": "61021",
+                  "d": "40",
+                  "s": "2024-04-03T07:38:05.678Z"
+                }
+              },
+              {
+                "actualurl": "https://vod-dash-ww-rd-live.akamaized.net/elephants_dream/1/avc3/1920x1080p25/000009.m4s",
+                "interval": "744",
+                "range": "",
+                "responsecode": "200",
+                "trequest": "2024-04-03T07:38:05.660Z",
+                "tresponse": "2024-04-03T07:38:05.660Z",
+                "type": "MediaSegment",
+                "url": "https://vod-dash-ww-rd-live.akamaized.net/elephants_dream/1/avc3/1920x1080p25/000009.m4s",
+                "Trace": {
+                  "b": "6665701",
+                  "d": "744",
+                  "s": "2024-04-03T07:38:05.660Z"
+                }
+              },
+              {
+                "actualurl": "https://vod-dash-ww-rd-live.akamaized.net/elephants_dream/1/audio/128kbps/000011.m4s",
+                "interval": "38",
+                "range": "",
+                "responsecode": "200",
+                "trequest": "2024-04-03T07:38:06.434Z",
+                "tresponse": "2024-04-03T07:38:06.434Z",
+                "type": "MediaSegment",
+                "url": "https://vod-dash-ww-rd-live.akamaized.net/elephants_dream/1/audio/128kbps/000011.m4s",
+                "Trace": {
+                  "b": "61063",
+                  "d": "38",
+                  "s": "2024-04-03T07:38:06.434Z"
+                }
+              },
+              {
+                "actualurl": "https://vod-dash-ww-rd-live.akamaized.net/elephants_dream/1/avc3/1920x1080p25/000010.m4s",
+                "interval": "737",
+                "range": "",
+                "responsecode": "200",
+                "trequest": "2024-04-03T07:38:06.429Z",
+                "tresponse": "2024-04-03T07:38:06.429Z",
+                "type": "MediaSegment",
+                "url": "https://vod-dash-ww-rd-live.akamaized.net/elephants_dream/1/avc3/1920x1080p25/000010.m4s",
+                "Trace": {
+                  "b": "6485960",
+                  "d": "737",
+                  "s": "2024-04-03T07:38:06.429Z"
+                }
+              },
+              {
+                "actualurl": "https://vod-dash-ww-rd-live.akamaized.net/elephants_dream/1/audio/128kbps/000012.m4s",
+                "interval": "43",
+                "range": "",
+                "responsecode": "200",
+                "trequest": "2024-04-03T07:38:07.192Z",
+                "tresponse": "2024-04-03T07:38:07.193Z",
+                "type": "MediaSegment",
+                "url": "https://vod-dash-ww-rd-live.akamaized.net/elephants_dream/1/audio/128kbps/000012.m4s",
+                "Trace": {
+                  "b": "60988",
+                  "d": "43",
+                  "s": "2024-04-03T07:38:07.193Z"
+                }
+              },
+              {
+                "actualurl": "https://vod-dash-ww-rd-live.akamaized.net/elephants_dream/1/avc3/1920x1080p25/000011.m4s",
+                "interval": "644",
+                "range": "",
+                "responsecode": "200",
+                "trequest": "2024-04-03T07:38:07.190Z",
+                "tresponse": "2024-04-03T07:38:07.191Z",
+                "type": "MediaSegment",
+                "url": "https://vod-dash-ww-rd-live.akamaized.net/elephants_dream/1/avc3/1920x1080p25/000011.m4s",
+                "Trace": {
+                  "b": "5430456",
+                  "d": "644",
+                  "s": "2024-04-03T07:38:07.191Z"
+                }
+              },
+              {
+                "actualurl": "https://vod-dash-ww-rd-live.akamaized.net/elephants_dream/1/audio/128kbps/000013.m4s",
+                "interval": "40",
+                "range": "",
+                "responsecode": "200",
+                "trequest": "2024-04-03T07:38:07.847Z",
+                "tresponse": "2024-04-03T07:38:07.847Z",
+                "type": "MediaSegment",
+                "url": "https://vod-dash-ww-rd-live.akamaized.net/elephants_dream/1/audio/128kbps/000013.m4s",
+                "Trace": {
+                  "b": "61077",
+                  "d": "40",
+                  "s": "2024-04-03T07:38:07.847Z"
+                }
+              },
+              {
+                "actualurl": "https://vod-dash-ww-rd-live.akamaized.net/elephants_dream/1/avc3/1920x1080p25/000012.m4s",
+                "interval": "421",
+                "range": "",
+                "responsecode": "200",
+                "trequest": "2024-04-03T07:38:07.845Z",
+                "tresponse": "2024-04-03T07:38:07.846Z",
+                "type": "MediaSegment",
+                "url": "https://vod-dash-ww-rd-live.akamaized.net/elephants_dream/1/avc3/1920x1080p25/000012.m4s",
+                "Trace": {
+                  "b": "3992391",
+                  "d": "421",
+                  "s": "2024-04-03T07:38:07.846Z"
+                }
+              },
+              {
+                "actualurl": "https://vod-dash-ww-rd-live.akamaized.net/elephants_dream/1/audio/128kbps/000014.m4s",
+                "interval": "41",
+                "range": "",
+                "responsecode": "200",
+                "trequest": "2024-04-03T07:38:08.287Z",
+                "tresponse": "2024-04-03T07:38:08.287Z",
+                "type": "MediaSegment",
+                "url": "https://vod-dash-ww-rd-live.akamaized.net/elephants_dream/1/audio/128kbps/000014.m4s",
+                "Trace": {
+                  "b": "60994",
+                  "d": "41",
+                  "s": "2024-04-03T07:38:08.287Z"
+                }
+              },
+              {
+                "actualurl": "https://vod-dash-ww-rd-live.akamaized.net/elephants_dream/1/avc3/1920x1080p25/000013.m4s",
+                "interval": "307",
+                "range": "",
+                "responsecode": "200",
+                "trequest": "2024-04-03T07:38:08.279Z",
+                "tresponse": "2024-04-03T07:38:08.279Z",
+                "type": "MediaSegment",
+                "url": "https://vod-dash-ww-rd-live.akamaized.net/elephants_dream/1/avc3/1920x1080p25/000013.m4s",
+                "Trace": {
+                  "b": "2598417",
+                  "d": "307",
+                  "s": "2024-04-03T07:38:08.279Z"
+                }
+              },
+              {
+                "actualurl": "https://vod-dash-ww-rd-live.akamaized.net/elephants_dream/1/audio/128kbps/000015.m4s",
+                "interval": "53",
+                "range": "",
+                "responsecode": "200",
+                "trequest": "2024-04-03T07:38:08.599Z",
+                "tresponse": "2024-04-03T07:38:08.600Z",
+                "type": "MediaSegment",
+                "url": "https://vod-dash-ww-rd-live.akamaized.net/elephants_dream/1/audio/128kbps/000015.m4s",
+                "Trace": {
+                  "b": "61068",
+                  "d": "53",
+                  "s": "2024-04-03T07:38:08.600Z"
+                }
+              },
+              {
+                "actualurl": "https://vod-dash-ww-rd-live.akamaized.net/elephants_dream/1/avc3/1920x1080p25/000014.m4s",
+                "interval": "265",
+                "range": "",
+                "responsecode": "200",
+                "trequest": "2024-04-03T07:38:08.594Z",
+                "tresponse": "2024-04-03T07:38:08.595Z",
+                "type": "MediaSegment",
+                "url": "https://vod-dash-ww-rd-live.akamaized.net/elephants_dream/1/avc3/1920x1080p25/000014.m4s",
+                "Trace": {
+                  "b": "2279502",
+                  "d": "265",
+                  "s": "2024-04-03T07:38:08.595Z"
+                }
+              },
+              {
+                "actualurl": "https://vod-dash-ww-rd-live.akamaized.net/elephants_dream/1/audio/128kbps/000016.m4s",
+                "interval": "60",
+                "range": "",
+                "responsecode": "200",
+                "trequest": "2024-04-03T07:38:08.882Z",
+                "tresponse": "2024-04-03T07:38:08.883Z",
+                "type": "MediaSegment",
+                "url": "https://vod-dash-ww-rd-live.akamaized.net/elephants_dream/1/audio/128kbps/000016.m4s",
+                "Trace": {
+                  "b": "61012",
+                  "d": "60",
+                  "s": "2024-04-03T07:38:08.883Z"
+                }
+              },
+              {
+                "actualurl": "https://vod-dash-ww-rd-live.akamaized.net/elephants_dream/1/avc3/1920x1080p25/000015.m4s",
+                "interval": "545",
+                "range": "",
+                "responsecode": "200",
+                "trequest": "2024-04-03T07:38:08.872Z",
+                "tresponse": "2024-04-03T07:38:08.873Z",
+                "type": "MediaSegment",
+                "url": "https://vod-dash-ww-rd-live.akamaized.net/elephants_dream/1/avc3/1920x1080p25/000015.m4s",
+                "Trace": {
+                  "b": "4991226",
+                  "d": "545",
+                  "s": "2024-04-03T07:38:08.873Z"
+                }
+              },
+              {
+                "actualurl": "https://vod-dash-ww-rd-live.akamaized.net/elephants_dream/1/audio/128kbps/000017.m4s",
+                "interval": "54",
+                "range": "",
+                "responsecode": "200",
+                "trequest": "2024-04-03T07:38:09.719Z",
+                "tresponse": "2024-04-03T07:38:09.721Z",
+                "type": "MediaSegment",
+                "url": "https://vod-dash-ww-rd-live.akamaized.net/elephants_dream/1/audio/128kbps/000017.m4s",
+                "Trace": {
+                  "b": "61027",
+                  "d": "54",
+                  "s": "2024-04-03T07:38:09.721Z"
+                }
+              },
+              {
+                "actualurl": "https://vod-dash-ww-rd-live.akamaized.net/elephants_dream/1/avc3/1920x1080p25/000016.m4s",
+                "interval": "528",
+                "range": "",
+                "responsecode": "200",
+                "trequest": "2024-04-03T07:38:09.710Z",
+                "tresponse": "2024-04-03T07:38:09.710Z",
+                "type": "MediaSegment",
+                "url": "https://vod-dash-ww-rd-live.akamaized.net/elephants_dream/1/avc3/1920x1080p25/000016.m4s",
+                "Trace": {
+                  "b": "4279230",
+                  "d": "528",
+                  "s": "2024-04-03T07:38:09.710Z"
+                }
+              }
+            ]
+          }
+        },
+        {
+          "MPDInformation": [
+            {
+              "representationId": "128kbps",
+              "Mpdinfo": {
+                "bandwidth": "128000",
+                "codecs": "mp4a.40.2",
+                "mimeType": "audio/mp4"
+              }
+            },
+            {
+              "representationId": "1920x1080p25",
+              "Mpdinfo": {
+                "bandwidth": "13178360",
+                "codecs": "avc3.640028",
+                "frameRate": "25.0",
+                "height": "1080",
+                "mimeType": "video/mp4",
+                "width": "1920"
+              }
+            },
+            {
+              "representationId": "1280x720p25",
+              "Mpdinfo": {
+                "bandwidth": "8885360",
+                "codecs": "avc1.640028",
+                "frameRate": "25.0",
+                "height": "720",
+                "mimeType": "video/mp4",
+                "width": "1280"
+              }
+            }
+          ]
+        },
+        {
+          "RepSwitchList": {
+            "RepSwitchEvent": [
+              {
+                "mt": "P0Y0DT0H0M0S",
+                "t": "2024-04-03T07:38:01.512Z",
+                "to": "128kbps"
+              },
+              {
+                "mt": "P0Y0DT0H0M0S",
+                "t": "2024-04-03T07:38:01.512Z",
+                "to": "1280x720p25"
+              },
+              {
+                "mt": "P0Y0DT0H0M5S",
+                "t": "2024-04-03T07:38:06.566Z",
+                "to": "1920x1080p25"
+              }
+            ]
+          }
+        }
+      ],
+      "sv:delimiter": "0"
+    }
+  }
+}
