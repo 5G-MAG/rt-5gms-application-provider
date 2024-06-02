@@ -1,9 +1,8 @@
 import { useEffect, useRef, useState } from 'react'; // Added useRef
-import dayjs from 'dayjs';
 import {
   CartesianGrid,
+  Label,
   Legend,
-  Line,
   ResponsiveContainer,
   Scatter,
   ScatterChart,
@@ -13,29 +12,29 @@ import {
 } from 'recharts';
 import { HttpList } from 'src/app/types/qoe-report.type';
 
-import { Box, Typography, useTheme } from '@mui/material';
+import { Box, Typography } from '@mui/material';
+
+type DataPoint = {
+  duration: number;
+  transferedBytes: number;
+};
+
+type TypeDataPoint = Record<string, DataPoint[]>;
 
 function HttpListChart({ httpList }: { httpList: HttpList | undefined }) {
-  const theme = useTheme();
-  const [seriesVisibility, setSeriesVisibility] = useState<
+  const [scatterVisibility, setScatterisibility] = useState<
     Record<string, boolean>
   >({});
 
-  type DataPoint = {
-    duration: number;
-    transferedBytes: number;
-  };
-
-  const dataByTypeRef = useRef<Record<string, DataPoint[]>>({});
+  const dataByTypeRef = useRef<TypeDataPoint>({});
 
   useEffect(() => {
-    // Added useEffect to handle setting series visibility
     if (httpList) {
       dataByTypeRef.current = httpList.HttpListEntry.reduce(
-        (acc: Record<string, DataPoint[]>, entry) => {
+        (acc: TypeDataPoint, entry) => {
           if (!acc[entry.type]) {
             acc[entry.type] = [];
-            setSeriesVisibility((prev) => ({ ...prev, [entry.type]: true }));
+            setScatterisibility((prev) => ({ ...prev, [entry.type]: true }));
           }
 
           acc[entry.type].push({
@@ -49,6 +48,10 @@ function HttpListChart({ httpList }: { httpList: HttpList | undefined }) {
     }
   }, [httpList]); // Added dependency array to useEffect
 
+  if (!httpList) {
+    return <Box>No data found for Http List</Box>;
+  }
+
   const fillColors = [
     '#8884d8',
     '#ff7300',
@@ -58,10 +61,6 @@ function HttpListChart({ httpList }: { httpList: HttpList | undefined }) {
     '#0000ff',
     '#ff00ff',
   ];
-
-  if (!httpList) {
-    return <Box>No data found for Http List</Box>;
-  }
 
   return (
     <Box
@@ -76,26 +75,53 @@ function HttpListChart({ httpList }: { httpList: HttpList | undefined }) {
         Http List
       </Typography>
       <ResponsiveContainer minHeight={500} minWidth={200}>
-        <ScatterChart>
+        <ScatterChart
+          width={500}
+          height={1000}
+          margin={{ top: 0, bottom: 20, left: 20, right: 20 }}
+        >
           <XAxis
             dataKey="duration"
             type="number"
             domain={['auto', 'auto']}
             tick={<TypographyTick></TypographyTick>}
-          />
+          >
+            <Label
+              value="Duration in ms"
+              position="bottom"
+              style={{ textAnchor: 'middle' }}
+            ></Label>
+          </XAxis>
           <YAxis
             dataKey="transferedBytes"
             type="number"
             domain={['auto', 'auto']}
             tick={<TypographyTick></TypographyTick>}
+          >
+            <Label
+              value="Transferred Bytes"
+              position="insideLeft"
+              angle={-90}
+              offset={-10}
+              style={{ textAnchor: 'middle' }}
+            />
+          </YAxis>
+          <Tooltip
+            formatter={(value: string, name: string) => {
+              return [
+                value + ' bytes',
+                name.charAt(0).toUpperCase() +
+                  name.replace(/([A-Z])/g, ' $1').slice(1),
+              ];
+            }}
           />
-          <Tooltip />
+
           <Legend
+            verticalAlign="top"
             onClick={(e: { value: string }) => {
-              console.log(e);
-              setSeriesVisibility({
-                ...seriesVisibility,
-                [e.value]: !seriesVisibility[e.value],
+              setScatterisibility({
+                ...scatterVisibility,
+                [e.value]: !scatterVisibility[e.value],
               });
             }}
           />
@@ -106,7 +132,7 @@ function HttpListChart({ httpList }: { httpList: HttpList | undefined }) {
               name={type}
               data={data}
               fill={fillColors[index % fillColors.length]}
-              hide={!seriesVisibility[type]}
+              hide={!scatterVisibility[type]}
             />
           ))}
         </ScatterChart>
