@@ -1,0 +1,29 @@
+{
+  "name": "express-mock-af",
+  "version": "1.1.0",
+  "private": true,
+  "scripts": {
+    "start": "nodemon ./bin/www"
+  },
+  "dependencies": {
+    "body-parser": "^1.20.2",
+    "body-parser-xml": "^2.0.5",
+    "compression": "^1.7.4",
+    "cookie-parser": "~1.4.4",
+    "cors": "^2.8.5",
+    "debug": "~2.6.9",
+    "express": "~4.16.1",
+    "get-all-files": "^5.0.0",
+    "lodash": "^4.17.21",
+    "morgan": "~1.9.1",
+    "node-dir": "^0.1.17",
+    "node-readfiles": "^0.3.1",
+    "readdir": "^1.0.2",
+    "rxjs": "^7.8.1",
+    "xml2js": "^0.6.2"
+  },
+  "devDependencies": {
+    "moment": "^2.30.1",
+    "nodemon": "^3.1.2"
+  }
+}
