@@ -14,30 +14,30 @@ app.get('/', (req, res) => {
 function observeEndpoint() {
     const eventSource = new EventSource('http://localhost:3003/frontend/metrics/reload');
 
-    eventSource.onopen = function(event) {
+    eventSource.onopen = function (event) {
         log('Connection opened');
     };
 
-    eventSource.onerror = function(e) {
-        log("Event: error");
+    eventSource.onerror = function (e) {
+        log('Event: error');
         if (this.readyState == EventSource.CONNECTING) {
             log(`Reconnecting (readyState=${this.readyState})...`);
         } else {
-            log("Error has occured.");
+            log('Error has occured.');
         }
     };
 
-    eventSource.addEventListener('reload', function(e) {
+    eventSource.addEventListener('reload', function (e) {
         log(e.data);
     });
 
-    eventSource.onmessage = function(e) {
-        log("Event: message, data: " + e.data);
+    eventSource.onmessage = function (e) {
+        log('Event: message, data: ' + e.data);
     };
 }
 
 
 app.listen(port, () => {
     console.log(`Server is running at http://localhost:${port}`);
-    observeEndpoint()
+    observeEndpoint();
 });

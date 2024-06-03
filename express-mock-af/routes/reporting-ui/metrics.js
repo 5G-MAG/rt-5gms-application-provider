@@ -9,14 +9,14 @@ const reportsService = new ReportsService();
 router.get('/', async (req, res) => {
     let provisionSessionIds = req.query.provisionSessionIds;
     if (!provisionSessionIds) {
-        return res.status(400).send('provisionSessionId is required')
+        return res.status(400).send('provisionSessionId is required');
     }
 
     const isValidFormat = provisionSessionIds.match(/([1-6],)*[1-6]|([1-6]-[1-6])/g);
     if (!isValidFormat) {
-        return res.status(400).send('Invalid format for provisionSessionIds must be of the form 1-6 or 1,2,3,4,5,6 or 1')
+        return res.status(400).send('Invalid format for provisionSessionIds must be of the form 1-6 or 1,2,3,4,5,6 or 1');
     }
-    provisionSessionIds = Utils.regexRangeToNumberArray(provisionSessionIds)
+    provisionSessionIds = Utils.regexRangeToNumberArray(provisionSessionIds);
 
     const report = await reportsService.generateMetricsReport(provisionSessionIds, req.query);
     res.status(200).send(report);
@@ -26,8 +26,8 @@ router.get('/details', async (req, res) => {
     const readContent = await Utils.readFiles('public/reports');
     const transformedJsonResponse = await reportsService.transformXmlToReport(readContent);
     const filteredList = await reportsService.filterReports(transformedJsonResponse, req.query);
-    res.status(200).send(filteredList)
-})
+    res.status(200).send(filteredList);
+});
 
 router.get('/reload', (req, res) => {
     res.writeHead(200, {
@@ -56,4 +56,4 @@ router.get('/reload', (req, res) => {
     }, 10000);
 });
 
-module.exports = router
+module.exports = router;

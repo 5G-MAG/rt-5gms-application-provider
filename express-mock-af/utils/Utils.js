@@ -1,6 +1,5 @@
 const fs = require('fs');
-const path = require('path')
-const { readSync, read} = require('readdir');
+const path = require('path');
 const dir = require('node-dir');
 const { chain, isEmpty } = require('lodash');
 const { BehaviorSubject } = require('rxjs');
@@ -14,18 +13,18 @@ class Utils {
             fs.mkdirSync(path.dirname(filepath), { recursive: true });
             fs.writeFile(filepath, content, (err) => {
                 if (err) {
-                    reject(err)
+                    reject(err);
                 } else {
                     this.fileWritten$.next(content);
-                    resolve()
+                    resolve();
                 }
-            })
-        })
+            });
+        });
     }
 
     static async readFiles(directoryPathRoot) {
         try {
-            const filePaths = await Utils.getDirectoriesRecursive(directoryPathRoot)
+            const filePaths = await Utils.getDirectoriesRecursive(directoryPathRoot);
             return chain(filePaths)
                 .map(path => {
                     const fileContent = fs.readFileSync(path, 'utf-8');
@@ -42,13 +41,13 @@ class Utils {
     static async getDirectoriesRecursive(srcpath) {
         return new Promise((resolve, reject) => {
             dir.readFiles(srcpath, {
-                    match: /\.xml$/,
+                    match: /\.xml$/
                 },
-                function(err, content, next) {
+                function (err, content, next) {
                     if (err) return reject(err);
                     next();
                 },
-                function(err, files) {
+                function (err, files) {
                     if (err) return reject(err);
                     resolve(files);
                 });
@@ -71,4 +70,4 @@ class Utils {
     }
 }
 
-module.exports = Utils
+module.exports = Utils;

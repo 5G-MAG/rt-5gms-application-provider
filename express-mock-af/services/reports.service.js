@@ -5,7 +5,7 @@ const Utils = require('../utils/Utils');
 class ReportsService {
 
     async translateXmlToJson(xml) {
-        return xml2js.parseStringPromise(xml, {mergeAttrs: true, explicitArray: false});
+        return xml2js.parseStringPromise(xml, { mergeAttrs: true, explicitArray: false });
     }
 
     async transformXmlToReport(XmlFiles) {
@@ -14,7 +14,7 @@ class ReportsService {
         })), isNil));
     }
 
-    async generateMetricsReport (provisionSessionIds, queryFilter) {
+    async generateMetricsReport(provisionSessionIds, queryFilter) {
         const readContent = (await Promise.all(
             provisionSessionIds.map(async (id) => {
                 return Utils.readFiles(`public/reports/${id}/metrics_reports`);
@@ -34,7 +34,7 @@ class ReportsService {
                 offset: 0,
                 limit: 20
             }
-        )
+        );
 
         return chain(reports)
             .map((report) => {
@@ -62,10 +62,10 @@ class ReportsService {
         return reportsList.filter(report => {
             const flattenedReport = merge(report.ReceptionReport, report.ReceptionReport.QoeReport);
             console.log(flattenedReport, clearQueryFilter);
-            return isMatch(flattenedReport, clearQueryFilter)
+            return isMatch(flattenedReport, clearQueryFilter);
         });
     }
 }
 
 
-module.exports = ReportsService
+module.exports = ReportsService;

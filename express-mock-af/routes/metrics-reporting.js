@@ -3,10 +3,10 @@ const Utils = require('../utils/Utils');
 var router = express.Router();
 
 router.post('/:provisioningSessionId/:metricsReportingConfigurationId', function (req, res, next) {
-    const payload = req.body
-    const path = `${Utils.getReportPath(req.params.provisioningSessionId, true)}/${req.params.metricsReportingConfigurationId}/${new Date().toISOString()}.xml`
+    const payload = req.body;
+    const path = `${Utils.getReportPath(req.params.provisioningSessionId, true)}/${req.params.metricsReportingConfigurationId}/${new Date().toISOString()}.xml`;
 
-    Utils.writeToDisk(path, payload)
+    Utils.writeToDisk(path, payload);
     res.send(204);
 });
 

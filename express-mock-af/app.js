@@ -31,10 +31,10 @@ app.use(express.static(path.join(__dirname, 'public')));
 
 app.use('/', indexRouter);
 app.use('/users', usersRouter);
-app.use('/3gpp-m5/v2/service-access-information', saiRouter )
-app.use('/m8/', m8Router )
-app.use('/3gpp-m5/v2/consumption-reporting', consumptionReportingRouter )
-app.use('/3gpp-m5/v2/metrics-reporting', metricsReportingRouter )
+app.use('/3gpp-m5/v2/service-access-information', saiRouter);
+app.use('/m8/', m8Router);
+app.use('/3gpp-m5/v2/consumption-reporting', consumptionReportingRouter);
+app.use('/3gpp-m5/v2/metrics-reporting', metricsReportingRouter);
 app.use('/reporting-ui/metrics', metricsFrontendRouter);
 
 module.exports = app;
