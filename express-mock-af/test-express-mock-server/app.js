@@ -1,6 +1,5 @@
 const express = require('express');
-const axios = require('axios');
-const { log } = require('debug'); // install with `npm install axios`
+const { log } = require('debug');
 global.EventSource = require('eventsource');
 
 /**
