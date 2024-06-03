@@ -20,7 +20,6 @@
     "node-readfiles": "^0.3.1",
     "readdir": "^1.0.2",
     "rxjs": "^7.8.1",
-    "xml-js": "^1.6.11",
     "xml2js": "^0.6.2"
   },
   "devDependencies": {

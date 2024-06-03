@@ -3,6 +3,10 @@ const axios = require('axios');
 const { log } = require('debug'); // install with `npm install axios`
 global.EventSource = require('eventsource');
 
+/**
+ * Create an express app which should validate the functionality of the SSE endpoint of the regular mock server.
+ * @type {*|Express}
+ */
 const app = express();
 const port = 3004;
 
@@ -39,5 +43,4 @@ function observeEndpoint() {
 
 app.listen(port, () => {
     console.log(`Server is running at http://localhost:${port}`);
-    observeEndpoint();
 });

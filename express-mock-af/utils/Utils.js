@@ -22,6 +22,12 @@ class Utils {
         });
     }
 
+    /**
+     * Read files from directory paths and return the content of the files in utf-8 format.
+     *
+     * @param directoryPathRoot
+     * @returns {Promise<*|*[]>}
+     */
     static async readFiles(directoryPathRoot) {
         try {
             const filePaths = await Utils.getDirectoriesRecursive(directoryPathRoot);
@@ -38,9 +44,15 @@ class Utils {
         }
     }
 
-    static async getDirectoriesRecursive(srcpath) {
+    /**
+     * Search for files in the given directory recursively.
+     *
+     * @param path
+     * @returns {Promise<unknown>}
+     */
+    static async getDirectoriesRecursive(path) {
         return new Promise((resolve, reject) => {
-            dir.readFiles(srcpath, {
+            dir.readFiles(path, {
                     match: /\.xml$/
                 },
                 function (err, content, next) {
@@ -54,18 +66,23 @@ class Utils {
         });
     }
 
-    static regexRangeToNumberArray(rangeString) {
+    /**
+     * Logically converts a regular expression range string to an array.
+     * @param rangeString
+     * @returns {*|*[]}
+     */
+    static regexRangeToArray(rangeString) {
         if (rangeString.includes(',')) {
-            return rangeString.split(',').map(Number);
+            return rangeString.split(',');
         } else if (rangeString.includes('-')) {
-            const [start, end] = rangeString.split('-').map(Number);
+            const [start, end] = rangeString.split('-');
             const result = [];
             for (let i = start; i <= end; i++) {
                 result.push(i);
             }
             return result;
         } else {
-            return [Number(rangeString)];
+            return [rangeString];
         }
     }
 }

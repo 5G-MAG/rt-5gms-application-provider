@@ -5,23 +5,24 @@ var router = express.Router();
 
 const reportsService = new ReportsService();
 
-// It is necessary to set provisionSessionId
+/**
+ * This endpoint returns an overview of all the metrics for the given provisionSessionIds
+ */
 router.get('/', async (req, res) => {
     let provisionSessionIds = req.query.provisionSessionIds;
     if (!provisionSessionIds) {
         return res.status(400).send('provisionSessionId is required');
     }
 
-    const isValidFormat = provisionSessionIds.match(/([1-6],)*[1-6]|([1-6]-[1-6])/g);
-    if (!isValidFormat) {
-        return res.status(400).send('Invalid format for provisionSessionIds must be of the form 1-6 or 1,2,3,4,5,6 or 1');
-    }
-    provisionSessionIds = Utils.regexRangeToNumberArray(provisionSessionIds);
+    provisionSessionIds = Utils.regexRangeToArray(provisionSessionIds);
 
     const report = await reportsService.generateMetricsReport(provisionSessionIds, req.query);
     res.status(200).send(report);
 });
 
+/**
+ * This endpoint filters reports based on the query parameters and returns them in a detailed format
+ */
 router.get('/details', async (req, res) => {
     const readContent = await Utils.readFiles('public/reports');
     const transformedJsonResponse = await reportsService.transformXmlToReport(readContent);
@@ -29,6 +30,10 @@ router.get('/details', async (req, res) => {
     res.status(200).send(filteredList);
 });
 
+/**
+ * This endpoint functions as an event source that sends a message every time a new file is written.
+ * This is base on {@link https://developer.mozilla.org/en-US/docs/Web/API/Server-sent_events/Using_server-sent_events SSE } (Server-Sent Events)
+ */
 router.get('/reload', (req, res) => {
     res.writeHead(200, {
         'Content-Type': 'text/event-stream',

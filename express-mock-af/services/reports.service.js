@@ -4,16 +4,35 @@ const Utils = require('../utils/Utils');
 
 class ReportsService {
 
+    /**
+     * Translates XML to JSON
+     *
+     * @param xml
+     * @returns {Promise<*>}
+     */
     async translateXmlToJson(xml) {
         return xml2js.parseStringPromise(xml, { mergeAttrs: true, explicitArray: false });
     }
 
+    /**
+     * Transforms XML to a report
+     *
+     * @param XmlFiles
+     * @returns {Promise<any[]>}
+     */
     async transformXmlToReport(XmlFiles) {
         return Object.values(omitBy(await Promise.all(XmlFiles.map(async (file) => {
             return await this.translateXmlToJson(file);
         })), isNil));
     }
 
+    /**
+     * Reads multiple saved metrics reports and generates a combined report
+     *
+     * @param provisionSessionIds
+     * @param queryFilter
+     * @returns {Promise<(any)[] | *>}
+     */
     async generateMetricsReport(provisionSessionIds, queryFilter) {
         const readContent = (await Promise.all(
             provisionSessionIds.map(async (id) => {
@@ -25,8 +44,15 @@ class ReportsService {
         return await this.overviewMetricsReport(transformedJsonResponse, queryFilter);
     }
 
+    /**
+     * Returns an overview of all the metrics for the given provisionSessionIds
+     *
+     * @param reports
+     * @param queryFilter
+     * @returns {Promise<(any)[]>}
+     */
     async overviewMetricsReport(reports, queryFilter) {
-        const { orderProperty, offset, limit, sortingOrder, provisionSessionId } = defaults(
+        const { orderProperty, offset, limit, sortingOrder } = defaults(
             queryFilter,
             {
                 orderProperty: 'reportTime',
@@ -57,6 +83,13 @@ class ReportsService {
             .value();
     }
 
+    /**
+     * Filters reports based on the query parameters
+     *
+     * @param reportsList
+     * @param queryFilter
+     * @returns {*}
+     */
     filterReports(reportsList, queryFilter) {
         const clearQueryFilter = omitBy(queryFilter, isNil);
         return reportsList.filter(report => {
