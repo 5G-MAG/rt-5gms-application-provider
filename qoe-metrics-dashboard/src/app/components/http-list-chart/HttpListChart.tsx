@@ -14,6 +14,8 @@ import { HttpList } from 'src/app/types/qoe-report.type';
 
 import { Box, Typography } from '@mui/material';
 
+import { graphColors } from '../../../theme';
+
 type DataPoint = {
   duration: number;
   transferedBytes: number;
@@ -51,16 +53,6 @@ function HttpListChart({ httpList }: { httpList: HttpList | undefined }) {
   if (!httpList) {
     return <Box>No data found for Http List</Box>;
   }
-
-  const fillColors = [
-    '#8884d8',
-    '#ff7300',
-    '#82ca9d',
-    '#ff0000',
-    '#00ff00',
-    '#0000ff',
-    '#ff00ff',
-  ];
 
   return (
     <Box
@@ -132,7 +124,7 @@ function HttpListChart({ httpList }: { httpList: HttpList | undefined }) {
               key={type}
               name={type}
               data={data}
-              fill={fillColors[index % fillColors.length]}
+              fill={graphColors[index % graphColors.length]}
               hide={!scatterVisibility[type]}
             />
           ))}
