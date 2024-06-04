@@ -5,6 +5,7 @@ import { Box } from '@mui/material';
 import ApiController from '../../api/ApiController';
 import BufferLevelChart from '../../components/buffer-level-chart/BufferLevelChart';
 import HttpListChart from '../../components/http-list-chart/HttpListChart';
+import RepSwitchesChart from '../../components/rep-switches-chart/RepSwitchesChart';
 import { QoEMetricsReport } from '../../types/qoe-report.type';
 
 function DetailPage({ reportId }: { reportId: string }) {
@@ -21,7 +22,14 @@ function DetailPage({ reportId }: { reportId: string }) {
   }, [reportId]);
 
   return (
-    <Box padding={'2rem'} component={'div'} overflow={'scroll'}>
+    <Box
+      padding={'2rem'}
+      component={'div'}
+      overflow={'scroll'}
+      display={'flex'}
+      flexDirection={'column'}
+      gap={'2rem'}
+    >
       <BufferLevelChart
         bufferLevel={
           report?.ReceptionReport.QoeReport.QoeMetric.find(
@@ -29,11 +37,6 @@ function DetailPage({ reportId }: { reportId: string }) {
           )?.BufferLevel
         }
       ></BufferLevelChart>
-      <div
-        style={{
-          height: '2rem',
-        }}
-      ></div>
       <HttpListChart
         httpList={
           report?.ReceptionReport.QoeReport.QoeMetric.find(
@@ -41,6 +44,18 @@ function DetailPage({ reportId }: { reportId: string }) {
           )?.HttpList
         }
       ></HttpListChart>
+      <RepSwitchesChart
+        repSwitchList={
+          report?.ReceptionReport.QoeReport.QoeMetric.find(
+            (metric) => metric.RepSwitchList
+          )?.RepSwitchList
+        }
+        mpdInfo={
+          report?.ReceptionReport.QoeReport.QoeMetric.find(
+            (metric) => metric.MPDInformation
+          )?.MPDInformation
+        }
+      ></RepSwitchesChart>
     </Box>
   );
 }

@@ -26,7 +26,7 @@ function BufferLevelChart({
 
   const data = bufferLevel.BufferLevelEntry.map((entry) => ({
     level: Number(entry.level),
-    datetime: new Date(entry.t).getTime(),
+    timestamp: new Date(entry.t).getTime(),
   }));
 
   return (
@@ -50,7 +50,7 @@ function BufferLevelChart({
         >
           <CartesianGrid />
           <XAxis
-            dataKey="datetime"
+            dataKey="timestamp"
             tick={<XAxisTick></XAxisTick>}
             height={80}
             allowDuplicatedCategory={true}
@@ -61,7 +61,7 @@ function BufferLevelChart({
             scale={'time'}
           >
             <Label
-              value="Datetime"
+              value="Timestamp"
               position="bottom"
               style={{ textAnchor: 'middle' }}
             />
@@ -84,7 +84,7 @@ function BufferLevelChart({
           <Tooltip
             position={{ y: 0 }}
             labelFormatter={(name) =>
-              'Datetime: ' + dayjs(name).format('YYYY-MM-DD HH:mm:ss:SSS')
+              'Timestamp: ' + dayjs(name).format('YYYY-MM-DD HH:mm:ss:SSS')
             }
             formatter={(value, name, props) => [value, 'Duration in ms']}
           />
