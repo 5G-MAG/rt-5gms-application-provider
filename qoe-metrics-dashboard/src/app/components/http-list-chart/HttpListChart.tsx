@@ -80,6 +80,8 @@ function HttpListChart({ httpList }: { httpList: HttpList | undefined }) {
           height={1000}
           margin={{ top: 0, bottom: 20, left: 20, right: 20 }}
         >
+          <CartesianGrid strokeDasharray="3 3" />
+
           <XAxis
             dataKey="duration"
             type="number"
@@ -125,7 +127,6 @@ function HttpListChart({ httpList }: { httpList: HttpList | undefined }) {
               });
             }}
           />
-          <CartesianGrid strokeDasharray="3 3" />
           {Object.entries(dataByTypeRef.current).map(([type, data], index) => (
             <Scatter
               key={type}
