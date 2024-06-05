@@ -1,5 +1,6 @@
-import { useEffect, useState } from 'react';
 import axios from 'axios';
+import { useEffect, useState } from 'react';
+
 import { TMetricsReportOverviewResponse } from '../types/responses/backend/metrics/report-overview.interface';
 
 const useAxiosGet = <T>({ url, params }: {
@@ -19,6 +20,7 @@ const useAxiosGet = <T>({ url, params }: {
                 params: params ? JSON.parse(params) : {},
             })
                 .then((res) => {
+                  console.log(res)
                     setResponse(res.data);
                 })
                 .catch((err) => {
@@ -38,15 +40,15 @@ const useAxiosGet = <T>({ url, params }: {
 
 
 export const useReportList = (
-    backendUrl = 'http://localhost:3003',
-    provisionSessionId: RegExp,
+    backendUrl = 'http://localhost:3003/reporting-ui/metrics',
+    provisionSessionIds: string,
     offset: number,
     limit: number
 ) => {
 
     const {response: reportList, error, loading} =  useAxiosGet< TMetricsReportOverviewResponse >({
         url: `${backendUrl}`,
-        params: JSON.stringify({ offset, limit }),
+        params: JSON.stringify({ provisionSessionIds, offset, limit, }),
     });
 
     return {reportList, error, loading}

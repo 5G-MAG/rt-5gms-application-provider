@@ -8,26 +8,32 @@ import {
   Box,
   Button,
   Checkbox,
+  CircularProgress,
   Divider,
   IconButton,
   Typography,
 } from '@mui/material';
 
-import  { useReportList } from '../../api/ApiController';
+import { useReportList } from '../../api/ApiController';
 
 import './Overview.scss';
 import load = Simulate.load;
 
 const ROWS_PER_PAGE = 20;
-const backendUrl = undefined
+const backendUrl = 'http://localhost:3003/reporting-ui/metrics';
 
 function Overview() {
   const navigate = useNavigate();
 
   // params for metrics report overview
-  const [ provisionSessionId, setProvisionSessionId] = useState<RegExp>(/1-6/);
-  const [ offset, setOffset] = useState<number>(0)
-  const [ limit, setLimit] = useState<number>(0)
+  const [provisionSessionIds, setProvisionSessionIds] = useState<string>('1-6');
+  const [offset, setOffset] = useState<number>(0);
+
+  const [selectedMetricsReports, setSelectedMetricsReports] = useState<
+    number[]
+  >([]);
+
+  const [currentPage, setCurrentPage] = useState(0);
 
   // params for metrics report details
   // const receptionReport = pick(report.ReceptionReport, [
@@ -44,38 +50,35 @@ function Overview() {
   // const [ clientId, setClientId ] = useState<string>('');
 
 
-  const {reportList, error, loading} = useReportList(backendUrl, provisionSessionId, offset, limit)
 
-  const [currentPage, setCurrentPage] = useState(0);
-  const [selectedMetricsReports, setSelectedMetricsReports] = useState<
-    number[]
-  >([]);
 
-  // useEffect(() => {
-  //   async function getMetricsReports(page: number): Promise<void> {
-  //     const reports = await ApiController.getMetricsReportsList(
-  //       page,
-  //       ROWS_PER_PAGE
-  //     );
-  //     if (reports.length === 0) {
-  //       setCurrentPage(currentPage - 1);
-  //     } else {
-  //       setMetricsReports(reports);
-  //     }
-  //   }
-  //   getMetricsReports(currentPage);
-  // }, [currentPage]);
+  const { reportList, error, loading } = useReportList(
+    backendUrl,
+    provisionSessionIds,
+    offset,
+    ROWS_PER_PAGE
+  );
+
+  useEffect(() => {
+    setOffset(currentPage * ROWS_PER_PAGE)
+  }, [currentPage]);
 
   if (loading) {
-    return "loading"
+    return (
+      <div className="loading">
+        <CircularProgress  />
+      </div>
+    );
+  }
+
+
+  if (error) {
+    return <div>{error}</div>;
   }
 
   if (!reportList) {
-    return <div>
-      No Records found
-    </div>
+    return <div>No Records found</div>;
   }
-
 
 
   function handleChangePage(page: number): void {
@@ -95,7 +98,7 @@ function Overview() {
   function handleClickMetric(index: number): void {
     navigate('/metrics/' + index);
   }
-  
+
   return (
     <div className="page-wrapper">
       <div className="list-wrapper">
@@ -136,10 +139,10 @@ function Overview() {
 
               <Box component={'div'} onClick={() => handleClickMetric(i)}>
                 <Typography component={'span'}>{row.clientID}</Typography>
-                <Typography component={'span'}>{row.recordingSessionId}</Typography>
                 <Typography component={'span'}>
-                  {row.reportTime}
+                  {row.recordingSessionId}
                 </Typography>
+                <Typography component={'span'}>{row.reportTime}</Typography>
               </Box>
             </Box>
           ))}
@@ -163,7 +166,7 @@ function Overview() {
               <ChevronLeft></ChevronLeft>
             </IconButton>
             <Typography component={'span'}>{currentPage + 1}</Typography>
-            <IconButton onClick={() => handleChangePage(currentPage + 1)}>
+            <IconButton onClick={() => handleChangePage(currentPage + 1)} disabled={reportList.length < ROWS_PER_PAGE}>
               <ChevronRight></ChevronRight>
             </IconButton>
           </Box>
