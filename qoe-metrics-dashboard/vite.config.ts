@@ -19,6 +19,7 @@ export default defineConfig({
   },
 
   plugins: [react(), nxViteTsPaths()],
+  assetsInclude: ['src/assets/**/*'],
 
   // Uncomment this if you are using workers.
   // worker: {

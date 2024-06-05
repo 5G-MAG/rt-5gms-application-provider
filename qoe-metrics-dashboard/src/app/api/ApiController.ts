@@ -1,3 +1,7 @@
+import axios from 'axios';
+
+import { QoEMetricsReport, ReceptionReport } from '../types/qoe-report.type';
+
 export default class ApiController {
   static async getMetricsReportsList(
     page: number,
@@ -14,5 +18,17 @@ export default class ApiController {
         }));
       resolve(rows.slice(page * itemsPerPage, (page + 1) * itemsPerPage));
     });
+  }
+
+  static async getMetricsReport(
+    reportId: string
+  ): Promise<QoEMetricsReport | null> {
+    try {
+      const report = (await axios.get<QoEMetricsReport>('/sample.json')).data;
+      return report;
+    } catch (error) {
+      console.error('Error reading JSON file:', error);
+      return null;
+    }
   }
 }

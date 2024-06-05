@@ -1,5 +1,7 @@
 import { createTheme } from '@mui/material';
 
+export const graphColors = ['#0F4776', '#F46036', '#2BA84A', '#A72608'];
+
 export const theme = createTheme({
   typography: {
     fontFamily: 'Roboto',
