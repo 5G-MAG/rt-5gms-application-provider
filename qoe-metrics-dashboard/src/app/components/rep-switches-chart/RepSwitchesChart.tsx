@@ -13,9 +13,10 @@ import {
 } from 'recharts';
 import { MPDInformation, RepSwitchList } from 'src/app/types/qoe-report.type';
 
-import { Box, Typography, useTheme } from '@mui/material';
+import { Box, Typography } from '@mui/material';
 
 import { graphColors } from '../../../theme';
+import { TypographyTick, XAxisTick } from '../utils/chart';
 
 function RepSwitchesChart({
   repSwitchList,
@@ -97,7 +98,7 @@ function RepSwitchesChart({
           <CartesianGrid />
           <XAxis
             dataKey="timestamp"
-            tick={<XAxisTick></XAxisTick>}
+            tick={(args) => <XAxisTick {...args}></XAxisTick>}
             height={80}
             allowDuplicatedCategory={true}
             angle={10}
@@ -113,7 +114,7 @@ function RepSwitchesChart({
             />
           </XAxis>
 
-          <YAxis tick={<TypographyTick></TypographyTick>}>
+          <YAxis tick={(args) => <TypographyTick {...args}></TypographyTick>}>
             <Label
               value="Bandwidth in bit/s"
               position="insideLeft"
@@ -156,38 +157,3 @@ function RepSwitchesChart({
 }
 
 export default RepSwitchesChart;
-
-// type is not exported
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function XAxisTick(props: any) {
-  const { x, y, payload } = props;
-
-  return (
-    <g transform={`translate(${x},${y})`}>
-      <text
-        x={0}
-        y={0}
-        dy={16}
-        textAnchor="end"
-        fill="#666"
-        transform="rotate(-65)"
-        fontSize={10}
-      >
-        {dayjs(payload.value).format('HH:mm:ss:SSS')}
-      </text>
-    </g>
-  );
-}
-
-// type is not exported
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function TypographyTick(props: any) {
-  const { payload, x, y } = props;
-  return (
-    <g transform={`translate(${x},${y})`}>
-      <text fontSize={10} x={0} y={0} dy={4} textAnchor="end" fill="#666">
-        {payload.value}
-      </text>
-    </g>
-  );
-}

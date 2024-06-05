@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'; // Added useRef
+import { useEffect, useRef, useState } from 'react';
 import {
   CartesianGrid,
   Label,
@@ -15,6 +15,7 @@ import { HttpList } from 'src/app/types/qoe-report.type';
 import { Box, Typography } from '@mui/material';
 
 import { graphColors } from '../../../theme';
+import { TypographyTick } from '../utils/chart';
 
 type DataPoint = {
   duration: number;
@@ -48,7 +49,7 @@ function HttpListChart({ httpList }: { httpList: HttpList | undefined }) {
         {}
       );
     }
-  }, [httpList]); // Added dependency array to useEffect
+  }, [httpList]);
 
   if (!httpList) {
     return <Box>No data found for Http List</Box>;
@@ -76,9 +77,11 @@ function HttpListChart({ httpList }: { httpList: HttpList | undefined }) {
 
           <XAxis
             dataKey="duration"
+            name="Duration"
             type="number"
+            unit={'ms'}
             domain={['auto', 'auto']}
-            tick={<TypographyTick></TypographyTick>}
+            tick={(args) => <TypographyTick {...args}></TypographyTick>}
           >
             <Label
               value="Duration in ms"
@@ -88,9 +91,11 @@ function HttpListChart({ httpList }: { httpList: HttpList | undefined }) {
           </XAxis>
           <YAxis
             dataKey="transferedBytes"
+            name="Transfered Bytes"
             type="number"
+            unit={'bytes'}
             domain={['auto', 'auto']}
-            tick={<TypographyTick></TypographyTick>}
+            tick={(args) => <TypographyTick {...args}></TypographyTick>}
           >
             <Label
               value="Transferred Bytes"
@@ -102,11 +107,7 @@ function HttpListChart({ httpList }: { httpList: HttpList | undefined }) {
           </YAxis>
           <Tooltip
             formatter={(value: string, name: string) => {
-              return [
-                value + ' bytes',
-                name.charAt(0).toUpperCase() +
-                  name.replace(/([A-Z])/g, ' $1').slice(1),
-              ];
+              return [value, name];
             }}
           />
 
@@ -136,15 +137,3 @@ function HttpListChart({ httpList }: { httpList: HttpList | undefined }) {
 
 export default HttpListChart;
 
-// type is not exported
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function TypographyTick(props: any) {
-  const { payload, x, y } = props;
-  return (
-    <g transform={`translate(${x},${y})`}>
-      <text fontSize={10} x={0} y={0} dy={4} textAnchor="end" fill="#666">
-        {payload.value}
-      </text>
-    </g>
-  );
-}
