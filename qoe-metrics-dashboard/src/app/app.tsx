@@ -11,7 +11,7 @@ export default function App() {
   }, [navigate]);
 
   return (
-    <div>
+    <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
       <NavBar></NavBar>
       <Outlet></Outlet>
     </div>
