@@ -1,33 +1,34 @@
-import axios from 'axios';
 import { useEffect, useState } from 'react';
+import axios from 'axios';
+import { defaults } from 'lodash';
+import { TMetricsDetailsRequestParams } from '../models/types/requests/metrics-details-request-params.type';
+import { IMetricsRequestParamsOverview } from '../models/types/requests/metrics-overview-request-params.interface';
+import { TMetricsDetailsReportResponse } from '../models/types/responses/metrics-details-report.interface';
+import { TMetricsOverviewReport, TMetricsOverviewReportResponse } from '../models/types/responses/metrics-overview-report.interface';
 
-import { TMetricsReportOverviewResponse } from '../types/responses/backend/metrics/report-overview.interface';
 
 const useAxiosGet = <T>({ url, params }: {
     url: string;
-    params?: string;
-
+    params: object;
 }) => {
     const [response, setResponse] = useState<T>();
     const [error, setError] = useState('');
-    const [loading, setloading] = useState(true);
-
+    const [loading, setLoading] = useState(true);
 
     useEffect(() => {
         const fetchData = () => {
             axios<T>(url,{
                 method: "get",
-                params: params ? JSON.parse(params) : {},
+                params: params,
             })
                 .then((res) => {
-                  console.log(res)
                     setResponse(res.data);
                 })
                 .catch((err) => {
                     setError(err);
                 })
                 .finally(() => {
-                    setloading(false);
+                    setLoading(false);
                 });
         };
 
@@ -40,16 +41,30 @@ const useAxiosGet = <T>({ url, params }: {
 
 
 export const useReportList = (
-    backendUrl = 'http://localhost:3003/reporting-ui/metrics',
-    provisionSessionIds: string,
-    offset: number,
-    limit: number
+    backendUrl: string,
+    requestOverviewParams: IMetricsRequestParamsOverview
 ) => {
-
-    const {response: reportList, error, loading} =  useAxiosGet< TMetricsReportOverviewResponse >({
-        url: `${backendUrl}`,
-        params: JSON.stringify({ provisionSessionIds, offset, limit, }),
+    const {response: reportList, error, loading} =  useAxiosGet<TMetricsOverviewReportResponse>({
+        url: `${backendUrl}/reporting-ui/metrics`,
+        params: defaults(
+            {
+                provisionSessionId: JSON.stringify(requestOverviewParams.provisionSessionIds),
+            },
+            requestOverviewParams,
+        )
     });
 
     return {reportList, error, loading}
+}
+
+export const useReportDetail = (
+    backendUrl: string,
+    requestDetailsParams: TMetricsDetailsRequestParams
+) => {
+    const {response: reportDetails, error, loading} =  useAxiosGet<TMetricsDetailsReportResponse>({
+        url: `${backendUrl}/reporting-ui/metrics/details`,
+        params: requestDetailsParams
+    });
+
+    return {reportDetails, error, loading}
 }

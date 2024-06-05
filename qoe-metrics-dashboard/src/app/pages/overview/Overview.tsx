@@ -1,67 +1,46 @@
 // import { pick } from 'lodash';
-import { useEffect, useState } from 'react';
-import { Simulate } from 'react-dom/test-utils';
-import { useNavigate } from 'react-router-dom';
-
 import { ChevronLeft, ChevronRight } from '@mui/icons-material';
-import {
-  Box,
-  Button,
-  Checkbox,
-  CircularProgress,
-  Divider,
-  IconButton,
-  Typography,
-} from '@mui/material';
+import { Box, Button, Checkbox, CircularProgress, Divider, IconButton, Typography } from '@mui/material';
+import { useContext, useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 
 import { useReportList } from '../../api/ApiController';
 
 import './Overview.scss';
-import load = Simulate.load;
+import { EnvContext } from '../../env.context';
+import { ESortingOrder } from '../../models/enums/shared/sorting-order.enum';
+import { TMetricsOverviewReport } from '../../models/types/responses/metrics-overview-report.interface';
 
 const ROWS_PER_PAGE = 20;
-const backendUrl = 'http://localhost:3003/reporting-ui/metrics';
 
 function Overview() {
   const navigate = useNavigate();
 
-  // params for metrics report overview
-  const [provisionSessionIds, setProvisionSessionIds] = useState<string>('1-6');
-  const [offset, setOffset] = useState<number>(0);
+  const envCtx = useContext(EnvContext);
 
+  // params for metrics report overview
+  const [ provisionSessionIds, setProvisionSessionId] = useState<RegExp>(/1-6/);
+  const [ offset, setOffset] = useState<number>(0)
+  const [ limit, setLimit] = useState<number>(ROWS_PER_PAGE)
+  const [ sortingOrder, setSortingOrder] = useState<ESortingOrder>(ESortingOrder.ASC)
+  const [ orderProperty, setOrderProperty] = useState<keyof TMetricsOverviewReport>('reportTime')
+
+  const {reportList, error, loading} = useReportList(envCtx.backendUrl, {
+    provisionSessionIds,
+    offset,
+    limit,
+    sortingOrder,
+    orderProperty
+  })
+
+  const [currentPage, setCurrentPage] = useState(0);
   const [selectedMetricsReports, setSelectedMetricsReports] = useState<
     number[]
   >([]);
 
-  const [currentPage, setCurrentPage] = useState(0);
-
-  // params for metrics report details
-  // const receptionReport = pick(report.ReceptionReport, [
-  //   'clientID',
-  //   'contentURI'
-  // ]);
-  //
-  // const qoeReport = pick(report.ReceptionReport.QoeReport, [
-  //   'reportPeriod',
-  //   'reportTime',
-  //   'recordingSessionId'
-  // ]);
-  //
-  // const [ clientId, setClientId ] = useState<string>('');
-
-
-
-
-  const { reportList, error, loading } = useReportList(
-    backendUrl,
-    provisionSessionIds,
-    offset,
-    ROWS_PER_PAGE
-  );
-
   useEffect(() => {
-    setOffset(currentPage * ROWS_PER_PAGE)
-  }, [currentPage]);
+    setOffset(currentPage * limit)
+  }, [currentPage, limit]);
 
   if (loading) {
     return (
@@ -95,8 +74,9 @@ function Overview() {
     }
   }
 
-  function handleClickMetric(index: number): void {
-    navigate('/metrics/' + index);
+  function handleClickMetric(filterQueryParams: TMetricsOverviewReport): void {
+    const params = new URLSearchParams(filterQueryParams as unknown as Record<string, string>);
+    navigate('/metrics/details?' + params.toString());
   }
 
   return (
@@ -121,7 +101,7 @@ function Overview() {
         </Box>
         <Divider></Divider>
         <Box className="table-body">
-          {reportList.map((row, i) => (
+          { Array.isArray(reportList) && reportList.map((row, i) => (
             <Box
               key={i}
               className="table-row spacer"
@@ -137,8 +117,9 @@ function Overview() {
                 onClick={() => handleSelectMetricsReport(i)}
               ></Checkbox>
 
-              <Box component={'div'} onClick={() => handleClickMetric(i)}>
+              <Box component={'div'} onClick={() => handleClickMetric(row)}>
                 <Typography component={'span'}>{row.clientID}</Typography>
+                <Typography component={'span'}>{row.recordingSessionId}</Typography>
                 <Typography component={'span'}>
                   {row.recordingSessionId}
                 </Typography>

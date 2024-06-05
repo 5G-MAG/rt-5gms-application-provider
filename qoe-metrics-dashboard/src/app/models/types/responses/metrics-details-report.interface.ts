@@ -1,12 +1,14 @@
+import { QoeMetric } from '../qoe-report.type';
+
 /**
  * The response type for the backend endpoint for metrics report detail
  */
-export type TMetricsReportDetailResponse = IMetricsReportDetail[];
+export type TMetricsDetailsReportResponse = TMetricsDetailReport[];
 
 /**
  * The interface for a single metrics report detail
  */
-export interface IMetricsReportDetail {
+export interface TMetricsDetailReport {
     ReceptionReport: IReceptionReport;
 }
 
@@ -31,4 +33,5 @@ export interface IQoeReport {
     reportPeriod: string;
     reportTime: string;
     periodID: string;
+    QoeMetric?: QoeMetric[];
 }

@@ -1,12 +1,12 @@
 /**
  * The response type for the backend endpoint for metrics report overview
  */
-export type TMetricsReportOverviewResponse = IMetricsReportOverview[]
+export type TMetricsOverviewReportResponse = TMetricsOverviewReport[]
 
 /**
  * Interface for an individual metrics overview report
  */
-export interface IMetricsReportOverview {
+export interface TMetricsOverviewReport {
     /**
      * The client ID
      */

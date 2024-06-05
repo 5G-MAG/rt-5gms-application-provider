@@ -8,6 +8,10 @@ export default defineConfig({
   root: __dirname,
   cacheDir: './node_modules/.vite/qoe-metrics-dashboard',
 
+  define: {
+    'process.env': process.env,
+  },
+
   server: {
     port: 4200,
     host: 'localhost',
