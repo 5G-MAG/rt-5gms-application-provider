@@ -1,3 +1,4 @@
+/*
 export interface QoEMetricsReport {
   ReceptionReport: ReceptionReport;
 }
@@ -20,6 +21,8 @@ export interface QoeReport {
   QoeMetric: QoeMetric[];
   'sv:delimiter': string;
 }
+
+ */
 
 export interface QoeMetric {
   BufferLevel?: BufferLevel;

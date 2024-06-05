@@ -1,34 +1,53 @@
+import { useEffect, useState } from 'react';
 import axios from 'axios';
+import { TMetricsReportOverviewResponse } from '../types/responses/backend/metrics/report-overview.interface';
 
-import { QoEMetricsReport, ReceptionReport } from '../types/qoe-report.type';
+const useAxiosGet = <T>({ url, params }: {
+    url: string;
+    params?: string;
 
-export default class ApiController {
-  static async getMetricsReportsList(
-    page: number,
-    itemsPerPage: number
-  ): Promise<any[]> {
-    return new Promise((resolve, reject) => {
-      const rows = new Array(101)
-        .fill(null)
-        .map((_, i) => i + 1)
-        .map((i) => ({
-          name: 'Metrics Report ' + i,
-          date: new Date('2024-05-21'),
-          provisioningId: 'owihgnpo2pom134',
-        }));
-      resolve(rows.slice(page * itemsPerPage, (page + 1) * itemsPerPage));
+}) => {
+    const [response, setResponse] = useState<T>();
+    const [error, setError] = useState('');
+    const [loading, setloading] = useState(true);
+
+
+    useEffect(() => {
+        const fetchData = () => {
+            axios<T>(url,{
+                method: "get",
+                params: params ? JSON.parse(params) : {},
+            })
+                .then((res) => {
+                    setResponse(res.data);
+                })
+                .catch((err) => {
+                    setError(err);
+                })
+                .finally(() => {
+                    setloading(false);
+                });
+        };
+
+
+        fetchData();
+    }, [url, params]);
+
+    return { response, error, loading };
+};
+
+
+export const useReportList = (
+    backendUrl = 'http://localhost:3003',
+    provisionSessionId: RegExp,
+    offset: number,
+    limit: number
+) => {
+
+    const {response: reportList, error, loading} =  useAxiosGet< TMetricsReportOverviewResponse >({
+        url: `${backendUrl}`,
+        params: JSON.stringify({ offset, limit }),
     });
-  }
 
-  static async getMetricsReport(
-    reportId: string
-  ): Promise<QoEMetricsReport | null> {
-    try {
-      const report = (await axios.get<QoEMetricsReport>('/sample.json')).data;
-      return report;
-    } catch (error) {
-      console.error('Error reading JSON file:', error);
-      return null;
-    }
-  }
+    return {reportList, error, loading}
 }
