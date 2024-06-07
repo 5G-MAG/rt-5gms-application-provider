@@ -1,11 +1,11 @@
-import { useEffect, useState } from 'react';
 import axios from 'axios';
 import { defaults } from 'lodash';
+import { useEffect, useState } from 'react';
 
 import { TMetricsDetailsRequestParams } from '../models/types/requests/metrics-details-request-params.type';
 import { IMetricsRequestParamsOverview } from '../models/types/requests/metrics-overview-request-params.interface';
 import { TMetricsDetailsReportResponse } from '../models/types/responses/metrics-details-report.interface';
-import { TMetricsOverviewReport, TMetricsOverviewReportResponse } from '../models/types/responses/metrics-overview-report.interface';
+import { TMetricsOverviewReportResponse } from '../models/types/responses/metrics-overview-report.interface';
 
 
 const useAxiosGet = <T>({ url, params }: {
@@ -18,9 +18,9 @@ const useAxiosGet = <T>({ url, params }: {
 
     useEffect(() => {
         const fetchData = () => {
-            axios<T>(url,{
-                method: "get",
-                params: params,
+            axios<T>(url, {
+                method: 'get',
+                params: params
             })
                 .then((res) => {
                     setResponse(res.data);
@@ -45,27 +45,27 @@ export const useReportList = (
     backendUrl: string,
     requestOverviewParams: IMetricsRequestParamsOverview
 ) => {
-    const {response: reportList, error, loading} =  useAxiosGet<TMetricsOverviewReportResponse>({
+    const { response: reportList, error, loading } = useAxiosGet<TMetricsOverviewReportResponse>({
         url: `${backendUrl}/reporting-ui/metrics`,
         params: defaults(
             {
-                provisionSessionId: JSON.stringify(requestOverviewParams.provisionSessionIds),
+                provisionSessionId: JSON.stringify(requestOverviewParams.provisionSessionIds)
             },
-            requestOverviewParams,
+            requestOverviewParams
         )
     });
 
-    return {reportList, error, loading}
-}
+    return { reportList, error, loading };
+};
 
 export const useReportDetail = (
     backendUrl: string,
     requestDetailsParams: TMetricsDetailsRequestParams
 ) => {
-    const {response: reportDetails, error, loading} =  useAxiosGet<TMetricsDetailsReportResponse>({
+    const { response: reportDetails, error, loading } = useAxiosGet<TMetricsDetailsReportResponse>({
         url: `${backendUrl}/reporting-ui/metrics/details`,
         params: requestDetailsParams
     });
 
-    return {reportDetails, error, loading}
-}
+    return { reportDetails, error, loading };
+};

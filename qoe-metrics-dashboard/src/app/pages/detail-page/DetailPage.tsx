@@ -15,78 +15,85 @@ import { DetailPageContext } from './DetailPage.context';
 import './DetailPage.scss';
 
 function DetailPage({ reportId }: { reportId: string }) {
-  const envCtx = useContext(EnvContext);
+    const envCtx = useContext(EnvContext);
 
-  const [searchParams, setSearchParams] = useSearchParams();
+    const [searchParams, setSearchParams] = useSearchParams();
 
-  const { reportDetails, error, loading } = useReportDetail(
-    envCtx.backendUrl,
-    searchParams as unknown as TMetricsDetailsRequestParams
-  );
-
-  if (loading) {
-    return (
-      <div className="loading">
-        <CircularProgress />
-      </div>
+    const { reportDetails, error, loading } = useReportDetail(
+        envCtx.backendUrl,
+        searchParams as unknown as TMetricsDetailsRequestParams
     );
-  }
 
-  if (error) {
-    return <div>{error}</div>;
-  }
+    if (loading) {
+        return (
+            <div className="loading">
+                <CircularProgress />
+            </div>
+        );
+    }
 
-  if (!reportDetails) {
-    return <div>No Data found</div>;
-  }
+    if (error) {
+        return <div>{error}</div>;
+    }
 
-  return (
-    <Box padding={'2rem'} component={'div'} overflow={'scroll'}>
-      {Array.isArray(reportDetails) &&
-        reportDetails.map((report) => (
-          <DetailPageContext.Provider
-            value={reportDetails}
-            key={
-              report.ReceptionReport.QoeReport.recordingSessionId +
-              report.ReceptionReport.QoeReport.reportTime
-            }
-          >
-            {Array.isArray(report?.ReceptionReport.QoeReport.QoeMetric) && (
-              <Box display={'flex'} flexDirection={'column'} gap={'2rem'}>
-                <BufferLevelChart
-                  bufferLevel={
-                    report?.ReceptionReport.QoeReport.QoeMetric?.find(
-                      (metric) => metric.BufferLevel
-                    )?.BufferLevel
-                  }
-                ></BufferLevelChart>
+    if (!reportDetails) {
+        return <div>No Data found</div>;
+    }
 
-                <HttpListChart
-                  httpList={
-                    report?.ReceptionReport.QoeReport.QoeMetric?.find(
-                      (metric) => metric.HttpList
-                    )?.HttpList
-                  }
-                ></HttpListChart>
+    return (
+        <Box padding={'2rem'} component={'div'} overflow={'scroll'}>
+            {Array.isArray(reportDetails) &&
+                reportDetails.map((report) => (
+                    <DetailPageContext.Provider
+                        value={reportDetails}
+                        key={
+                            report.ReceptionReport.QoeReport
+                                .recordingSessionId +
+                            report.ReceptionReport.QoeReport.reportTime
+                        }
+                    >
+                        {Array.isArray(
+                            report?.ReceptionReport.QoeReport.QoeMetric
+                        ) && (
+                            <Box
+                                display={'flex'}
+                                flexDirection={'column'}
+                                gap={'2rem'}
+                            >
+                                <BufferLevelChart
+                                    bufferLevel={
+                                        report?.ReceptionReport.QoeReport.QoeMetric?.find(
+                                            (metric) => metric.BufferLevel
+                                        )?.BufferLevel
+                                    }
+                                ></BufferLevelChart>
 
-                <RepSwitchesChart
-                  repSwitchList={
-                    report?.ReceptionReport.QoeReport.QoeMetric?.find(
-                      (metric) => metric.RepSwitchList
-                    )?.RepSwitchList
-                  }
-                  mpdInfo={
-                    report?.ReceptionReport.QoeReport.QoeMetric?.find(
-                      (metric) => metric.MPDInformation
-                    )?.MPDInformation
-                  }
-                ></RepSwitchesChart>
-              </Box>
-            )}
-          </DetailPageContext.Provider>
-        ))}
-    </Box>
-  );
+                                <HttpListChart
+                                    httpList={
+                                        report?.ReceptionReport.QoeReport.QoeMetric?.find(
+                                            (metric) => metric.HttpList
+                                        )?.HttpList
+                                    }
+                                ></HttpListChart>
+
+                                <RepSwitchesChart
+                                    repSwitchList={
+                                        report?.ReceptionReport.QoeReport.QoeMetric?.find(
+                                            (metric) => metric.RepSwitchList
+                                        )?.RepSwitchList
+                                    }
+                                    mpdInfo={
+                                        report?.ReceptionReport.QoeReport.QoeMetric?.find(
+                                            (metric) => metric.MPDInformation
+                                        )?.MPDInformation
+                                    }
+                                ></RepSwitchesChart>
+                            </Box>
+                        )}
+                    </DetailPageContext.Provider>
+                ))}
+        </Box>
+    );
 }
 
 export default DetailPage;

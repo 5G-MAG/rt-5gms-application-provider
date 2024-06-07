@@ -10,25 +10,25 @@ export interface TMetricsOverviewReport {
     /**
      * The client ID
      */
-    clientID: string
+    clientID: string;
 
     /**
      * The content URI of the report
      */
-    contentURI: string
+    contentURI: string;
 
     /**
      * The interval of the report
      */
-    reportPeriod: string
+    reportPeriod: string;
 
     /**
      * The time when the report was generated
      */
-    reportTime: string
+    reportTime: string;
 
     /**
      * The ID of the recording session
      */
-    recordingSessionId: string
+    recordingSessionId: string;
 }
