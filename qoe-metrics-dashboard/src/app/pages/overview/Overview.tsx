@@ -3,7 +3,15 @@ import { useContext, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 import { ChevronLeft, ChevronRight } from '@mui/icons-material';
-import { Box, Button, Checkbox, CircularProgress, Divider, IconButton, Typography } from '@mui/material';
+import {
+  Box,
+  Button,
+  Checkbox,
+  CircularProgress,
+  Divider,
+  IconButton,
+  Typography,
+} from '@mui/material';
 
 import { useReportList } from '../../api/ApiController';
 import { EnvContext } from '../../env.context';
@@ -20,19 +28,22 @@ function Overview() {
   const envCtx = useContext(EnvContext);
 
   // params for metrics report overview
-  const [ provisionSessionIds, setProvisionSessionId] = useState<RegExp>(/1-6/);
-  const [ offset, setOffset] = useState<number>(0)
-  const [ limit, setLimit] = useState<number>(ROWS_PER_PAGE)
-  const [ sortingOrder, setSortingOrder] = useState<ESortingOrder>(ESortingOrder.ASC)
-  const [ orderProperty, setOrderProperty] = useState<keyof TMetricsOverviewReport>('reportTime')
+  const [provisionSessionIds, setProvisionSessionId] = useState<RegExp>(/1-6/);
+  const [offset, setOffset] = useState<number>(0);
+  const [limit, setLimit] = useState<number>(ROWS_PER_PAGE);
+  const [sortingOrder, setSortingOrder] = useState<ESortingOrder>(
+    ESortingOrder.ASC
+  );
+  const [orderProperty, setOrderProperty] =
+    useState<keyof TMetricsOverviewReport>('reportTime');
 
-  const {reportList, error, loading} = useReportList(envCtx.backendUrl, {
+  const { reportList, error, loading } = useReportList(envCtx.backendUrl, {
     provisionSessionIds,
     offset,
     limit,
     sortingOrder,
-    orderProperty
-  })
+    orderProperty,
+  });
 
   const [currentPage, setCurrentPage] = useState(0);
   const [selectedMetricsReports, setSelectedMetricsReports] = useState<
@@ -40,17 +51,16 @@ function Overview() {
   >([]);
 
   useEffect(() => {
-    setOffset(currentPage * limit)
+    setOffset(currentPage * limit);
   }, [currentPage, limit]);
 
   if (loading) {
     return (
       <div className="loading">
-        <CircularProgress  />
+        <CircularProgress />
       </div>
     );
   }
-
 
   if (error) {
     return <div>{error}</div>;
@@ -59,7 +69,6 @@ function Overview() {
   if (!reportList) {
     return <div>No Records found</div>;
   }
-
 
   function handleChangePage(page: number): void {
     setCurrentPage(page);
@@ -76,7 +85,9 @@ function Overview() {
   }
 
   function handleClickMetric(filterQueryParams: TMetricsOverviewReport): void {
-    const params = new URLSearchParams(filterQueryParams as unknown as Record<string, string>);
+    const params = new URLSearchParams(
+      filterQueryParams as unknown as Record<string, string>
+    );
     navigate('/metrics/details?' + params.toString());
   }
 
@@ -90,7 +101,7 @@ function Overview() {
           ></Checkbox>
           <div>
             <Typography component={'span'} fontWeight={'bold'}>
-              Name
+              Client ID
             </Typography>
             <Typography component={'span'} fontWeight={'bold'}>
               Provisioning ID
@@ -102,32 +113,32 @@ function Overview() {
         </Box>
         <Divider></Divider>
         <Box className="table-body">
-          { Array.isArray(reportList) && reportList.map((row, i) => (
-            <Box
-              key={i}
-              className="table-row spacer"
-              component={'div'}
-              sx={{
-                '&:hover': {
-                  backgroundColor: 'primary.light',
-                },
-              }}
-            >
-              <Checkbox
-                className="table-checkbox"
-                onClick={() => handleSelectMetricsReport(i)}
-              ></Checkbox>
+          {Array.isArray(reportList) &&
+            reportList.map((row, i) => (
+              <Box
+                key={i}
+                className="table-row spacer"
+                component={'div'}
+                sx={{
+                  '&:hover': {
+                    backgroundColor: 'primary.light',
+                  },
+                }}
+              >
+                <Checkbox
+                  className="table-checkbox"
+                  onClick={() => handleSelectMetricsReport(i)}
+                ></Checkbox>
 
-              <Box component={'div'} onClick={() => handleClickMetric(row)}>
-                <Typography component={'span'}>{row.clientID}</Typography>
-                <Typography component={'span'}>{row.recordingSessionId}</Typography>
-                <Typography component={'span'}>
-                  {row.recordingSessionId}
-                </Typography>
-                <Typography component={'span'}>{row.reportTime}</Typography>
+                <Box component={'div'} onClick={() => handleClickMetric(row)}>
+                  <Typography component={'span'}>{row.clientID}</Typography>
+                  <Typography component={'span'}>
+                    {row.recordingSessionId}
+                  </Typography>
+                  <Typography component={'span'}>{row.reportTime}</Typography>
+                </Box>
               </Box>
-            </Box>
-          ))}
+            ))}
         </Box>
         <Divider></Divider>
         <Box className="table-footer">
@@ -148,7 +159,10 @@ function Overview() {
               <ChevronLeft></ChevronLeft>
             </IconButton>
             <Typography component={'span'}>{currentPage + 1}</Typography>
-            <IconButton onClick={() => handleChangePage(currentPage + 1)} disabled={reportList.length < ROWS_PER_PAGE}>
+            <IconButton
+              onClick={() => handleChangePage(currentPage + 1)}
+              disabled={reportList.length < ROWS_PER_PAGE}
+            >
               <ChevronRight></ChevronRight>
             </IconButton>
           </Box>

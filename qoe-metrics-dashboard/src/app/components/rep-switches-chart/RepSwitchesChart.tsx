@@ -11,11 +11,14 @@ import {
   XAxis,
   YAxis,
 } from 'recharts';
-import { MPDInformation, RepSwitchList } from 'src/app/types/qoe-report.type';
 
 import { Box, Typography } from '@mui/material';
 
 import { graphColors } from '../../../theme';
+import {
+  MPDInformation,
+  RepSwitchList,
+} from '../../models/types/qoe-report.type';
 import { TypographyTick, XAxisTick } from '../utils/chart';
 
 function RepSwitchesChart({
@@ -30,7 +33,7 @@ function RepSwitchesChart({
   >({});
 
   if (!repSwitchList || !mpdInfo) {
-    return <Box>No data</Box>;
+    return null;
   }
 
   const mimeTypes = [...new Set(mpdInfo.map((i) => i.Mpdinfo.mimeType))];
@@ -69,6 +72,7 @@ function RepSwitchesChart({
     Object.entries(dataByMimeType).forEach((entry) => {
       const [mimeType, entries] = entry;
       const filteredElems = entries.filter((e) => e.timestamp <= timestamp);
+      if (!filteredElems.length) return;
       filteredElems.sort((a, b) => b.timestamp - a.timestamp);
       const latestBandwidth = filteredElems[0].bandwidth;
       res = { ...res, [mimeType]: latestBandwidth };
