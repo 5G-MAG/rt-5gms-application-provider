@@ -1,7 +1,6 @@
+import { Box, CircularProgress } from '@mui/material';
 import { useContext } from 'react';
 import { useSearchParams } from 'react-router-dom';
-
-import { Box, CircularProgress } from '@mui/material';
 
 import { useReportDetail } from '../../api/ApiController';
 import BufferLevelChart from '../../components/buffer-level-chart/BufferLevelChart';
@@ -11,7 +10,7 @@ import { TMetricsDetailsRequestParams } from '../../models/types/requests/metric
 
 import { DetailPageContext } from './DetailPage.context';
 
-import './DetailPage.scss'
+import './DetailPage.scss';
 
 function DetailPage({ reportId }: { reportId: string }) {
 
@@ -25,7 +24,7 @@ function DetailPage({ reportId }: { reportId: string }) {
     if (loading) {
         return (
             <div className="loading">
-                <CircularProgress  />
+                <CircularProgress/>
             </div>
         );
     }
@@ -41,18 +40,18 @@ function DetailPage({ reportId }: { reportId: string }) {
 
     return (
         <div>
-            { Array.isArray(reportDetails) && reportDetails.map ((report) => (
+            {Array.isArray(reportDetails) && reportDetails.map((report) => (
 
                 <DetailPageContext.Provider value={reportDetails}>
-                    { Array.isArray(report?.ReceptionReport.QoeReport.QoeMetric) &&
-                    <Box
-                        padding={'2rem'}
-                        component={'div'}
-                        overflow={'scroll'}
-                        display={'flex'}
-                        flexDirection={'column'}
-                        gap={'2rem'}
-                    >
+                    {Array.isArray(report?.ReceptionReport.QoeReport.QoeMetric) &&
+                        <Box
+                            padding={'2rem'}
+                            component={'div'}
+                            overflow={'scroll'}
+                            display={'flex'}
+                            flexDirection={'column'}
+                            gap={'2rem'}
+                        >
 
                             <BufferLevelChart
                                 bufferLevel={
@@ -63,35 +62,33 @@ function DetailPage({ reportId }: { reportId: string }) {
                             ></BufferLevelChart>
 
 
-                        <HttpListChart
-                            httpList={
-                                report?.ReceptionReport.QoeReport.QoeMetric?.find(
-                                    (metric) => metric.HttpList
-                                )?.HttpList
-                            }
-                        ></HttpListChart>
+                            <HttpListChart
+                                httpList={
+                                    report?.ReceptionReport.QoeReport.QoeMetric?.find(
+                                        (metric) => metric.HttpList
+                                    )?.HttpList
+                                }
+                            ></HttpListChart>
 
-                        {/*<RepSwitchesChart*/}
-                        {/*    repSwitchList={*/}
-                        {/*        report?.ReceptionReport.QoeReport.QoeMetric?.find(*/}
-                        {/*            (metric) => metric.RepSwitchList*/}
-                        {/*        )?.RepSwitchList*/}
-                        {/*    }*/}
-                        {/*    mpdInfo={*/}
-                        {/*        report?.ReceptionReport.QoeReport.QoeMetric?.find(*/}
-                        {/*            (metric) => metric.MPDInformation*/}
-                        {/*        )?.MPDInformation*/}
-                        {/*    }*/}
-                        {/*></RepSwitchesChart>*/}
-                    </Box>
+                            {/*<RepSwitchesChart*/}
+                            {/*    repSwitchList={*/}
+                            {/*        report?.ReceptionReport.QoeReport.QoeMetric?.find(*/}
+                            {/*            (metric) => metric.RepSwitchList*/}
+                            {/*        )?.RepSwitchList*/}
+                            {/*    }*/}
+                            {/*    mpdInfo={*/}
+                            {/*        report?.ReceptionReport.QoeReport.QoeMetric?.find(*/}
+                            {/*            (metric) => metric.MPDInformation*/}
+                            {/*        )?.MPDInformation*/}
+                            {/*    }*/}
+                            {/*></RepSwitchesChart>*/}
+                        </Box>
                     }
 
                 </DetailPageContext.Provider>
-        ))}
-    </div>
-    )
-
-
+            ))}
+        </div>
+    );
 
 
 }

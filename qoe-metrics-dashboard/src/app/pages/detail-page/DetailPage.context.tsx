@@ -6,4 +6,4 @@ export const DetailPageContext = createContext<
     TMetricsDetailsReportResponse
 >(
     {} as TMetricsDetailsReportResponse
-)
+);

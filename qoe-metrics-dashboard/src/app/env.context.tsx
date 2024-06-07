@@ -8,4 +8,4 @@ export const EnvContext = createContext<
     {
         backendUrl: 'localhost:3003'
     }
-)
+);
