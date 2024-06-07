@@ -1,15 +1,16 @@
 // import { pick } from 'lodash';
-import { ChevronLeft, ChevronRight } from '@mui/icons-material';
-import { Box, Button, Checkbox, CircularProgress, Divider, IconButton, Typography } from '@mui/material';
 import { useContext, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
-import { useReportList } from '../../api/ApiController';
+import { ChevronLeft, ChevronRight } from '@mui/icons-material';
+import { Box, Button, Checkbox, CircularProgress, Divider, IconButton, Typography } from '@mui/material';
 
-import './Overview.scss';
+import { useReportList } from '../../api/ApiController';
 import { EnvContext } from '../../env.context';
 import { ESortingOrder } from '../../models/enums/shared/sorting-order.enum';
 import { TMetricsOverviewReport } from '../../models/types/responses/metrics-overview-report.interface';
+
+import './Overview.scss';
 
 const ROWS_PER_PAGE = 20;
 

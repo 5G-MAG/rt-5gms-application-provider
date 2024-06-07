@@ -1,17 +1,14 @@
-import { pickBy } from 'lodash';
-import { useEffect, useState } from 'react';
-
-import { Box, CircularProgress } from '@mui/material';
+import { useContext } from 'react';
 import { useSearchParams } from 'react-router-dom';
 
+import { Box, CircularProgress } from '@mui/material';
+
+import { useReportDetail } from '../../api/ApiController';
 import BufferLevelChart from '../../components/buffer-level-chart/BufferLevelChart';
 import HttpListChart from '../../components/http-list-chart/HttpListChart';
-import RepSwitchesChart from '../../components/rep-switches-chart/RepSwitchesChart';
 import { EnvContext } from '../../env.context';
 import { TMetricsDetailsRequestParams } from '../../models/types/requests/metrics-details-request-params.type';
 
-import { useContext } from 'react';
-import { useReportDetail } from '../../api/ApiController';
 import { DetailPageContext } from './DetailPage.context';
 
 import './DetailPage.scss'
@@ -64,8 +61,6 @@ function DetailPage({ reportId }: { reportId: string }) {
                                     )?.BufferLevel
                                 }
                             ></BufferLevelChart>
-
-
 
 
                         <HttpListChart
