@@ -5,4 +5,5 @@ vscode
 
 /node_modules
 express-mock-af/node_modules
+express-mock-af/test-express-mock-server/node_modules
 qoeMetricsReportingUi/node_modules
