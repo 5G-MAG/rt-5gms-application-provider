@@ -3,3 +3,4 @@ __pycache__
 vscode
 .env
 qoeMetricsReportingUi/node_modules
+**/node_modules
