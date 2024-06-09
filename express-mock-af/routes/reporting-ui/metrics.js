@@ -36,9 +36,11 @@ router.get('/details', async (req, res) => {
  */
 router.get('/reload', (req, res) => {
     res.writeHead(200, {
-        'Content-Type': 'text/event-stream',
+        'Access-Control-Allow-Origin': '*',
+        'Content-Type': 'text/event-stream; charset=utf-8',
         'Cache-Control': 'no-cache',
-        'Connection': 'keep-alive'
+        'Connection': 'keep-alive',
+        'Content-Encoding': 'none'
     });
 
     const subscription = Utils.fileWritten$.subscribe({

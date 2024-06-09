@@ -1,6 +1,6 @@
-import { useContext, useEffect, useState } from 'react';
+import React, { useContext, useEffect, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
-
 import { ChevronLeft, ChevronRight } from '@mui/icons-material';
 import {
     Box,
@@ -8,34 +8,37 @@ import {
     Checkbox,
     CircularProgress,
     Divider,
-    IconButton,
-    Typography,
+    IconButton, Portal,
+    Typography
 } from '@mui/material';
-
 import { useReportList } from '../../api/ApiController';
+import NavBar from '../../components/nav-bar/NavBar';
+import { NAV_BAR_PORTAL_ID } from '../../components/nav-bar/token';
+import ReloadButton from '../../components/reload-button/reload-button';
 import { EnvContext } from '../../env.context';
 import { ESortingOrder } from '../../models/enums/shared/sorting-order.enum';
 import { TMetricsOverviewReport } from '../../models/types/responses/metrics-overview-report.interface';
-
 import './Overview.scss';
 
 const ROWS_PER_PAGE = 5;
 
 function Overview() {
     const navigate = useNavigate();
-
     const envCtx = useContext(EnvContext);
 
-    // params for metrics report overview
-    const [provisionSessionIds, setProvisionSessionId] =
-        useState<RegExp>(/1-6/);
+    const [provisionSessionIds] = useState<RegExp>(/1-6/);
     const [offset, setOffset] = useState<number>(0);
-    const [limit, setLimit] = useState<number>(ROWS_PER_PAGE);
+    const [limit] = useState<number>(ROWS_PER_PAGE);
     const [sortingOrder, setSortingOrder] = useState<ESortingOrder>(
         ESortingOrder.ASC
     );
+    const [currentPage, setCurrentPage] = useState(0);
+    const [selectedMetricsReports, setSelectedMetricsReports] = useState<number[]>([]);
+
     const [orderProperty, setOrderProperty] =
         useState<keyof TMetricsOverviewReport>('reportTime');
+
+    const container = React.useRef(null);
 
     const { reportList, error, loading } = useReportList(envCtx.backendUrl, {
         provisionSessionIds,
@@ -44,11 +47,6 @@ function Overview() {
         sortingOrder,
         orderProperty,
     });
-
-    const [currentPage, setCurrentPage] = useState(0);
-    const [selectedMetricsReports, setSelectedMetricsReports] = useState<
-        number[]
-    >([]);
 
     useEffect(() => {
         setOffset(currentPage * limit);
@@ -84,12 +82,8 @@ function Overview() {
         }
     }
 
-    function handleClickMetric(
-        filterQueryParams: TMetricsOverviewReport
-    ): void {
-        const params = new URLSearchParams(
-            filterQueryParams as unknown as Record<string, string>
-        );
+    function handleClickMetric(filterQueryParams: TMetricsOverviewReport): void {
+        const params = new URLSearchParams(filterQueryParams as unknown as Record<string, string>);
         navigate('/metrics/details?' + params.toString());
     }
 
@@ -152,6 +146,7 @@ function Overview() {
                 <Divider></Divider>
                 <Box className="table-footer">
                     <Box>
+                        <ReloadButton/>
                         <Button
                             variant="contained"
                             color="primary"

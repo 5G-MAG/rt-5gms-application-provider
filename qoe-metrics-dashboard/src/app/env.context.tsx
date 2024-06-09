@@ -6,6 +6,6 @@ export const EnvContext = createContext<
     IEnv
 >(
     {
-        backendUrl: 'localhost:3003'
+        backendUrl: 'http://localhost:3003'
     }
 );

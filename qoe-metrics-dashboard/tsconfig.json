@@ -9,10 +9,7 @@
         "importHelpers": true,
         "target": "es2015",
         "module": "esnext",
-        "lib": [
-            "es2020",
-            "dom"
-        ],
+        "lib": ["es2020", "dom"],
         "skipLibCheck": true,
         "skipDefaultLibCheck": true,
         "baseUrl": ".",
@@ -22,10 +19,7 @@
         "esModuleInterop": false,
         "allowSyntheticDefaultImports": true,
         "strict": true,
-        "types": [
-            "vite/client",
-            "vitest"
-        ]
+        "types": ["vite/client", "vitest"]
     },
     "files": [],
     "include": [],
@@ -38,8 +32,5 @@
         }
     ],
     "compileOnSave": false,
-    "exclude": [
-        "node_modules",
-        "tmp"
-    ]
+    "exclude": ["node_modules", "tmp"]
 }

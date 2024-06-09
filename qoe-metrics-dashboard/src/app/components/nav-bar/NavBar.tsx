@@ -5,6 +5,7 @@ import { Link, useLocation } from 'react-router-dom';
 import logo from '../../../assets/Logo_5G_MAG.png';
 
 import './NavBar.scss';
+import { NAV_BAR_PORTAL_ID } from './token';
 
 const pages = [
     { label: 'Metrics Reports', route: '/metrics' },
@@ -66,6 +67,8 @@ function NavBar() {
                     >
                         <img src={logo} className="logo" alt="The 5G MAG logo"></img>
                     </Box>
+
+                    <div id={NAV_BAR_PORTAL_ID}></div>
                 </Toolbar>
             </Container>
         </AppBar>
