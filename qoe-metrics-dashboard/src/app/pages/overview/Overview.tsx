@@ -19,7 +19,7 @@ import { TMetricsOverviewReport } from '../../models/types/responses/metrics-ove
 
 import './Overview.scss';
 
-const ROWS_PER_PAGE = 20;
+const ROWS_PER_PAGE = 5;
 
 function Overview() {
     const navigate = useNavigate();
