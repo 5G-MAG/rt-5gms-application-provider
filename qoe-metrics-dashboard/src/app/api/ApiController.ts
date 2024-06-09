@@ -1,6 +1,6 @@
+import { useEffect, useMemo, useState } from 'react';
 import axios from 'axios';
 import { defaults } from 'lodash';
-import { useEffect, useMemo, useState } from 'react';
 
 import { TMetricsDetailsRequestParams } from '../models/types/requests/metrics-details-request-params.type';
 import { IMetricsRequestParamsOverview } from '../models/types/requests/metrics-overview-request-params.interface';
@@ -12,6 +12,7 @@ const useAxiosGet = <T>({ url, params }: { url: string; params: object }) => {
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(true);
 
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     const memoizedParams = useMemo(() => params, Object.values(params));
 
     useEffect(() => {
