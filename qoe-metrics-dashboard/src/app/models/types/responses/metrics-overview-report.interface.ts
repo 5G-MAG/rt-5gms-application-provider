@@ -1,3 +1,5 @@
+import { EMetricsType } from '../../enums/metrics/metrics-type.enum';
+
 /**
  * The response type for the backend endpoint for metrics report overview
  */
@@ -31,4 +33,9 @@ export interface TMetricsOverviewReport {
      * The ID of the recording session
      */
     recordingSessionId: string;
+
+    /**
+     * Indicates which metrics are available in the report
+     */
+    availableMetrics: EMetricsType[];
 }

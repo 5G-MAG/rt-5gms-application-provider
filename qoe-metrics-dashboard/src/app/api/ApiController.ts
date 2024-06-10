@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { defaults } from 'lodash';
+import { defaults, isNil, omitBy } from 'lodash';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 
 import { TMetricsDetailsRequestParams } from '../models/types/requests/metrics-details-request-params.type';
@@ -43,20 +43,15 @@ export const useReportList = (
     backendUrl: string,
     requestOverviewParams: IMetricsRequestParamsOverview
 ) => {
+    const cleanParams = omitBy(requestOverviewParams, isNil);
+
     const {
         response: reportList,
         error,
         loading,
     } = useAxiosGet<TMetricsOverviewReportResponse>({
         url: `${backendUrl}/reporting-ui/metrics`,
-        params: defaults(
-            {
-                provisionSessionId: JSON.stringify(
-                    requestOverviewParams.provisionSessionIds
-                ),
-            },
-            requestOverviewParams
-        ),
+        params: cleanParams
     });
 
     return { reportList, error, loading };

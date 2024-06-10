@@ -24,6 +24,7 @@
         "recharts": "^2.13.0-alpha.1"
     },
     "devDependencies": {
+        "@mui/x-data-grid": "^7.6.2",
         "@nx/cypress": "19.0.5",
         "@nx/devkit": "19.0.5",
         "@nx/eslint": "19.0.5",

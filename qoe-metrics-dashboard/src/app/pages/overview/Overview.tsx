@@ -1,34 +1,38 @@
+import { styled } from '@mui/material/styles';
+import { chunk, defaults, pick, range } from 'lodash';
 import React, { useContext, useEffect, useState } from 'react';
-import { createPortal } from 'react-dom';
-import { useNavigate } from 'react-router-dom';
-import { ChevronLeft, ChevronRight } from '@mui/icons-material';
+import { Link, useNavigate } from 'react-router-dom';
 import {
-    Box,
-    Button,
-    Checkbox,
     CircularProgress,
-    Divider,
-    IconButton, Portal,
-    Typography
 } from '@mui/material';
+import { theme } from '../../../theme';
 import { useReportList } from '../../api/ApiController';
-import NavBar from '../../components/nav-bar/NavBar';
-import { NAV_BAR_PORTAL_ID } from '../../components/nav-bar/token';
+import MetricTypeIcon from '../../components/metric-type-icon/metric-type-icon';
 import ReloadButton from '../../components/reload-button/reload-button';
 import { EnvContext } from '../../env.context';
+import { metricsTypeIcon } from '../../models/const/metrics/metrics-type-icon.record';
+import { EMetricsType } from '../../models/enums/metrics/metrics-type.enum';
 import { ESortingOrder } from '../../models/enums/shared/sorting-order.enum';
+import { IMetricsRequestParamsOverview } from '../../models/types/requests/metrics-overview-request-params.interface';
 import { TMetricsOverviewReport } from '../../models/types/responses/metrics-overview-report.interface';
 import './Overview.scss';
+import { DataGrid, DEFAULT_GRID_AUTOSIZE_OPTIONS, GridColDef, GridRenderCellParams, GridToolbar, useGridApiRef } from '@mui/x-data-grid';
+
 
 const ROWS_PER_PAGE = 5;
+const MAX_ROWS_PER_PAGE = 25;
 
 function Overview() {
     const navigate = useNavigate();
     const envCtx = useContext(EnvContext);
 
+    const [, rerenderInternal] = useState({}); // integer state
+    const rerender = () => {
+        rerenderInternal({});
+    }
     const [provisionSessionIds] = useState<RegExp>(/1-6/);
     const [offset, setOffset] = useState<number>(0);
-    const [limit] = useState<number>(ROWS_PER_PAGE);
+    const [limit, setLimit] = useState<number>(ROWS_PER_PAGE);
     const [sortingOrder, setSortingOrder] = useState<ESortingOrder>(
         ESortingOrder.ASC
     );
@@ -38,15 +42,13 @@ function Overview() {
     const [orderProperty, setOrderProperty] =
         useState<keyof TMetricsOverviewReport>('reportTime');
 
-    const container = React.useRef(null);
-
     const { reportList, error, loading } = useReportList(envCtx.backendUrl, {
         provisionSessionIds,
-        offset,
-        limit,
-        sortingOrder,
-        orderProperty,
-    });
+        // offset,
+        // limit,
+        // sortingOrder,
+        // orderProperty,
+    } as IMetricsRequestParamsOverview);
 
     useEffect(() => {
         setOffset(currentPage * limit);
@@ -67,113 +69,92 @@ function Overview() {
     if (!reportList) {
         return <div>No Records found</div>;
     }
-
-    function handleChangePage(page: number): void {
-        setCurrentPage(page);
-    }
-
-    function handleSelectMetricsReport(index: number): void {
-        if (selectedMetricsReports.includes(index)) {
-            setSelectedMetricsReports(
-                selectedMetricsReports.filter((i) => i !== index)
-            );
-        } else {
-            setSelectedMetricsReports([...selectedMetricsReports, index]);
-        }
-    }
-
     function handleClickMetric(filterQueryParams: TMetricsOverviewReport): void {
         const params = new URLSearchParams(filterQueryParams as unknown as Record<string, string>);
         navigate('/metrics/details?' + params.toString());
     }
 
+    const columns: GridColDef<TMetricsOverviewReport>[] = [
+        { field: 'clientID', headerName: 'Client ID' },
+        { field: 'recordingSessionId', headerName: 'Recording Session ID'  },
+        { field: 'reportTime', headerName: 'Date', maxWidth: 200 },
+        { field: 'reportPeriod', headerName: 'Report Period', maxWidth: 120 },
+        { field: 'contentURI', headerName: 'Content URI' },
+        {
+            field: 'availableMetrics',
+            headerName: 'Available Metrics',
+            renderCell: (params: GridRenderCellParams) => {
+                const availableMetrics = params.value as EMetricsType[];
+                return (
+                    <>
+                        {availableMetrics.map((metricType: EMetricsType, index: number) => (
+                            <MetricTypeIcon key={index} metricType={metricType}/>
+                        ))}
+                    </>
+                );
+            },
+            sortComparator: (v1: string[], v2: string[]) => v1.length - v2.length,
+            cellClassName: 'icon-cell'
+        },
+    ];
+
     return (
         <div className="page-wrapper">
-            <div className="list-wrapper">
-                <Box className="table-header spacer">
-                    <Checkbox
-                        className="table-checkbox"
-                        sx={{ visibility: 'hidden' }}
-                    ></Checkbox>
-                    <div>
-                        <Typography component={'span'} fontWeight={'bold'}>
-                            Client ID
-                        </Typography>
-                        <Typography component={'span'} fontWeight={'bold'}>
-                            Provisioning ID
-                        </Typography>
-                        <Typography component={'span'} fontWeight={'bold'}>
-                            Date
-                        </Typography>
-                    </div>
-                </Box>
-                <Divider></Divider>
-                <Box className="table-body">
-                    {Array.isArray(reportList) &&
-                        reportList.map((row, i) => (
-                            <Box
-                                key={i}
-                                className="table-row spacer"
-                                component={'div'}
-                                sx={{
-                                    '&:hover': {
-                                        backgroundColor: 'primary.light',
-                                    },
-                                }}
-                            >
-                                <Checkbox
-                                    className="table-checkbox"
-                                    onClick={() => handleSelectMetricsReport(i)}
-                                ></Checkbox>
-
-                                <Box
-                                    component={'div'}
-                                    onClick={() => handleClickMetric(row)}
-                                >
-                                    <Typography component={'span'}>
-                                        {row.clientID}
-                                    </Typography>
-                                    <Typography component={'span'}>
-                                        {row.recordingSessionId}
-                                    </Typography>
-                                    <Typography component={'span'}>
-                                        {row.reportTime}
-                                    </Typography>
-                                </Box>
-                            </Box>
-                        ))}
-                </Box>
-                <Divider></Divider>
-                <Box className="table-footer">
-                    <Box>
-                        <ReloadButton/>
-                        <Button
-                            variant="contained"
-                            color="primary"
-                            disabled={!selectedMetricsReports.length}
-                        >
-                            Show aggregated metrics
-                        </Button>
-                    </Box>
-                    <Box display={'flex'} alignItems={'center'} gap={1}>
-                        <IconButton
-                            onClick={() => handleChangePage(currentPage - 1)}
-                            disabled={!currentPage}
-                        >
-                            <ChevronLeft></ChevronLeft>
-                        </IconButton>
-                        <Typography component={'span'}>
-                            {currentPage + 1}
-                        </Typography>
-                        <IconButton
-                            onClick={() => handleChangePage(currentPage + 1)}
-                            disabled={reportList.length < ROWS_PER_PAGE}
-                        >
-                            <ChevronRight></ChevronRight>
-                        </IconButton>
-                    </Box>
-                </Box>
-            </div>
+            <ReloadButton action={rerender}/>
+            <DataGrid
+                rows={reportList}
+                columns={columns.map((column) => (defaults(
+                    {},
+                    column,
+                    { flex: 1 }
+                )))}
+                initialState={{
+                    pagination: {
+                        paginationModel: { pageSize: ROWS_PER_PAGE },
+                    },
+                    sorting: {
+                        sortModel: [{ field: 'reportTime', sort: ESortingOrder.ASC }],
+                    },
+                    columns: {
+                        columnVisibilityModel: {
+                            reportPeriod: false,
+                            contentURI: false,
+                        },
+                    },
+                }}
+                pageSizeOptions={range(ROWS_PER_PAGE, MAX_ROWS_PER_PAGE + 1, ROWS_PER_PAGE)}
+                getRowId={(row) => `${row.recordingSessionId}-${row.reportTime}`}
+                autosizeOptions={{ expand: DEFAULT_GRID_AUTOSIZE_OPTIONS.expand, includeHeaders: true, includeOutliers: true }}
+                autosizeOnMount
+                checkboxSelection
+                onPaginationModelChange={(params) => {
+                    setOffset(params.page);
+                    setLimit(params.pageSize);
+                }}
+                onRowClick={(params) => {
+                    const filterQueryParams = pick(params.row, ['clientID', 'recordingSessionId', 'reportTime']);
+                    handleClickMetric(filterQueryParams as TMetricsOverviewReport);
+                }}
+                getRowClassName={() => 'row'}
+                sx={{
+                    '& .MuiDataGrid-row:hover': {
+                        backgroundColor: theme.palette.primary.light,
+                    },
+                    '& .icon-cell': {
+                        display: 'flex',
+                        alignContent: 'center',
+                        alignItems: 'center'
+                    },
+                    '& .MuiDataGrid-toolbarContainer': {
+                        'button': {
+                            padding: '0.75rem',
+                            margin: '0.5rem'
+                        }
+                    },
+                }}
+                loading={loading}
+                slots={{ toolbar: GridToolbar}}
+            />
         </div>
     );
 }
