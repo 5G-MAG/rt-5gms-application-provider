@@ -1,7 +1,7 @@
 import { Icon, Tooltip } from '@mui/material';
 import { styled } from '@mui/material/styles';
 import React from 'react';
-import { metricsTypeIcon } from '../../models/const/metrics/metrics-type-icon.record';
+import { metricsTypeInformation } from '../../models/const/metrics/metrics-type-icon.record';
 import { EMetricsType } from '../../models/enums/metrics/metrics-type.enum';
 
 /**
@@ -11,13 +11,13 @@ interface MetricTypeIconProps {
     metricType: EMetricsType;
 }
 
-const CustomIcon = styled(Icon)(({ theme }) => ({
+const StyleIcon = styled(Icon)(({ theme }) => ({
     color: theme.palette.primary.main,
     fontSize: '1.5rem',
     padding: '0.5rem',
     marginInline: '0.5rem',
     background: theme.palette.background.default,
-    borderRadius: '0.5rem',
+    borderRadius: '0.5rem'
 }));
 
 /**
@@ -28,10 +28,10 @@ const CustomIcon = styled(Icon)(({ theme }) => ({
  */
 export function MetricTypeIcon(props: MetricTypeIconProps) {
     return (
-        <Tooltip title={metricsTypeIcon[props.metricType].title}>
-            <CustomIcon style={{ background: metricsTypeIcon[props.metricType].backgroundColor, color:'white' }}>
-                {metricsTypeIcon[props.metricType].iconName}
-            </CustomIcon>
+        <Tooltip title={metricsTypeInformation[props.metricType].title}>
+            <StyleIcon style={{ background: metricsTypeInformation[props.metricType].backgroundColor, color: 'white' }}>
+                {metricsTypeInformation[props.metricType].iconName}
+            </StyleIcon>
         </Tooltip>
     );
 }

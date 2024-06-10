@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { defaults, isNil, omitBy } from 'lodash';
+import { isNil, omitBy } from 'lodash';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 
 import { TMetricsDetailsRequestParams } from '../models/types/requests/metrics-details-request-params.type';
@@ -7,6 +7,12 @@ import { IMetricsRequestParamsOverview } from '../models/types/requests/metrics-
 import { TMetricsDetailsReportResponse } from '../models/types/responses/metrics-details-report.interface';
 import { TMetricsOverviewReportResponse } from '../models/types/responses/metrics-overview-report.interface';
 
+/**
+ * Generically fetches data from the backend
+ *
+ * @param url - The URL to fetch data from
+ * @param params - The parameters to send with the request
+ */
 const useAxiosGet = <T>({ url, params }: { url: string; params: object }) => {
     const [response, setResponse] = useState<T>();
     const [error, setError] = useState('');
@@ -19,7 +25,7 @@ const useAxiosGet = <T>({ url, params }: { url: string; params: object }) => {
         const fetchData = () => {
             axios<T>(url, {
                 method: 'get',
-                params: memoizedParams,
+                params: memoizedParams
             })
                 .then((res) => {
                     setResponse(res.data);
@@ -38,7 +44,12 @@ const useAxiosGet = <T>({ url, params }: { url: string; params: object }) => {
     return { response, error, loading };
 };
 
-
+/**
+ * Fetches the list of reports
+ *
+ * @param backendUrl - The URL of the backend
+ * @param requestOverviewParams - The filter parameters for the request
+ */
 export const useReportList = (
     backendUrl: string,
     requestOverviewParams: IMetricsRequestParamsOverview
@@ -48,7 +59,7 @@ export const useReportList = (
     const {
         response: reportList,
         error,
-        loading,
+        loading
     } = useAxiosGet<TMetricsOverviewReportResponse>({
         url: `${backendUrl}/reporting-ui/metrics`,
         params: cleanParams
@@ -57,6 +68,12 @@ export const useReportList = (
     return { reportList, error, loading };
 };
 
+/**
+ * Fetches the details of a report
+ *
+ * @param backendUrl - The URL of the backend
+ * @param requestDetailsParams - The filter parameters for the request
+ */
 export const useReportDetail = (
     backendUrl: string,
     requestDetailsParams: TMetricsDetailsRequestParams
@@ -64,15 +81,20 @@ export const useReportDetail = (
     const {
         response: reportDetails,
         error,
-        loading,
+        loading
     } = useAxiosGet<TMetricsDetailsReportResponse>({
         url: `${backendUrl}/reporting-ui/metrics/details`,
-        params: requestDetailsParams,
+        params: requestDetailsParams
     });
 
     return { reportDetails, error, loading };
 };
 
+/**
+ * Uses the SSE to be notified when the list of reports should be reloaded
+ *
+ * @param backendUrl - The URL of the backend
+ */
 export const useSseReloadList = (backendUrl: string) => {
     const [reloadCount, setReloadCount] = useState(0);
 
@@ -85,13 +107,13 @@ export const useSseReloadList = (backendUrl: string) => {
 
         sse.onopen = () => {
             console.log('SSE connection opened');
-        }
+        };
 
         sse.onerror = function (e) {
             if (this.readyState == EventSource.CONNECTING) {
                 console.log(`Reconnecting (readyState=${this.readyState})...`);
             } else {
-                console.log('Error has occurred.');
+                console.log('Error has occurred: ', e);
             }
         };
 
@@ -108,4 +130,4 @@ export const useSseReloadList = (backendUrl: string) => {
     }, []);
 
     return { reloadCount, resetReloadCount };
-}
+};

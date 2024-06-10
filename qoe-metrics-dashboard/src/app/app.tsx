@@ -10,7 +10,7 @@ export default function App() {
         <EnvContext.Provider
             value={{
                 backendUrl:
-                    import.meta.env.VITE_BACKEND_URL || 'http://localhost:3003',
+                    import.meta.env.VITE_BACKEND_URL || 'http://localhost:3003'
             }}
         >
             <div className={'qoe-metrics-dashboard'}>

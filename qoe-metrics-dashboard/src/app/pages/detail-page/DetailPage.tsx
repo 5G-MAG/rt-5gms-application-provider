@@ -1,7 +1,6 @@
+import { Box, CircularProgress } from '@mui/material';
 import { useContext } from 'react';
 import { useSearchParams } from 'react-router-dom';
-
-import { Box, CircularProgress } from '@mui/material';
 
 import { useReportDetail } from '../../api/ApiController';
 import BufferLevelChart from '../../components/buffer-level-chart/BufferLevelChart';
@@ -27,7 +26,7 @@ function DetailPage({ reportId }: { reportId: string }) {
     if (loading) {
         return (
             <div className="loading">
-                <CircularProgress />
+                <CircularProgress/>
             </div>
         );
     }
