@@ -1,29 +1,3 @@
-/*
-export interface QoEMetricsReport {
-  ReceptionReport: ReceptionReport;
-}
-
-export interface ReceptionReport {
-  clientID: string;
-  contentURI: string;
-  'xsi:schemaLocation': string;
-  'xmlns:sv': string;
-  xmlns: string;
-  'xmlns:xsi': string;
-  QoeReport: QoeReport;
-}
-
-export interface QoeReport {
-  recordingSessionId: string;
-  reportPeriod: string;
-  reportTime: string;
-  periodID: string;
-  QoeMetric: QoeMetric[];
-  'sv:delimiter': string;
-}
-
- */
-
 export interface QoeMetric {
     BufferLevel?: BufferLevel;
     HttpList?: HttpList;

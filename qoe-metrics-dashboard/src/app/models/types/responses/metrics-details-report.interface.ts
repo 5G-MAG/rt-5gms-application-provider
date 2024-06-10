@@ -1,4 +1,4 @@
-import { QoeMetric } from '../qoe-report.type';
+import { QoeMetric } from '../metrics/qoe-report.type';
 
 /**
  * The response type for the backend endpoint for metrics report detail

@@ -15,7 +15,7 @@ import { TMetricsOverviewReportResponse } from '../models/types/responses/metric
  */
 const useAxiosGet = <T>({ url, params }: { url: string; params: object }) => {
     const [response, setResponse] = useState<T>();
-    const [error, setError] = useState('');
+    const [error, setError] = useState(null);
     const [loading, setLoading] = useState(true);
 
     // eslint-disable-next-line react-hooks/exhaustive-deps

@@ -13,7 +13,7 @@ import { DetailPageContext } from './DetailPage.context';
 
 import './DetailPage.scss';
 
-function DetailPage({ reportId }: { reportId: string }) {
+function DetailPage() {
     const envCtx = useContext(EnvContext);
 
     const [searchParams, setSearchParams] = useSearchParams();

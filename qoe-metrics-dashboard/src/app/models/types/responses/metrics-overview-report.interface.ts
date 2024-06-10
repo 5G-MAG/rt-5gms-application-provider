@@ -8,7 +8,7 @@ export type TMetricsOverviewReportResponse = TMetricsOverviewReport[]
 /**
  * Interface for an individual metrics overview report
  */
-export interface TMetricsOverviewReport {
+export type TMetricsOverviewReport = {
     /**
      * The client ID
      */

@@ -1,5 +1,6 @@
-import { CircularProgress } from '@mui/material';
+import { Alert, CircularProgress } from '@mui/material';
 import { DataGrid, DEFAULT_GRID_AUTOSIZE_OPTIONS, GridColDef, GridRenderCellParams, GridToolbar } from '@mui/x-data-grid';
+import { AxiosError, isAxiosError } from 'axios';
 import { defaults, pick, range } from 'lodash';
 import React, { useContext, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -10,6 +11,7 @@ import ReloadButton from '../../components/reload-button/reload-button';
 import { EnvContext } from '../../env.context';
 import { EMetricsType } from '../../models/enums/metrics/metrics-type.enum';
 import { ESortingOrder } from '../../models/enums/shared/sorting-order.enum';
+import { TMetricsDetailsRequestParams } from '../../models/types/requests/metrics-details-request-params.type';
 import { IMetricsRequestParamsOverview } from '../../models/types/requests/metrics-overview-request-params.interface';
 import { TMetricsOverviewReport } from '../../models/types/responses/metrics-overview-report.interface';
 import './Overview.scss';
@@ -52,15 +54,25 @@ function Overview() {
     }
 
     if (error) {
-        return <div>{error}</div>;
+        console.log(error);
+        return <div className="page-wrapper">
+                <Alert variant="outlined" severity="error">
+                    An unknown error has occurred {`${error}`}
+                    {isAxiosError(error) && (
+                        <div>
+                            No data from backend, have you started it?
+                        </div>
+                    )}
+                </Alert>
+            </div>;
     }
 
-    if (!reportList) {
+    if (reportList?.length === 0) {
         return <div>No Records found</div>;
     }
 
-    function handleClickMetric(filterQueryParams: TMetricsOverviewReport): void {
-        const params = new URLSearchParams(filterQueryParams as unknown as Record<string, string>);
+    function handleClickMetric(filterQueryParams: TMetricsDetailsRequestParams): void {
+        const params = new URLSearchParams(filterQueryParams as Record<string, string>);
         navigate('/metrics/details?' + params.toString());
     }
 
@@ -123,7 +135,7 @@ function Overview() {
                 }}
                 onRowClick={(params) => {
                     const filterQueryParams = pick(params.row, ['clientID', 'recordingSessionId', 'reportTime']);
-                    handleClickMetric(filterQueryParams as TMetricsOverviewReport);
+                    handleClickMetric(filterQueryParams);
                 }}
                 getRowClassName={() => 'row'}
                 sx={{
