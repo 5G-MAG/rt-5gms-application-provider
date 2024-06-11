@@ -16,11 +16,10 @@ export function ReloadButton({ action }: { action: () => void }) {
     const { reloadCount, resetReloadCount } = useSseReloadList(envCtx.backendUrl);
 
     const ReloadButton = styled(Button)<ButtonProps>(({ theme }) => ({
-        background: theme.palette.background.default,
-        color: theme.palette.text.primary,
+        color: theme.palette.background.default,
         size: 'large',
         margin: '1rem',
-        maxInlineSize: '15rem'
+        inlineSize: '12rem'
     }));
 
     const handleReload = () => {
