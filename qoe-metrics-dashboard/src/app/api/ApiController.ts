@@ -13,7 +13,15 @@ import { TMetricsOverviewReportResponse } from '../models/types/responses/metric
  * @param url - The URL to fetch data from
  * @param params - The parameters to send with the request
  */
-const useAxiosGet = <T>({ url, params }: { url: string; params: object }) => {
+const useAxiosGet = <T>({
+    url,
+    params,
+    rerender,
+}: {
+    url: string;
+    params: object;
+    rerender?: string;
+}) => {
     const [response, setResponse] = useState<T>();
     const [error, setError] = useState(null);
     const [loading, setLoading] = useState(true);
@@ -25,7 +33,7 @@ const useAxiosGet = <T>({ url, params }: { url: string; params: object }) => {
         const fetchData = () => {
             axios<T>(url, {
                 method: 'get',
-                params: memoizedParams
+                params: memoizedParams,
             })
                 .then((res) => {
                     setResponse(res.data);
@@ -39,7 +47,7 @@ const useAxiosGet = <T>({ url, params }: { url: string; params: object }) => {
         };
 
         fetchData();
-    }, [url, memoizedParams]);
+    }, [url, memoizedParams, rerender]);
 
     return { response, error, loading };
 };
@@ -52,17 +60,19 @@ const useAxiosGet = <T>({ url, params }: { url: string; params: object }) => {
  */
 export const useReportList = (
     backendUrl: string,
-    requestOverviewParams: IMetricsRequestParamsOverview
+    requestOverviewParams: IMetricsRequestParamsOverview,
+    rerender?: string
 ) => {
     const cleanParams = omitBy(requestOverviewParams, isNil);
 
     const {
         response: reportList,
         error,
-        loading
+        loading,
     } = useAxiosGet<TMetricsOverviewReportResponse>({
         url: `${backendUrl}/reporting-ui/metrics`,
-        params: cleanParams
+        params: cleanParams,
+        rerender,
     });
 
     return { reportList, error, loading };
@@ -81,10 +91,10 @@ export const useReportDetail = (
     const {
         response: reportDetails,
         error,
-        loading
+        loading,
     } = useAxiosGet<TMetricsDetailsReportResponse>({
         url: `${backendUrl}/reporting-ui/metrics/details`,
-        params: requestDetailsParams
+        params: requestDetailsParams,
     });
 
     return { reportDetails, error, loading };
@@ -99,10 +109,12 @@ export const useSseReloadList = (backendUrl: string) => {
     const [reloadCount, setReloadCount] = useState(0);
 
     useEffect(() => {
-        const sse = new EventSource(`${backendUrl}/reporting-ui/metrics/reload`);
+        const sse = new EventSource(
+            `${backendUrl}/reporting-ui/metrics/reload`
+        );
 
         const handleReload = (e: MessageEvent) => {
-            setReloadCount(prevCount => prevCount + 1);
+            setReloadCount((prevCount) => prevCount + 1);
         };
 
         sse.onopen = () => {

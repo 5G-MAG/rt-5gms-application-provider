@@ -22,12 +22,24 @@ interface IMetricsTypeIcon {
  * Map the metrics type to its respective informations f.e. icon name
  */
 export const metricsTypeInformation: Record<EMetricsType, IMetricsTypeIcon> = {
-    [EMetricsType.BUFFER_LEVEL]: { iconName: 'downloading', backgroundColor: green[500], title: 'Buffer Level' },
-    [EMetricsType.HTTP_LIST]: { iconName: 'http', backgroundColor: purple[500], title: 'Http List' },
+    [EMetricsType.BUFFER_LEVEL]: {
+        iconName: 'downloading',
+        backgroundColor: green[500],
+        title: 'Buffer Level',
+    },
+    [EMetricsType.HTTP_LIST]: {
+        iconName: 'http',
+        backgroundColor: purple[500],
+        title: 'Http List',
+    },
     [EMetricsType.MPD_INFORMATION]: {
         iconName: 'spatial_audio',
         backgroundColor: orange[500],
-        title: 'MPD(Music Player Daemon) Information'
+        title: 'MPD(Media Presentation Description) Information',
     },
-    [EMetricsType.REP_SWITCH_LIST]: { iconName: 'router', backgroundColor: lightBlue[500], title: 'Report Switch List' }
+    [EMetricsType.REP_SWITCH_LIST]: {
+        iconName: 'router',
+        backgroundColor: lightBlue[500],
+        title: 'Report Switch List',
+    },
 };
