@@ -1,139 +1,201 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useContext, useState } from 'react';
+import { isAxiosError } from 'axios';
+import { defaults, pick, range } from 'lodash';
 import { useNavigate } from 'react-router-dom';
 
-import { ChevronLeft, ChevronRight } from '@mui/icons-material';
+import { Alert, CircularProgress } from '@mui/material';
 import {
-  Box,
-  Button,
-  Checkbox,
-  Divider,
-  IconButton,
-  Typography,
-} from '@mui/material';
+    DataGrid,
+    DEFAULT_GRID_AUTOSIZE_OPTIONS,
+    GridColDef,
+    GridRenderCellParams,
+    GridToolbar,
+} from '@mui/x-data-grid';
 
-import ApiController from '../../api/ApiController';
+import { theme } from '../../../theme';
+import { useReportList } from '../../api/ApiController';
+import MetricTypeIcon from '../../components/metric-type-icon/metric-type-icon';
+import ReloadButton from '../../components/reload-button/reload-button';
+import { EnvContext } from '../../env.context';
+import { EMetricsType } from '../../models/enums/metrics/metrics-type.enum';
+import { ESortingOrder } from '../../models/enums/shared/sorting-order.enum';
+import { TMetricsDetailsRequestParams } from '../../models/types/requests/metrics-details-request-params.type';
+import { IMetricsRequestParamsOverview } from '../../models/types/requests/metrics-overview-request-params.interface';
+import { TMetricsOverviewReport } from '../../models/types/responses/metrics-overview-report.interface';
 
 import './Overview.scss';
 
-const ROWS_PER_PAGE = 20;
+const ROWS_PER_PAGE = 5;
+const MAX_ROWS_PER_PAGE = 25;
 
+/**
+ * Displays an overview of the metrics types
+ */
 function Overview() {
-  const navigate = useNavigate();
+    const navigate = useNavigate();
+    const envCtx = useContext(EnvContext);
 
-  const [metricsReports, setMetricsReports] = useState<any[]>([]);
-  const [currentPage, setCurrentPage] = useState(0);
-  const [selectedMetricsReports, setSelectedMetricsReports] = useState<
-    number[]
-  >([]);
+    const [rerender, setRerender] = useState(Date.now().toString());
+    const onReload = useCallback(() => setRerender(Date.now().toString()), []);
 
-  useEffect(() => {
-    async function getMetricsReports(page: number): Promise<void> {
-      const reports = await ApiController.getMetricsReportsList(
-        page,
-        ROWS_PER_PAGE
-      );
-      if (reports.length === 0) {
-        setCurrentPage(currentPage - 1);
-      } else {
-        setMetricsReports(reports);
-      }
+    const [provisionSessionIds] = useState<RegExp>(/1-6/);
+    // const [limit, setLimit] = useState<number>(ROWS_PER_PAGE);
+    // const [currentPage, setCurrentPage] = useState(0);
+
+    const [orderProperty, setOrderProperty] =
+        useState<keyof TMetricsOverviewReport>('reportTime');
+
+    const { reportList, error, loading } = useReportList(
+        envCtx.backendUrl,
+        {
+            provisionSessionIds,
+
+            // currentPage,
+            // limit,
+            // sortingOrder,
+            // orderProperty,
+        } as IMetricsRequestParamsOverview,
+        rerender
+    );
+
+    if (loading) {
+        return (
+            <div className="loading">
+                <CircularProgress />
+            </div>
+        );
     }
-    getMetricsReports(currentPage);
-  }, [currentPage]);
 
-  function handleChangePage(page: number): void {
-    setCurrentPage(page);
-  }
-
-  function handleSelectMetricsReport(index: number): void {
-    if (selectedMetricsReports.includes(index)) {
-      setSelectedMetricsReports(
-        selectedMetricsReports.filter((i) => i !== index)
-      );
-    } else {
-      setSelectedMetricsReports([...selectedMetricsReports, index]);
+    if (error) {
+        console.log(error);
+        return (
+            <div className="page-wrapper">
+                <Alert variant="outlined" severity="error">
+                    An unknown error has occurred {`${error}`}
+                    {isAxiosError(error) && (
+                        <div>No data from backend, have you started it?</div>
+                    )}
+                </Alert>
+            </div>
+        );
     }
-  }
 
-  function handleClickMetric(index: number): void {
-    navigate('/metrics/' + index);
-  }
+    if (reportList?.length === 0) {
+        return <div>No Records found</div>;
+    }
 
-  return (
-    <div className="page-wrapper">
-      <div className="list-wrapper">
-        <Box className="table-header spacer">
-          <Checkbox
-            className="table-checkbox"
-            sx={{ visibility: 'hidden' }}
-          ></Checkbox>
-          <div>
-            <Typography component={'span'} fontWeight={'bold'}>
-              Name
-            </Typography>
-            <Typography component={'span'} fontWeight={'bold'}>
-              Provisioning ID
-            </Typography>
-            <Typography component={'span'} fontWeight={'bold'}>
-              Date
-            </Typography>
-          </div>
-        </Box>
-        <Divider></Divider>
-        <Box className="table-body">
-          {metricsReports.map((row, i) => (
-            <Box
-              key={i}
-              className="table-row spacer"
-              component={'div'}
-              sx={{
-                '&:hover': {
-                  backgroundColor: 'primary.light',
-                },
-              }}
-            >
-              <Checkbox
-                className="table-checkbox"
-                onClick={() => handleSelectMetricsReport(i)}
-              ></Checkbox>
+    function handleClickMetric(
+        filterQueryParams: TMetricsDetailsRequestParams
+    ): void {
+        const params = new URLSearchParams(
+            filterQueryParams as Record<string, string>
+        );
+        navigate('/metrics/details?' + params.toString());
+    }
 
-              <Box component={'div'} onClick={() => handleClickMetric(i)}>
-                <Typography component={'span'}>{row.name}</Typography>
-                <Typography component={'span'}>{row.provisioningId}</Typography>
-                <Typography component={'span'}>
-                  {row.date.toUTCString()}
-                </Typography>
-              </Box>
-            </Box>
-          ))}
-        </Box>
-        <Divider></Divider>
-        <Box className="table-footer">
-          <Box>
-            <Button
-              variant="contained"
-              color="primary"
-              disabled={!selectedMetricsReports.length}
-            >
-              Show aggregated metrics
-            </Button>
-          </Box>
-          <Box display={'flex'} alignItems={'center'} gap={1}>
-            <IconButton
-              onClick={() => handleChangePage(currentPage - 1)}
-              disabled={!currentPage}
-            >
-              <ChevronLeft></ChevronLeft>
-            </IconButton>
-            <Typography component={'span'}>{currentPage + 1}</Typography>
-            <IconButton onClick={() => handleChangePage(currentPage + 1)}>
-              <ChevronRight></ChevronRight>
-            </IconButton>
-          </Box>
-        </Box>
-      </div>
-    </div>
-  );
+    const columns: GridColDef<TMetricsOverviewReport>[] = [
+        { field: 'clientID', headerName: 'Client ID' },
+        { field: 'recordingSessionId', headerName: 'Recording Session ID' },
+        { field: 'reportTime', headerName: 'Date', maxWidth: 200 },
+        { field: 'reportPeriod', headerName: 'Report Period', maxWidth: 120 },
+        { field: 'contentURI', headerName: 'Content URI' },
+        {
+            field: 'availableMetrics',
+            headerName: 'Available Metrics',
+            renderCell: (params: GridRenderCellParams) => {
+                const availableMetrics = params.value as EMetricsType[];
+                return (
+                    <>
+                        {availableMetrics.map(
+                            (metricType: EMetricsType, index: number) => (
+                                <MetricTypeIcon
+                                    key={index}
+                                    metricType={metricType}
+                                />
+                            )
+                        )}
+                    </>
+                );
+            },
+            sortComparator: (v1: string[], v2: string[]) =>
+                v1.length - v2.length,
+            cellClassName: 'icon-cell',
+        },
+    ];
+
+    return (
+        <div className="page-wrapper">
+            <ReloadButton action={onReload} />
+            <DataGrid
+                rows={reportList}
+                columns={columns.map((column) =>
+                    defaults({}, column, { flex: 1 })
+                )}
+                initialState={{
+                    pagination: {
+                        paginationModel: { pageSize: ROWS_PER_PAGE },
+                    },
+                    sorting: {
+                        sortModel: [
+                            { field: 'reportTime', sort: ESortingOrder.ASC },
+                        ],
+                    },
+                    columns: {
+                        columnVisibilityModel: {
+                            reportPeriod: false,
+                            contentURI: false,
+                        },
+                    },
+                }}
+                pageSizeOptions={range(
+                    ROWS_PER_PAGE,
+                    MAX_ROWS_PER_PAGE + 1,
+                    ROWS_PER_PAGE
+                )}
+                getRowId={(row) =>
+                    `${row.recordingSessionId}-${row.reportTime}`
+                }
+                autosizeOptions={{
+                    expand: DEFAULT_GRID_AUTOSIZE_OPTIONS.expand,
+                    includeHeaders: true,
+                    includeOutliers: true,
+                }}
+                autosizeOnMount
+                checkboxSelection
+                onPaginationModelChange={(params) => {
+                    // setCurrentPage(params.page);
+                    // setLimit(params.pageSize);
+                }}
+                onRowClick={(params) => {
+                    const filterQueryParams = pick(params.row, [
+                        'clientID',
+                        'recordingSessionId',
+                        'reportTime',
+                    ]);
+                    handleClickMetric(filterQueryParams);
+                }}
+                getRowClassName={() => 'row'}
+                sx={{
+                    '& .MuiDataGrid-row:hover': {
+                        backgroundColor: theme.palette.primary.light,
+                    },
+                    '& .icon-cell': {
+                        display: 'flex',
+                        alignContent: 'center',
+                        alignItems: 'center',
+                    },
+                    '& .MuiDataGrid-toolbarContainer': {
+                        button: {
+                            padding: '0.75rem',
+                            margin: '0.5rem',
+                        },
+                    },
+                }}
+                loading={loading}
+                slots={{ toolbar: GridToolbar }}
+            />
+        </div>
+    );
 }
 
 export default Overview;

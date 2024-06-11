@@ -56,9 +56,7 @@ class ReportsService {
             queryFilter,
             {
                 orderProperty: 'reportTime',
-                sortingOrder: 'desc',
-                offset: 0,
-                limit: 20
+                sortingOrder: 'desc'
             }
         );
 
@@ -75,11 +73,28 @@ class ReportsService {
                     'recordingSessionId'
                 ]);
 
-                return defaults({}, receptionReport, qoeReport);
+                const qoeMetric = report.ReceptionReport.QoeReport.QoeMetric;
+                const availableMetrics = Array.isArray(qoeMetric)
+                    ? qoeMetric.map(metric => {
+                        return Object.keys(metric)[0]
+                    })
+                    : [];
+
+
+                return defaults({}, receptionReport, qoeReport, { availableMetrics });
             })
             .orderBy(orderProperty, sortingOrder)
-            .drop(offset)
-            .take(limit)
+            .thru(chainInstance => {
+                let result = chain(chainInstance);
+                if (offset !== undefined) {
+                    result = result.drop(offset);
+                    console.log(123)
+                }
+                if (limit !== undefined) {
+                    result = result.take(limit);
+                }
+                return result;
+            })
             .value();
     }
 
@@ -94,7 +109,6 @@ class ReportsService {
         const clearQueryFilter = omitBy(queryFilter, isNil);
         return reportsList.filter(report => {
             const flattenedReport = merge(report.ReceptionReport, report.ReceptionReport.QoeReport);
-            console.log(flattenedReport, clearQueryFilter);
             return isMatch(flattenedReport, clearQueryFilter);
         });
     }

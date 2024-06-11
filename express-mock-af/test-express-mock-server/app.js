@@ -15,7 +15,7 @@ app.get('/', (req, res) => {
 });
 
 function observeEndpoint() {
-    const eventSource = new EventSource('http://localhost:3003/frontend/metrics/reload');
+    const eventSource = new EventSource('http://localhost:3003/reporting-ui/metrics/reload');
 
     eventSource.onopen = function (event) {
         log('Connection opened');
@@ -26,20 +26,21 @@ function observeEndpoint() {
         if (this.readyState == EventSource.CONNECTING) {
             log(`Reconnecting (readyState=${this.readyState})...`);
         } else {
-            log('Error has occured.');
+            log('Error has occurred.');
         }
+    };
+
+    eventSource.onmessage = function (e) {
+        log('Event: message, data: ' + e.data);
     };
 
     eventSource.addEventListener('reload', function (e) {
         log(e.data);
     });
-
-    eventSource.onmessage = function (e) {
-        log('Event: message, data: ' + e.data);
-    };
 }
 
 
 app.listen(port, () => {
     console.log(`Server is running at http://localhost:${port}`);
+    observeEndpoint()
 });

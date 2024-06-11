@@ -64,3 +64,14 @@ example `http://localhost:3003/3gpp-m5/v2/service-access-information/1` returns
 
 To access the server from a mobile device or another machine replace `localhost`
 with the IP address of your machine.
+
+## Testing Report UI functionality 
+
+### Postman
+
+You can test the backend routes using the provided Postman collection, [Express Mock AF](https://www.postman.com/planetary-meteor-808735/workspace/awt-5g-mag/folder/20364286-f8f0da43-74a7-481a-bfd1-6808c5437dbd?action=share&creator=20364286&ctx=documentation). 
+This collection includes a `report-ui` folder that contains the new routes specifically for the report UI, while the others present the existing endpoints.
+
+### Express Mock Backend
+
+In addition to the Postman functionality, we also provide a test backend. This is designed to demonstrate communication via Server-Sent Events (SSE).
