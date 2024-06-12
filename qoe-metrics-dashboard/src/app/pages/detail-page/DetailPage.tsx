@@ -1,6 +1,7 @@
-import { Box, CircularProgress } from '@mui/material';
 import { useContext } from 'react';
 import { useSearchParams } from 'react-router-dom';
+
+import { Box, CircularProgress } from '@mui/material';
 
 import { useReportDetail } from '../../api/ApiController';
 import BufferLevelChart from '../../components/buffer-level-chart/BufferLevelChart';
@@ -16,7 +17,7 @@ import './DetailPage.scss';
 function DetailPage() {
     const envCtx = useContext(EnvContext);
 
-    const [searchParams, setSearchParams] = useSearchParams();
+    const [searchParams] = useSearchParams();
 
     const { reportDetails, error, loading } = useReportDetail(
         envCtx.backendUrl,
@@ -26,7 +27,7 @@ function DetailPage() {
     if (loading) {
         return (
             <div className="loading">
-                <CircularProgress/>
+                <CircularProgress />
             </div>
         );
     }
