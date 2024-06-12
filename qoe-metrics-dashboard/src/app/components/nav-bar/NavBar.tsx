@@ -1,21 +1,23 @@
+import { Link, useLocation } from 'react-router-dom';
+
 import { AppBar, Box, Container, Toolbar, useTheme } from '@mui/material';
 import { styled } from '@mui/material/styles';
-import { Link, useLocation } from 'react-router-dom';
 
 import logo from '../../../assets/Logo_5G_MAG.png';
 
-import './NavBar.scss';
 import { NAV_BAR_PORTAL_ID } from './token';
+
+import './NavBar.scss';
 
 const pages = [
     { label: 'Metrics Reports', route: '/metrics' },
-    { label: 'Consumption Reports', route: '/consumption' }
+    { label: 'Consumption Reports', route: '/consumption' },
 ];
 
 const CustomNavLink = styled(Link, {
     name: 'MuiCustomNavLink',
     slot: 'root',
-    shouldForwardProp: (prop) => prop !== 'isActive'
+    shouldForwardProp: (prop) => prop !== 'isActive',
 })<{ isActive: boolean }>(({ theme, isActive }) => ({
     padding: '1rem',
     textDecoration: 'none',
@@ -26,8 +28,8 @@ const CustomNavLink = styled(Link, {
     ...(isActive && {
         background: theme.palette.background.default,
         color: theme.palette.text.primary,
-        borderRadius: '2rem'
-    })
+        borderRadius: '2rem',
+    }),
 }));
 
 function NavBar() {
@@ -42,14 +44,16 @@ function NavBar() {
                         sx={{
                             flexGrow: 1,
                             display: { xs: 'none', md: 'flex' },
-                            gap: '1rem'
+                            gap: '1rem',
                         }}
                     >
                         {pages.map((page) => (
                             <CustomNavLink
                                 key={page.route}
                                 to={page.route}
-                                isActive={location.pathname === page.route}
+                                isActive={location.pathname.includes(
+                                    page.route
+                                )}
                             >
                                 {page.label}
                             </CustomNavLink>
@@ -62,10 +66,14 @@ function NavBar() {
                             borderRadius: '0.5rem',
                             display: 'flex',
                             alignItems: 'center',
-                            justifyContent: 'center'
+                            justifyContent: 'center',
                         }}
                     >
-                        <img src={logo} className="logo" alt="The 5G MAG logo"></img>
+                        <img
+                            src={logo}
+                            className="logo"
+                            alt="The 5G MAG logo"
+                        ></img>
                     </Box>
 
                     <div id={NAV_BAR_PORTAL_ID}></div>
