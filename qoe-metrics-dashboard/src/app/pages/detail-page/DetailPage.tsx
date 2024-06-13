@@ -4,8 +4,10 @@ import { useSearchParams } from 'react-router-dom';
 import { Box, CircularProgress } from '@mui/material';
 
 import { useReportDetail } from '../../api/ApiController';
+import BasicInformationTables from '../../components/basic-information-tables/BasicInformationTables';
 import BufferLevelChart from '../../components/buffer-level-chart/BufferLevelChart';
 import HttpListChart from '../../components/http-list-chart/HttpListChart';
+import MPDInformationTable from '../../components/mpd-information-table/MPDInformationTable';
 import RepSwitchesChart from '../../components/rep-switches-chart/RepSwitchesChart';
 import { EnvContext } from '../../env.context';
 import { TMetricsDetailsRequestParams } from '../../models/types/requests/metrics-details-request-params.type';
@@ -60,6 +62,16 @@ function DetailPage() {
                                 flexDirection={'column'}
                                 gap={'2rem'}
                             >
+                                <BasicInformationTables
+                                    receptionReport={report.ReceptionReport}
+                                ></BasicInformationTables>
+                                <MPDInformationTable
+                                    mpdInfo={
+                                        report?.ReceptionReport.QoeReport.QoeMetric?.find(
+                                            (metric) => metric.MPDInformation
+                                        )?.MPDInformation
+                                    }
+                                ></MPDInformationTable>
                                 <BufferLevelChart
                                     bufferLevel={
                                         report?.ReceptionReport.QoeReport.QoeMetric?.find(
