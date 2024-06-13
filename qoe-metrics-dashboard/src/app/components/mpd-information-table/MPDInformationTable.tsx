@@ -31,13 +31,15 @@ function MPDInformationTable({ mpdInfo }: { mpdInfo?: MPDInformation[] }) {
             </Typography>
             <Table>
                 <TableHead>
-                    <TableCell>Representation ID</TableCell>
-                    <TableCell>Bandwidth</TableCell>
-                    <TableCell>Codecs</TableCell>
-                    <TableCell>Mime Type</TableCell>
-                    <TableCell>Height</TableCell>
-                    <TableCell>Width</TableCell>
-                    <TableCell>Frame Rate</TableCell>
+                    <TableRow>
+                        <TableCell>Representation ID</TableCell>
+                        <TableCell>Bandwidth</TableCell>
+                        <TableCell>Codecs</TableCell>
+                        <TableCell>Mime Type</TableCell>
+                        <TableCell>Height</TableCell>
+                        <TableCell>Width</TableCell>
+                        <TableCell>Frame Rate</TableCell>
+                    </TableRow>
                 </TableHead>
                 <TableBody>
                     {mpdInfo.map((info) => (

@@ -22,7 +22,7 @@ function BasicInformationTables({
     }
 
     return (
-        <Box display={'flex'} gap={'2rem'}>
+        <Box display={'flex'} gap={'2rem'} flexWrap={'wrap'}>
             <Box
                 padding={'2rem'}
                 bgcolor={'background.default'}
@@ -41,8 +41,10 @@ function BasicInformationTables({
                 </Typography>
                 <Table>
                     <TableHead>
-                        <TableCell>Field</TableCell>
-                        <TableCell>Value</TableCell>
+                        <TableRow>
+                            <TableCell>Field</TableCell>
+                            <TableCell>Value</TableCell>
+                        </TableRow>
                     </TableHead>
                     <TableBody>
                         <TableRow>
@@ -78,8 +80,10 @@ function BasicInformationTables({
                 </Typography>
                 <Table>
                     <TableHead>
-                        <TableCell>Field</TableCell>
-                        <TableCell>Value</TableCell>
+                        <TableRow>
+                            <TableCell>Field</TableCell>
+                            <TableCell>Value</TableCell>
+                        </TableRow>
                     </TableHead>
                     <TableBody>
                         <TableRow>
