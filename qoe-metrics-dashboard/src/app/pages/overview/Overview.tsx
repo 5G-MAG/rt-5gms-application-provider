@@ -13,10 +13,10 @@ import {
 } from '@mui/x-data-grid';
 
 import { theme } from '../../../theme';
-import { useReportList } from '../../api/ApiController';
 import MetricTypeIcon from '../../components/metric-type-icon/metric-type-icon';
 import ReloadButton from '../../components/reload-button/reload-button';
 import { EnvContext } from '../../env.context';
+import { useReportList } from '../../hooks/api';
 import { EMetricsType } from '../../models/enums/metrics/metrics-type.enum';
 import { ESortingOrder } from '../../models/enums/shared/sorting-order.enum';
 import { TMetricsDetailsRequestParams } from '../../models/types/requests/metrics-details-request-params.type';
@@ -42,8 +42,7 @@ function Overview() {
     // const [limit, setLimit] = useState<number>(ROWS_PER_PAGE);
     // const [currentPage, setCurrentPage] = useState(0);
 
-    const [orderProperty, setOrderProperty] =
-        useState<keyof TMetricsOverviewReport>('reportTime');
+    const [orderProperty, setOrderProperty] = useState<keyof TMetricsOverviewReport>('reportTime');
 
     const { reportList, error, loading } = useReportList(
         envCtx.backendUrl,
@@ -72,9 +71,7 @@ function Overview() {
             <div className="page-wrapper">
                 <Alert variant="outlined" severity="error">
                     An unknown error has occurred {`${error}`}
-                    {isAxiosError(error) && (
-                        <div>No data from backend, have you started it?</div>
-                    )}
+                    {isAxiosError(error) && <div>No data from backend, have you started it?</div>}
                 </Alert>
             </div>
         );
@@ -84,12 +81,8 @@ function Overview() {
         return <div>No Records found</div>;
     }
 
-    function handleClickMetric(
-        filterQueryParams: TMetricsDetailsRequestParams
-    ): void {
-        const params = new URLSearchParams(
-            filterQueryParams as Record<string, string>
-        );
+    function handleClickMetric(filterQueryParams: TMetricsDetailsRequestParams): void {
+        const params = new URLSearchParams(filterQueryParams as Record<string, string>);
         navigate('/metrics/details?' + params.toString());
     }
 
@@ -106,19 +99,13 @@ function Overview() {
                 const availableMetrics = params.value as EMetricsType[];
                 return (
                     <>
-                        {availableMetrics.map(
-                            (metricType: EMetricsType, index: number) => (
-                                <MetricTypeIcon
-                                    key={index}
-                                    metricType={metricType}
-                                />
-                            )
-                        )}
+                        {availableMetrics.map((metricType: EMetricsType, index: number) => (
+                            <MetricTypeIcon key={index} metricType={metricType} />
+                        ))}
                     </>
                 );
             },
-            sortComparator: (v1: string[], v2: string[]) =>
-                v1.length - v2.length,
+            sortComparator: (v1: string[], v2: string[]) => v1.length - v2.length,
             cellClassName: 'icon-cell',
         },
     ];
@@ -128,17 +115,13 @@ function Overview() {
             <ReloadButton action={onReload} />
             <DataGrid
                 rows={reportList}
-                columns={columns.map((column) =>
-                    defaults({}, column, { flex: 1 })
-                )}
+                columns={columns.map((column) => defaults({}, column, { flex: 1 }))}
                 initialState={{
                     pagination: {
                         paginationModel: { pageSize: ROWS_PER_PAGE },
                     },
                     sorting: {
-                        sortModel: [
-                            { field: 'reportTime', sort: ESortingOrder.ASC },
-                        ],
+                        sortModel: [{ field: 'reportTime', sort: ESortingOrder.ASC }],
                     },
                     columns: {
                         columnVisibilityModel: {
@@ -147,14 +130,8 @@ function Overview() {
                         },
                     },
                 }}
-                pageSizeOptions={range(
-                    ROWS_PER_PAGE,
-                    MAX_ROWS_PER_PAGE + 1,
-                    ROWS_PER_PAGE
-                )}
-                getRowId={(row) =>
-                    `${row.recordingSessionId}-${row.reportTime}`
-                }
+                pageSizeOptions={range(ROWS_PER_PAGE, MAX_ROWS_PER_PAGE + 1, ROWS_PER_PAGE)}
+                getRowId={(row) => `${row.recordingSessionId}-${row.reportTime}`}
                 autosizeOptions={{
                     expand: DEFAULT_GRID_AUTOSIZE_OPTIONS.expand,
                     includeHeaders: true,
@@ -167,11 +144,7 @@ function Overview() {
                     // setLimit(params.pageSize);
                 }}
                 onRowClick={(params) => {
-                    const filterQueryParams = pick(params.row, [
-                        'clientID',
-                        'recordingSessionId',
-                        'reportTime',
-                    ]);
+                    const filterQueryParams = pick(params.row, ['clientID', 'recordingSessionId', 'reportTime']);
                     handleClickMetric(filterQueryParams);
                 }}
                 getRowClassName={() => 'row'}

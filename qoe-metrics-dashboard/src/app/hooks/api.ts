@@ -1,6 +1,6 @@
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import axios from 'axios';
 import { isNil, omitBy } from 'lodash';
-import { useCallback, useEffect, useMemo, useState } from 'react';
 
 import { TMetricsDetailsRequestParams } from '../models/types/requests/metrics-details-request-params.type';
 import { IMetricsRequestParamsOverview } from '../models/types/requests/metrics-overview-request-params.interface';
@@ -13,15 +13,7 @@ import { TMetricsOverviewReportResponse } from '../models/types/responses/metric
  * @param url - The URL to fetch data from
  * @param params - The parameters to send with the request
  */
-const useAxiosGet = <T>({
-    url,
-    params,
-    rerender,
-}: {
-    url: string;
-    params: object;
-    rerender?: string;
-}) => {
+const useAxiosGet = <T>({ url, params, rerender }: { url: string; params: object; rerender?: string }) => {
     const [response, setResponse] = useState<T>();
     const [error, setError] = useState(null);
     const [loading, setLoading] = useState(true);
@@ -84,10 +76,7 @@ export const useReportList = (
  * @param backendUrl - The URL of the backend
  * @param requestDetailsParams - The filter parameters for the request
  */
-export const useReportDetail = (
-    backendUrl: string,
-    requestDetailsParams: TMetricsDetailsRequestParams
-) => {
+export const useReportDetail = (backendUrl: string, requestDetailsParams: TMetricsDetailsRequestParams) => {
     const {
         response: reportDetails,
         error,
@@ -109,9 +98,7 @@ export const useSseReloadList = (backendUrl: string) => {
     const [reloadCount, setReloadCount] = useState(0);
 
     useEffect(() => {
-        const sse = new EventSource(
-            `${backendUrl}/reporting-ui/metrics/reload`
-        );
+        const sse = new EventSource(`${backendUrl}/reporting-ui/metrics/reload`);
 
         const handleReload = (e: MessageEvent) => {
             setReloadCount((prevCount) => prevCount + 1);
