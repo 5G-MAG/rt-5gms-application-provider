@@ -283,6 +283,10 @@ button {
   font-size: 12px;
 }
 
+button:disabled {
+  filter: brightness(30%);
+}
+
 @font-face {
   font-family: 'Poppins ExtraLight';
   src: url('fonts/Poppins-ExtraLight.ttf') format('truetype');

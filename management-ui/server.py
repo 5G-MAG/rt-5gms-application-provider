@@ -15,7 +15,7 @@ import httpx
 from dotenv import load_dotenv
 from typing import Optional
 from fastapi import FastAPI, Query, Depends, HTTPException, Response, Request
-from fastapi.responses import JSONResponse, FileResponse
+from fastapi.responses import JSONResponse, FileResponse, PlainTextResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from fastapi.middleware.cors import CORSMiddleware
@@ -28,6 +28,7 @@ from rt_m1_client.types import ResourceId, ApplicationId, ConsumptionReportingCo
 from rt_m1_client.configuration import Configuration
 from rt_m1_client.session import M1Session
 from rt_m1_client.data_store import JSONFileDataStore
+from rt_m1_client.exceptions import M1Error
 
 config = Configuration()
 
@@ -56,6 +57,13 @@ async def get_session(config: Configuration) -> M1Session:
                                        data_store,
                                        config.get('certificate_signing_class'))
     return _m1_session
+
+# Error handling
+@app.exception_handler(M1Error)
+async def m1_error_handler(request: Request, exc: M1Error):
+    if exc.args[2] is not None:
+        return JSONResponse(status_code=exc.args[1], content=exc.args[2])
+    return PlainTextResponse(status_code=exc.args[1], content=exc.args[0])
 
 # UI page rendering
 app.mount("/static", StaticFiles(directory="static"), name="static")
@@ -499,5 +507,16 @@ async def connection_checker():
             return {"status": "STABLE"}
         else:
             return {"status": "UNSTABLE"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/policy_template_checker/{provisioning_session_id}")
+async def policy_template_checker(provisioning_session_id: str):
+    policy_templates_url = f"{OPTIONS_ENDPOINT}/{provisioning_session_id}/policy-templates"
+    try:
+        response = requests.options(policy_templates_url)
+        if response.status_code == 204 and 'POST' in response.headers['allow']:
+            return {"enabled": True}
+        return {"enabled": False}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

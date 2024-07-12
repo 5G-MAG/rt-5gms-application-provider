@@ -9,7 +9,7 @@ https://drive.google.com/file/d/1cinCiA778IErENZ3JN52VFW-1ffHpx7Z/view
 
 // Auxiliary function to clear storage when the connection is lost
 
-let operatingUrl = 'https://5gms-provisioning-portal.5g-mag.com/webui';
+let operatingUrl = '';
 
 let isStorageCleared = false;
 function clearStorage() {
@@ -30,7 +30,7 @@ function showConnectionLostAlert() {
 }
 
 function checkAFstatus() {
-  fetch(`${operatingUrl}/connection_checker`)
+  fetch(`${operatingUrl}connection_checker`)
   .then(response => {
     if (!response.ok && !isStorageCleared) {
       document.getElementById('AFStatus').innerText = 'Connection with Application Function: ❌';
@@ -49,6 +49,10 @@ function checkAFstatus() {
       showConnectionLostAlert();
       isStorageCleared = true;}
   });
+}
+
+function do_on_policy_templates_check(session_id, fn) {
+  fetch(`${operatingUrl}policy_template_checker/${session_id}`).then(response => (response.ok && response.json()['enabled']), response => false).then(fn);
 }
 
 function addSessionToTable(sessionId) {
@@ -74,9 +78,26 @@ function addSessionToTable(sessionId) {
   cell5.innerHTML = `<button onclick="setConsumptionReporting('${sessionId}')" class="btn btn-primary table-button">Set</button>
                       <button onclick="showConsumptionReporting('${sessionId}')" class="btn btn-info table-button">Show</button>
                       <button onclick="deleteConsumptionReporting('${sessionId}')" class="btn btn-danger table-button">Delete</button>`;
-  cell6.innerHTML = `<button onclick="setDynamicPolicy('${sessionId}')" class="btn btn-primary table-button">Set</button>
-                    <button onclick="showDynamicPolicies('${sessionId}', '${sessionData.policy_template_id}')" class="btn btn-info table-button">Show</button>
-                    <button onclick="deleteDynamicPolicy('${sessionId}', '${sessionData.policy_template_id}')" class="btn btn-danger table-button">Delete</button>`;
+  cell6.innerHTML = `<button onclick="setDynamicPolicy('${sessionId}')" class="loading btn btn-primary table-button" disabled="disabled">Set</button>
+                     <button onclick="showDynamicPolicies('${sessionId}', '${sessionData.policy_template_id}')" class="loading btn btn-info table-button" disabled="disabled">Show</button>
+                     <button onclick="deleteDynamicPolicy('${sessionId}', '${sessionData.policy_template_id}')" class="loading btn btn-danger table-button" disabled="disabled">Delete</button>
+                     <p><img src="static/images/loading.gif" alt="loading..." /> Checking feature availability...</p>`;
+  do_on_policy_templates_check(sessionId, enabled => {
+    buttons = cell6.getElementsByTagName('button');
+    for (but of buttons) {
+      but.classList.remove('loading');
+      but.disabled = !enabled;
+      if (!enabled) {
+          but.classList.add('disabled');
+      }
+    }
+    msg = cell6.getElementsByTagName('p')[0];
+    if (enabled) {
+      msg.innerText='';
+    } else {
+      msg.innerText='Feature not configured';
+    }
+  });
   cell7.innerHTML = `<button onclick="getProvisioningSessionDetails()" class="btn btn-info table-button">Show</button>`;
   cell8.innerHTML = `<button onclick="createMetricsJson('${sessionId}')" class="btn btn-primary table-button">Create</button>
                       <button onclick="showMetricsReporting('${sessionId}')" class="btn btn-info table-button">Show</button>
@@ -85,7 +106,7 @@ function addSessionToTable(sessionId) {
 }
 
 async function createNewSession() {
-  const response = await fetch(`${operatingUrl}/create_session`, { method: 'POST' });
+  const response = await fetch(`${operatingUrl}create_session`, { method: 'POST' });
   if (!response.ok) {
     Swal.fire({
       title: 'Failed to create new session!',
@@ -130,7 +151,7 @@ async function deleteProvisioningSession(sessionId) {
     cancelButtonText: 'No'
   });
   if (result.value) {
-    const response = await fetch(`${operatingUrl}/delete_session/${sessionId}`, {
+    const response = await fetch(`${operatingUrl}delete_session/${sessionId}`, {
       method: 'DELETE'
     });
 
@@ -158,7 +179,7 @@ async function deleteProvisioningSession(sessionId) {
 }
 
 async function createChcFromJson(sessionId) {
-  const response = await fetch(`${operatingUrl}/set_stream/${sessionId}`, {
+  const response = await fetch(`${operatingUrl}set_stream/${sessionId}`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json'
@@ -183,12 +204,12 @@ async function createChcFromJson(sessionId) {
 }
 
 async function getProvisioningSessionDetails() {
-  window.open(`${operatingUrl}/details`, '_blank');
+  window.open(`${operatingUrl}details`, '_blank');
 }
 
 async function createNewCertificate(sessionId) {
   try {
-      const response = await fetch(`${operatingUrl}/certificate/${sessionId}`, {
+      const response = await fetch(`${operatingUrl}certificate/${sessionId}`, {
           method: 'POST'
       });
       const data = await response.json();
@@ -237,12 +258,12 @@ async function createNewCertificate(sessionId) {
 function showCertificateDetails(sessionId) {
   let session_data = JSON.parse(localStorage.getItem(sessionId));
   let certificate_id = session_data.certificate_id;
-  window.open(`${operatingUrl}/show_certificate/${sessionId}/${certificate_id}`, '_blank');l
+  window.open(`${operatingUrl}show_certificate/${sessionId}/${certificate_id}`, '_blank');l
 }
 
 
 function getProtocols(sessionId) {
-  window.open(`${operatingUrl}/show_protocol/${sessionId}`, '_blank');
+  window.open(`${operatingUrl}show_protocol/${sessionId}`, '_blank');
 }
 
 
@@ -296,7 +317,7 @@ async function setConsumptionReporting(session_id) {
       accessReporting: formValues.accessReporting
     };
 
-    const response = await fetch(`${operatingUrl}/set_consumption/${session_id}`, {
+    const response = await fetch(`${operatingUrl}set_consumption/${session_id}`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
@@ -323,7 +344,7 @@ async function setConsumptionReporting(session_id) {
 }
 
 async function showConsumptionReporting(sessionId){
-  const url = `${operatingUrl}/show_consumption/${sessionId}`;
+  const url = `${operatingUrl}show_consumption/${sessionId}`;
   window.open(url, '_blank');
 }
 
@@ -500,7 +521,7 @@ async function setDynamicPolicy(sessionId) {
   });
   if (formValues) {
     try {
-      const response = await fetch(`${operatingUrl}/create_policy_template/${sessionId}`, {
+      const response = await fetch(`${operatingUrl}create_policy_template/${sessionId}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
@@ -525,7 +546,7 @@ async function setDynamicPolicy(sessionId) {
 async function showDynamicPolicies(sessionId) {
   const policy_template_id = localStorage.getItem(`policyTemplateId_${sessionId}`);
   if (policy_template_id && policy_template_id !== 'undefined') {
-      const url = `${operatingUrl}/show_policy_template/${sessionId}/${policy_template_id}`;
+      const url = `${operatingUrl}show_policy_template/${sessionId}/${policy_template_id}`;
       window.open(url, '_blank');
   } else {
       Swal.fire({
@@ -557,7 +578,7 @@ async function deleteDynamicPolicy(sessionId) {
   });
   if (result.isConfirmed) {
     try {
-      const response = await fetch(`${operatingUrl}/delete_policy_template/${sessionId}/${policyTemplateId}`, {
+      const response = await fetch(`${operatingUrl}delete_policy_template/${sessionId}/${policyTemplateId}`, {
         method: 'DELETE'
       });
       if (response.status === 204) {
@@ -657,7 +678,7 @@ async function createMetricsJson(sessionId) {
 
 async function postMetricsData(sessionId, metricsConfiguration) {
   try {
-      const response = await fetch(`${operatingUrl}/create_metrics/${sessionId}`, {
+      const response = await fetch(`${operatingUrl}create_metrics/${sessionId}`, {
           method: 'POST',
           headers: {
               'Content-Type': 'application/json'
@@ -705,7 +726,7 @@ async function showMetricsReporting(sessionId) {
 }
 
 async function fetchMetricsConfigurationIDs(sessionId) {
-  const response = await fetch(`${operatingUrl}/list_metrics_ids/${sessionId}`);
+  const response = await fetch(`${operatingUrl}list_metrics_ids/${sessionId}`);
   if (!response.ok) {
       throw new Error('Failed to fetch metrics configurations');
   }
@@ -756,7 +777,7 @@ async function confirmDeletion(sessionId, metricsId) {
 
 async function deleteMetrics(sessionId, metricsId) {
   try {
-      const response = await fetch(`${operatingUrl}/delete_metrics/${sessionId}/${metricsId}`, {
+      const response = await fetch(`${operatingUrl}delete_metrics/${sessionId}/${metricsId}`, {
           method: 'DELETE'
       });
       if (response.ok) {
