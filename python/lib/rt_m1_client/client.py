@@ -37,13 +37,14 @@ import datetime
 import json
 import logging
 from typing import Optional, Union, Tuple, Dict, Any, TypedDict, List
+#import traceback
 
 import httpx
 
 from .exceptions import (M1ClientError, M1ServerError)
 from .types import (ApplicationId, ContentHostingConfiguration, ContentProtocols,
                     ConsumptionReportingConfiguration, PolicyTemplate, MetricsReportingConfiguration,
-                    ProvisioningSessionType, ProvisioningSession, ResourceId)
+                    ProvisioningSessionType, ProvisioningSession, ResourceId, ProblemDetail)
 
 class TagAndDateResponse(TypedDict, total=False):
     '''Response containing ETag and Last-Modified headers
@@ -903,12 +904,21 @@ class M1Client:
         :raise M1ClientError: if there was a problem with the request.
         :raise M1ServerError: if there was a server side issue preventing the creation of the provisioning session.
         '''
+        problem_detail = None
+        if 'Content-Type' in result['headers']:
+            if result['headers']['Content-Type'] in ['application/problem+json', 'application/json']:
+                try:
+                    problem_detail = ProblemDetail.fromJSON(result['body'])
+                except Exception:
+                    #traceback.print_exc()
+                    pass
+
         if result['status_code'] >= 400 and result['status_code'] < 500:
             raise M1ClientError(reason='M1 operation failed: '+str(result['body']),
-                                status_code=result['status_code'])
+                                status_code=result['status_code'], problem_detail=problem_detail)
         if result['status_code'] >= 500 and result['status_code'] < 600:
             raise M1ServerError(reason='M1 operation failed: '+str(result['body']),
-                                status_code=result['status_code'])
+                                status_code=result['status_code'], problem_detail=problem_detail)
 
     @staticmethod
     def __tag_and_date(result: Dict[str,Any]) -> TagAndDateResponse:
