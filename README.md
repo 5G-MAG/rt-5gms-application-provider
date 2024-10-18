@@ -2,7 +2,7 @@
 <p align="center">
   <img src="https://img.shields.io/github/v/tag/5G-MAG/rt-5gms-application-provider?label=version" alt="Version">
   <img src="https://img.shields.io/badge/Status-Under_Development-yellow" alt="Under Development">
-  <img src="https://github.com/5G-MAG/rt-5gms-application-provider/actions/workflows/integration-test.yml/badge.svg" alt="Integration Test">
+  <img src="https://github.com/5G-MAG/rt-5gms-application-provider/actions/workflows/deploy_production.yml/badge.svg" alt="Production Deployment">
   <img src="https://img.shields.io/badge/License-5G--MAG%20Public%20License%20(v1.0)-blue" alt="License">
 </p>
 
