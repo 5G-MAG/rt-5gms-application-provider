@@ -11,7 +11,13 @@ import os
 import sys
 
 def lib_to_sys_path():
-    rt_m1_client = './python/lib/rt-m1-client'
+    rt_m1_client = os.path.abspath('./python/lib/rt-m1-client')
     if os.path.isdir(rt_m1_client) and rt_m1_client not in sys.path:
         sys.path.append(rt_m1_client)
+
+    rt_media_configuration = os.path.abspath('./python/lib/rt-media-configuration')
+    if os.path.isdir(rt_media_configuration) and rt_media_configuration not in sys.path:
+        sys.path.append(rt_media_configuration)
+
+
 

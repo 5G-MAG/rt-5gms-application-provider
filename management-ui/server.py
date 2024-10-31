@@ -9,11 +9,16 @@ https://drive.google.com/file/d/1cinCiA778IErENZ3JN52VFW-1ffHpx7Z/view
 
 import os
 import json
+import aiofiles
 import requests
 import asyncio
 import httpx
+import logging
+from fastapi import Body
+from urllib.parse import urljoin
 from dotenv import load_dotenv
-from typing import Optional
+from typing import List, Optional
+from pydantic import BaseModel
 from fastapi import FastAPI, Query, Depends, HTTPException, Response, Request
 from fastapi.responses import JSONResponse, FileResponse, PlainTextResponse
 from fastapi.staticfiles import StaticFiles
@@ -30,6 +35,13 @@ from rt_m1_client.session import M1Session
 from rt_m1_client.data_store import JSONFileDataStore
 from rt_m1_client.exceptions import M1Error
 
+from rt_media_configuration.media_configuration import MediaConfiguration
+from rt_media_configuration.importers.m1_importer import M1SessionImporter
+from rt_media_configuration.media_entry import MediaEntry
+from rt_media_configuration.media_distribution import MediaDistribution
+from rt_media_configuration.media_entry_point import MediaEntryPoint
+from rt_media_configuration.media_app_distribution import MediaAppDistribution
+
 config = Configuration()
 
 OPTIONS_ENDPOINT = os.getenv("OPTIONS_ENDPOINT", "http://" + config.get('m1_address', 'localhost') + ":" + config.get('m1_port',7777) + "/3gpp-m1/v2/provisioning-sessions/")
@@ -37,12 +49,27 @@ CORS_ORIGINS = os.getenv("CORS_ORIGINS", "http://0.0.0.0:8000,http://127.0.0.1:8
 
 app = FastAPI()
 _m1_session = None
-
+_media_configuration: Optional[MediaConfiguration] = None
 
 # Auxiliary function to pass proper configuration as dependency injection parameter
 def get_config():
     return Configuration()
 
+# Logging
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    handlers=[
+        logging.StreamHandler(),
+        logging.FileHandler('webui_server.log')
+    ]
+)
+#logging.info("Logging setted up.")
+
+class MediaSessionUpdateRequest(BaseModel):
+    media_entry_name: str
+    content_type: str
+    profiles: List[str]
 
 async def get_session(config: Configuration) -> M1Session:
     global _m1_session
@@ -57,6 +84,19 @@ async def get_session(config: Configuration) -> M1Session:
                                        data_store,
                                        config.get('certificate_signing_class'))
     return _m1_session
+
+async def initialize_media_configuration(session: M1Session) -> MediaConfiguration:
+    global _media_configuration
+    data_store_dir = config.get('data_store')
+    if data_store_dir is not None:
+        data_store = await JSONFileDataStore(config.get('data_store'))
+    else:
+        data_store = None
+    if _media_configuration is None:
+        _media_configuration = await MediaConfiguration(persistent_data_store=data_store)
+        importer = M1SessionImporter(session)
+        await importer.import_to(_media_configuration)
+    return _media_configuration
 
 # Error handling
 @app.exception_handler(M1Error)
@@ -74,25 +114,100 @@ def landing_page():
 
 
 """
-Endpoint: Create Provisioning Session
+Endpoint: Create Provisioning & Media Session
 HTTP Method: POST
 Path: /create_session
-Description: This endpoint will create a empty provisioning session.
+Description: This endpoint will create a empty provisioning and media session.
 """
 @app.post("/create_session")
 async def new_provisioning_session(app_id: Optional[str] = None, asp_id: Optional[str] = None):
+
     session = await get_session(config)
     app_id = app_id or config.get('external_app_id')
     asp_id = asp_id or config.get('asp_id')
 
     provisioning_session_id: Optional[ResourceId] = await session.createDownlinkPullProvisioningSession(
         ApplicationId(app_id),
-        ApplicationId(asp_id) if asp_id else None)
+        ApplicationId(asp_id) if asp_id else None
+    )
     
     if provisioning_session_id is None:
         raise HTTPException(status_code=400, detail="Failed to create a new provisioning session")
-        
-    return {"provisioning_session_id": provisioning_session_id}
+    
+    media_configuration = await initialize_media_configuration(session)
+    media_session = await media_configuration.newMediaSession(
+        is_downlink=True,
+        external_app_id=app_id,
+        provisioning_session_id=str(provisioning_session_id),
+        asp_id=asp_id)
+    
+    await media_configuration.addMediaSession(media_session)
+
+    return {
+        "provisioning_session_id": provisioning_session_id,
+        "media_session_id": media_session.id
+    }
+
+
+@app.post("/update_media_session/{provisioning_session_id}/{media_session_id}")
+async def update_media_session(provisioning_session_id: str, media_session_id: str, request: MediaSessionUpdateRequest = Body(...)):
+    
+    session = await get_session(config)
+    media_configuration = await initialize_media_configuration(session)
+    
+    media_session = await media_configuration.mediaSessionById(media_session_id)
+    if not media_session:
+        raise HTTPException(status_code=404, detail="MediaSession not found")
+
+    allowed_names = ["VoD: Elephant's Dream", "VoD: Big Buck Bunny", "VoD: Testcard", "Tears Of Steel (aau.at)"]
+
+    if request.media_entry_name not in allowed_names:
+        raise HTTPException(status_code=400, detail="Invalid media entry name.")
+    
+    base_url_prefix = "http://rt.5g-mag.com/m4d"
+    if request.media_entry_name == "VoD: Elephant's Dream":
+        relative_path = f"provisioning-session-{provisioning_session_id}/elephants_dream/1/client_manifest-all.mpd"
+    elif request.media_entry_name == "VoD: Big Buck Bunny":
+        relative_path = f"provisioning-session-{provisioning_session_id}/bbb/2/client_manifest-common_init.mpd"
+    elif request.media_entry_name == "VoD: Testcard":
+        relative_path = f"provisioning-session-{provisioning_session_id}/testcard/vod/manifests/avc-full.mpd"
+    else:
+        relative_path = None
+
+    base_url = f"{base_url_prefix}/provisioning-session-{provisioning_session_id}/"
+
+    entry_point = MediaEntryPoint(
+        relative_path=relative_path,
+        content_type=request.content_type,
+        profiles=request.profiles
+    ) if relative_path else None
+
+    distribution = MediaDistribution(
+        base_url=base_url,
+        entry_point=entry_point
+    ) if entry_point else None
+    
+    app_distribution = MediaAppDistribution(
+        name=request.media_entry_name,
+        entry_points=[entry_point] if entry_point else []
+    )
+
+    media_entry = MediaEntry(
+        name=request.media_entry_name,
+        ingest_url_prefix=base_url_prefix,
+        distributions=[distribution] if distribution else [],
+        app_distributions=[app_distribution]
+    )
+
+    media_session.media_entry = media_entry
+    await media_configuration.synchronise()
+    
+    # TO BE TUNED
+    m8_location = ""
+    async with aiofiles.open(m8_location, mode='r') as f:
+        m8_data = await f.read()
+    
+    return json.loads(m8_data)
 
 """
 Endpoint: Fetch all provisioning sessions
