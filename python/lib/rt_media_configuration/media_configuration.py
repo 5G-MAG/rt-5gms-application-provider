@@ -128,7 +128,7 @@ configuration with the 5GMS AF.
         try:
             await self.__loadModelFromDatastore()
             m1_imp = await M1SessionImporter(self.__m1_session)
-            m1_imp.import_to(self)
+            await m1_imp.import_to(self)
         except Exception as exc:
             self.__log.error(f"Failed to restore model: {exc}")
             return False
@@ -218,7 +218,7 @@ configuration with the 5GMS AF.
         to_add = list(other.__model['sessions'].values())
         for session in self.__model['sessions'].values():
             for o_session in to_add:
-                if await session.shallow_eq(o_session):
+                if session.shallow_eq(o_session):
                     have += [(session, o_session)]
                     to_add.remove(o_session)
                     break

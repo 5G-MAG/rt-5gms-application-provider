@@ -105,7 +105,7 @@ This class models a 3GPP TS 26.512 ProvisioningSession. The ProvisioningSession 
             return False
         return self.__dynamic_policies == other.__dynamic_policies
 
-    async def shallow_eq(self, other: "MediaSession") -> bool:
+    def shallow_eq(self, other: "MediaSession") -> bool:
         if self.__is_downlink != other.__is_downlink:
             return False
         if self.__external_app_id != other.__external_app_id:
