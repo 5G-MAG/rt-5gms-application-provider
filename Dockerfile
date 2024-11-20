@@ -10,7 +10,7 @@ RUN apt-get update && apt-get install -y \
     libmongoc-dev libbson-dev libyaml-dev libnghttp2-dev libmicrohttpd-dev \
     libcurl4-gnutls-dev libnghttp2-dev libtins-dev libtalloc-dev cmake
 
-RUN apt-get update && apt-get install -y meson python3-venv python3-pip
+RUN apt-get update && apt-get install -y libpcre2-dev meson python3-venv python3-pip
 
 # AF build & install
 RUN git clone -b development --recurse-submodules https://github.com/5G-MAG/rt-5gms-application-function.git
