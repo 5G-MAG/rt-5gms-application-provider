@@ -42,6 +42,37 @@
 					"response": []
 				},
 				{
+					"name": "Enumerate Provisioning Sessions",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"method": "GET",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{m1_url}}/5gmag-rt-management/v1/provisioning-sessions",
+							"host": [
+								"{{m1_url}}"
+							],
+							"path": [
+								"5gmag-rt-management",
+								"v1",
+								"provisioning-sessions"
+							]
+						}
+					},
+					"response": []
+				},
+				{
 					"name": "Create Provisioning Session",
 					"event": [
 						{
@@ -97,6 +128,114 @@
 								"v2",
 								"provisioning-sessions",
 								"{{provisioning_session_id}}"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Content Hosting",
+			"item": [
+				{
+					"name": "Get Content Hosting Configuration",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{m1_url}}/3gpp-m1/v2/provisioning-sessions/{{provisioning_session_id}}/content-hosting-configuration",
+							"host": [
+								"{{m1_url}}"
+							],
+							"path": [
+								"3gpp-m1",
+								"v2",
+								"provisioning-sessions",
+								"{{provisioning_session_id}}",
+								"content-hosting-configuration"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Create Content Hosting Configuration",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"BBC R&D Demo Streams\",\n    \"ingestConfiguration\": {\n        \"pull\": true,\n        \"protocol\": \"urn:3gpp:5gms:content-protocol:http-pull-ingest\",\n        \"baseURL\": \"https://rdmedia.bbc.co.uk/\"\n    },\n    \"distributionConfigurations\": [\n        {\n            \"domainNameAlias\": \"192.168.178.56:8080\",\n            \"entryPoint\": {\n                \"relativePath\": \"bbb/2/client_manifest-common_init.mpd\",\n                \"contentType\": \"application/dash+xml\",\n                \"profiles\": [\"urn:mpeg:dash:profile:isoff-live:2011\"]\n\t\t\t}\n        },\n        {\n            \"domainNameAlias\": \"192.168.178.56:8080\",\n            \"entryPoint\": {\n                \"relativePath\": \"elephants_dream/1/client_manifest-all.mpd\",\n                \"contentType\": \"application/dash+xml\",\n                \"profiles\": [\"urn:mpeg:dash:profile:isoff-live:2011\"]\n\t\t\t}\n        }\n    ]\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{m1_url}}/3gpp-m1/v2/provisioning-sessions/{{provisioning_session_id}}/content-hosting-configuration",
+							"host": [
+								"{{m1_url}}"
+							],
+							"path": [
+								"3gpp-m1",
+								"v2",
+								"provisioning-sessions",
+								"{{provisioning_session_id}}",
+								"content-hosting-configuration"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Purge Content Hosting Configuration",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"BBC R&D Demo Streams\",\n    \"ingestConfiguration\": {\n        \"pull\": true,\n        \"protocol\": \"urn:3gpp:5gms:content-protocol:http-pull-ingest\",\n        \"baseURL\": \"https://rdmedia.bbc.co.uk/\"\n    },\n    \"distributionConfigurations\": [\n        {\n            \"domainNameAlias\": \"192.168.178.56\",\n            \"entryPoint\": {\n                \"relativePath\": \"bbb/2/client_manifest-common_init.mpd\",\n                \"contentType\": \"application/dash+xml\",\n                \"profiles\": [\"urn:mpeg:dash:profile:isoff-live:2011\"]\n\t\t\t}\n        },\n        {\n            \"domainNameAlias\": \"192.168.178.56\",\n            \"entryPoint\": {\n                \"relativePath\": \"elephants_dream/1/client_manifest-all.mpd\",\n                \"contentType\": \"application/dash+xml\",\n                \"profiles\": [\"urn:mpeg:dash:profile:isoff-live:2011\"]\n\t\t\t}\n        }\n    ]\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{m1_url}}/3gpp-m1/v2/provisioning-sessions/{{provisioning_session_id}}/content-hosting-configuration/purge",
+							"host": [
+								"{{m1_url}}"
+							],
+							"path": [
+								"3gpp-m1",
+								"v2",
+								"provisioning-sessions",
+								"{{provisioning_session_id}}",
+								"content-hosting-configuration",
+								"purge"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Delete Content Hosting Configuration",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{m1_url}}/3gpp-m1/v2/provisioning-sessions/{{provisioning_session_id}}/content-hosting-configuration",
+							"host": [
+								"{{m1_url}}"
+							],
+							"path": [
+								"3gpp-m1",
+								"v2",
+								"provisioning-sessions",
+								"{{provisioning_session_id}}",
+								"content-hosting-configuration"
 							]
 						}
 					},
@@ -208,6 +347,36 @@
 						}
 					},
 					"response": []
+				},
+				{
+					"name": "Check: Create Consumption Reporting Configuration",
+					"request": {
+						"method": "OPTIONS",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"reportingInterval\": 10,\n    \"samplePercentage\": 100,\n    \"locationReporting\": true,\n    \"accessReporting\": true\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{m1_url}}/3gpp-m1/v2/provisioning-sessions/{{provisioning_session_id}}/consumption-reporting-configuration",
+							"host": [
+								"{{m1_url}}"
+							],
+							"path": [
+								"3gpp-m1",
+								"v2",
+								"provisioning-sessions",
+								"{{provisioning_session_id}}",
+								"consumption-reporting-configuration"
+							]
+						}
+					},
+					"response": []
 				}
 			]
 		},
@@ -263,6 +432,49 @@
 					],
 					"request": {
 						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"externalReference\": \"externalReference\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{m1_url}}/3gpp-m1/v2/provisioning-sessions/{{provisioning_session_id}}/policy-templates",
+							"host": [
+								"{{m1_url}}"
+							],
+							"path": [
+								"3gpp-m1",
+								"v2",
+								"provisioning-sessions",
+								"{{provisioning_session_id}}",
+								"policy-templates"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Check: Create Policy Template Check",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var policyTemplateId = pm.response.headers.get(\"Location\").split(\"/\").pop()",
+									"pm.environment.set(\"policy_template_id\", policyTemplateId);"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "OPTIONS",
 						"header": [],
 						"body": {
 							"mode": "raw",
@@ -433,7 +645,7 @@
 						"header": [],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"scheme\": \"\",\n    \"dataNetworkName\": \"\",\n    \"reportingInterval\": 10,\n    \"samplePercentage\": 100,\n    \"urlFilters\": [],\n    \"samplingPeriod\": 5,\n    \"metrics\": [\"urn:3GPP:ns:PSS:DASH:QM10#HTTPList\", \"urn:3GPP:ns:PSS:DASH:QM10#BufferLevel\", \"urn:3GPP:ns:PSS:DASH:QM10#RepSwitchList\", \"urn:3GPP:ns:PSS:DASH:QM10#MPDInformation\"]\n}",
+							"raw": "{\n    \"scheme\": \"\",\n    \"dataNetworkName\": \"\",\n    \"reportingInterval\": 10,\n    \"samplePercentage\": 100,\n    \"urlFilters\": [],\n    \"samplingPeriod\": 5,\n    \"metrics\": [\"urn:3GPP:ns:PSS:DASH:QM10#HTTPList\", \"urn:3GPP:ns:PSS:DASH:QM10#BufferLevel\", \"urn:3GPP:ns:PSS:DASH:QM10#RepSwitchList\", \"urn:3GPP:ns:PSS:DASH:QM10#MPDInformation\"],\n    \"sliceScope\": []\n}",
 							"options": {
 								"raw": {
 									"language": "json"
