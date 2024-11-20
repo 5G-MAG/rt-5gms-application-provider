@@ -65,13 +65,12 @@ async def m1_error_handler(request: Request, exc: M1Error):
         return JSONResponse(status_code=exc.args[1], content=exc.args[2])
     return PlainTextResponse(status_code=exc.args[1], content=exc.args[0])
 
-# UI page rendering
-app.mount("/static", StaticFiles(directory="static"), name="static")
-templates = Jinja2Templates(directory="templates")
+# UI rendering
+app.mount("/src", StaticFiles(directory="src"), name="src")
+templates = Jinja2Templates(directory="src/templates")
 @app.get("/")
 def landing_page():
-    return FileResponse("templates/index.html")
-
+    return FileResponse("src/templates/index.html")
 
 """
 Endpoint: Create Provisioning Session
