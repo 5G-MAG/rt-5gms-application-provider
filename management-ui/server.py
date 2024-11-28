@@ -12,6 +12,7 @@ import json
 import requests
 import asyncio
 import httpx
+import aiofiles
 from dotenv import load_dotenv
 from typing import Optional
 from fastapi import FastAPI, Query, Depends, HTTPException, Response, Request
@@ -20,6 +21,8 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from fastapi.middleware.cors import CORSMiddleware
 from utils import lib_to_sys_path
+from fastapi.encoders import jsonable_encoder
+
 
 load_dotenv()
 lib_to_sys_path()
@@ -29,6 +32,9 @@ from rt_m1_client.configuration import Configuration
 from rt_m1_client.session import M1Session
 from rt_m1_client.data_store import JSONFileDataStore
 from rt_m1_client.exceptions import M1Error
+from rt_m1_client import app_configuration
+
+from rt_media_configuration import MediaConfiguration, MediaEntry, MediaDistribution, MediaEntryPoint, MediaAppDistribution
 
 config = Configuration()
 
@@ -37,26 +43,34 @@ CORS_ORIGINS = os.getenv("CORS_ORIGINS", "http://0.0.0.0:8000,http://127.0.0.1:8
 
 app = FastAPI()
 _m1_session = None
-
+_media_configuration = None
+_media_session = None
 
 # Auxiliary function to pass proper configuration as dependency injection parameter
 def get_config():
     return Configuration()
 
-
-async def get_session(config: Configuration) -> M1Session:
+async def get_session():
     global _m1_session
     if _m1_session is None:
-        data_store_dir = config.get('data_store')
-        if data_store_dir is not None:
-            data_store = await JSONFileDataStore(config.get('data_store'))
-        else:
-            data_store = None
-        _m1_session = await M1Session((config.get('m1_address', 'localhost'),
-                                       config.get('m1_port',7777)),
-                                       data_store,
-                                       config.get('certificate_signing_class'))
+        data_store_dir = app_configuration.get('data_store')
+        data_store = await JSONFileDataStore(data_store_dir) if data_store_dir else None
+        _m1_session = await M1Session(
+            (app_configuration.get('m1_address', 'localhost'), app_configuration.get('m1_port', 7777)),
+            data_store,
+            app_configuration.get('certificate_signing_class')
+        )
     return _m1_session
+
+async def initialize_media_configuration():
+    global _media_configuration
+    session = await get_session()
+    if _media_configuration is None:
+        _media_configuration = await MediaConfiguration(
+            persistent_data_store=session.data_store(),
+            m1_session=session)
+        await _media_configuration.restoreModel()
+    return _media_configuration
 
 # Error handling
 @app.exception_handler(M1Error)
@@ -76,7 +90,6 @@ def landing_page():
 Endpoint: Create Provisioning Session
 HTTP Method: POST
 Path: /create_session
-Description: This endpoint will create a empty provisioning session.
 """
 @app.post("/create_session")
 async def new_provisioning_session(app_id: Optional[str] = None, asp_id: Optional[str] = None):
@@ -90,14 +103,138 @@ async def new_provisioning_session(app_id: Optional[str] = None, asp_id: Optiona
     
     if provisioning_session_id is None:
         raise HTTPException(status_code=400, detail="Failed to create a new provisioning session")
-        
+    
     return {"provisioning_session_id": provisioning_session_id}
 
+
+async def create_media_session_dependency():
+    global _media_session
+    if _media_session is None:
+        media_configuration = await initialize_media_configuration()
+        app_id = app_configuration.get('external_app_id')
+        asp_id = app_configuration.get('asp_id')
+
+        _media_session = await media_configuration.newMediaSession(
+            is_downlink=True,
+            external_app_id=app_id,
+            asp_id=asp_id
+        )
+    return _media_session
+
+@app.post("/create_media_session")
+async def create_media_session():
+    try:
+        global _media_session
+        media_session = await create_media_session_dependency()
+        media_session = media_session
+
+        response_data = {
+            "media_session_id": media_session.id,
+            "provisioning_session_id": _media_session.provisioning_session_id
+        }
+        print(f"Media session created: {response_data}")
+        return response_data
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to create media session: {e}")
+
+async def get_media_session():
+    if _media_session is None:
+        raise HTTPException(status_code=404, detail="Media session not created. Please create a session first.")
+    return _media_session
+
+
+def generate_relative_path(media_entry_name):
+    if media_entry_name == "VoD: Elephant's Dream":
+        return f"elephants_dream/1/client_manifest-all.mpd"
+    elif media_entry_name == "VoD: Big Buck Bunny":
+        return f"bbb/2/client_manifest-common_init.mpd"
+    elif media_entry_name == "VoD: Testcard":
+        return f"testcard/vod/manifests/avc-full.mpd"
+    return None
+
+
+@app.post("/generate_m8")
+async def generate_m8():
+    try:
+        
+        media_session = await get_media_session()
+        print(f"Media session retrieved: ID={media_session.id}")
+
+        media_configuration = await initialize_media_configuration()
+        print("Media configuration initialized.")
+
+        entries = [
+            {"name": "VoD: Elephant's Dream", "profiles": ["urn:mpeg:dash:profile:isoff-live:2011"]},
+            {"name": "VoD: Big Buck Bunny", "profiles": ["urn:mpeg:dash:profile:isoff-live:2011"]},
+            {"name": "VoD: Testcard", "profiles": ["urn:mpeg:dash:profile:isoff-live:2011"]},
+        ]
+
+        distribution = MediaDistribution(
+            domain_name_alias="alias.example.com",
+        )
+
+        media_entry = MediaEntry(
+            name="Generic VoD stream",
+            ingest_url_prefix="http://example.com/ingest",
+            is_pull=True,
+            distributions=[distribution]
+        )
+        media_session.media_entry = media_entry
+        print("Media entry created and assigned to media session.")
+
+        for entry in entries:
+            print(f"Processing entry: {entry['name']}...")
+            relative_path = generate_relative_path(entry["name"])
+            if not relative_path:
+                print(f"Skipping entry {entry['name']} due to missing relative path.")
+                continue
+            entry_point = MediaEntryPoint(
+                relative_path=relative_path,
+                content_type="application/dash+xml",
+                profiles=entry["profiles"]
+            )
+            app_distribution = MediaAppDistribution(
+                name=entry["name"],
+                entry_points=[entry_point]
+            )
+            media_entry.addAppDistribution(app_distribution)
+            print(f"Added app distribution for entry: {entry['name']}.")
+
+        await media_configuration.synchronise()
+        print(f"Media configuration synchronized, ID: {media_session.id} ")
+
+        print("Verifying provisioning session...")
+        provisioning_session_after_sync = await media_configuration.mediaSessionByProvisioningSessionId(
+            media_session.provisioning_session_id
+        )
+
+        if provisioning_session_after_sync is not None:
+            print(f"Provisioning Session ID after sync: {provisioning_session_after_sync.provisioning_session_id}")
+        else:
+            print("Provisioning session was still not created after synchronization.")
+
+        print("Reading M8 JSON file...")
+        m8_output_dir = app_configuration.get("m8_output_dir", "/home/stepski/Desktop/m8")
+        m8_file_path = f"{m8_output_dir}/m8.json"
+        print(f"Expected M8 JSON file path: {m8_file_path}")
+
+        async with aiofiles.open(m8_file_path, mode='r') as m8_file:
+            m8_content = await m8_file.read()
+            print("Generated M8 JSON:")
+            print(json.dumps(json.loads(m8_content), indent=2))
+
+        print("M8 generation completed successfully.")
+        return {"status": "success", "message": "M8 generated successfully"}
+
+    except Exception as e:
+        print(f"Error occurred during execution: {e}")
+        raise HTTPException(status_code=500, detail=f"Error during M8 generation: {e}")
+            
+   
 """
 Endpoint: Fetch all provisioning sessions
 HTTP Method: GET
 Path: /fetch_all_sessions
-Description: This endpoint will a list of all provisioning sessions.
 """
 @app.get("/fetch_all_sessions")
 async def get_all_sessions():
@@ -144,34 +281,44 @@ async def cmd_delete_session(provisioning_session_id: str, config: Configuration
     
     return JSONResponse(content={"message": f"Provisioning Session {provisioning_session_id} and all its resources were destroyed"}, status_code=200)
 
-"""
-Endpoint: Create Content Hosting Configuration from JSON data example
-HTTP Method: POST
-Path: /set_stream/{provisioning_session_id}
-Description: This endpoint will add Content hosting configuration to particular provisioning session, taking JSON example data.
-"""
 @app.post("/set_stream/{provisioning_session_id}")
 async def set_stream(provisioning_session_id: str, config: Configuration = Depends(get_config)):
-    session = await get_session(config)
-    json_path = "examples/ContentHostingConfiguration_Llama-Drama_pull-ingest.json"
-    with open(json_path, 'r') as f:
-        chc = json.load(f)
-    
-    old_chc = await session.contentHostingConfigurationGet(provisioning_session_id)
-    
-    if old_chc is None:
-        result = await session.contentHostingConfigurationCreate(provisioning_session_id, chc)
-    else:
-        for dc in chc['distributionConfigurations']:
-            for strip_field in ['canonicalDomainName', 'baseURL']:
-                if strip_field in dc:
-                    del dc[strip_field]
-        result = await session.contentHostingConfigurationUpdate(provisioning_session_id, chc)
+    try:
+        # Retrieve the session using MediaConfiguration
+        media_configuration = await initialize_media_configuration()
+        media_session = await media_configuration.mediaSessionByProvisioningSessionId(provisioning_session_id)
 
-    if not result:
+        if media_session is None:
+            raise HTTPException(status_code=404, detail="Provisioning session not found")
+
+        # Perform the content hosting configuration
+        json_path = "examples/ContentHostingConfiguration_Llama-Drama_pull-ingest.json"
+        with open(json_path, 'r') as f:
+            chc = json.load(f)
+
+        #session = await get_session(config)
+        session = await get_session()
+        old_chc = await session.contentHostingConfigurationGet(provisioning_session_id)
+
+        if old_chc is None:
+            result = await session.contentHostingConfigurationCreate(provisioning_session_id, chc)
+        else:
+            for dc in chc['distributionConfigurations']:
+                for strip_field in ['canonicalDomainName', 'baseURL']:
+                    if strip_field in dc:
+                        del dc[strip_field]
+            result = await session.contentHostingConfigurationUpdate(provisioning_session_id, chc)
+
+        if not result:
             return JSONResponse(content={"message": f"Failed to set hosting for provisioning session {provisioning_session_id}"}, status_code=400)
-        
-    return JSONResponse(content={"message": f"Hosting set for provisioning session {provisioning_session_id}"}, status_code=200)
+
+        return JSONResponse(content={"message": f"Hosting set for provisioning session {provisioning_session_id}"}, status_code=200)
+
+    except HTTPException as e:
+        raise e
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error setting stream: {str(e)}")
+
 
 """
 Endpoint: Retrieve all provisioning sessions details
@@ -212,7 +359,7 @@ async def get_session_details(session, ps_id):
 
 @app.get("/details")
 async def get_provisioning_session_details():
-    session = await get_session(config)
+    session = await get_session()
     provisioning_session_ids = await session.provisioningSessionIds()
 
     tasks = [get_session_details(session, ps_id) for ps_id in provisioning_session_ids]
