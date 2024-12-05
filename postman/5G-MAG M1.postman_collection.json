@@ -166,7 +166,7 @@
 						"header": [],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"name\": \"BBC R&D Demo Streams\",\n    \"ingestConfiguration\": {\n        \"pull\": true,\n        \"protocol\": \"urn:3gpp:5gms:content-protocol:http-pull-ingest\",\n        \"baseURL\": \"https://rdmedia.bbc.co.uk/\"\n    },\n    \"distributionConfigurations\": [\n        {\n            \"domainNameAlias\": \"192.168.178.56:8080\",\n            \"entryPoint\": {\n                \"relativePath\": \"bbb/2/client_manifest-common_init.mpd\",\n                \"contentType\": \"application/dash+xml\",\n                \"profiles\": [\"urn:mpeg:dash:profile:isoff-live:2011\"]\n\t\t\t}\n        },\n        {\n            \"domainNameAlias\": \"192.168.178.56:8080\",\n            \"entryPoint\": {\n                \"relativePath\": \"elephants_dream/1/client_manifest-all.mpd\",\n                \"contentType\": \"application/dash+xml\",\n                \"profiles\": [\"urn:mpeg:dash:profile:isoff-live:2011\"]\n\t\t\t}\n        }\n    ]\n}",
+							"raw": "{\n    \"name\": \"BBC R&D Demo Streams\",\n    \"ingestConfiguration\": {\n        \"pull\": true,\n        \"protocol\": \"urn:3gpp:5gms:content-protocol:http-pull-ingest\",\n        \"baseURL\": \"https://rdmedia.bbc.co.uk/\"\n    },\n    \"distributionConfigurations\": [\n        {\n            \"entryPoint\": {\n                \"relativePath\": \"elephants_dream/1/client_manifest-all.mpd\",\n                \"contentType\": \"application/dash+xml\",\n                \"profiles\": [\"urn:mpeg:dash:profile:isoff-live:2011\"]\n\t\t\t}\n        }\n    ]\n}",
 							"options": {
 								"raw": {
 									"language": "json"
