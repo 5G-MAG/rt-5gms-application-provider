@@ -14,8 +14,8 @@ import { setConsumptionReporting,showConsumptionReporting, deleteConsumptionRepo
 import { createMetricsJson, showMetricsReporting, confirmMetricsDeletion, deleteMetricsConfiguration } from "./modules/metricsReporting.js";
 import { setDynamicPolicy, showDynamicPolicies, deleteDynamicPolicy } from "./modules/dynamicPolicies.js";
 
-//let operatingUrl = '';
-let operatingUrl = 'http://127.0.0.1:8000/'
+let operatingUrl = '';
+//let operatingUrl = 'http://127.0.0.1:8000/'
 let isConnectionLost = false;
 
 window.createNewSession = createNewSession;

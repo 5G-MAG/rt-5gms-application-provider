@@ -3,3 +3,4 @@ __pycache__
 vscode
 .env
 qoe-metrics-reporting-ui/node_modules
+nohup.*
