@@ -35,6 +35,7 @@ window.deleteMetricsConfiguration = deleteMetricsConfiguration;
 window.setDynamicPolicy = setDynamicPolicy;
 window.showDynamicPolicies = showDynamicPolicies;
 window.deleteDynamicPolicy = deleteDynamicPolicy;
+window.generateM8 = generateM8;
 
 document.addEventListener('DOMContentLoaded', async () => {
   await loadAllSessions();
@@ -192,7 +193,7 @@ async function loadAllSessions() {
 
 async function createNewSession(){
   try {
-    const response = await fetch(`${operatingUrl}create_session`, { method: 'POST' });
+    const response = await fetch(`${operatingUrl}create_media_session`, { method: 'POST' });
     if (!response.ok) {
       Swal.fire({
         title: 'Failed to create new provisioning session!',
@@ -275,6 +276,93 @@ async function deleteProvisioningSession(sessionId) {
       Swal.fire({
         title: 'Error',
         text: 'An error occurred while deleting the session.',
+        icon: 'error',
+        confirmButtonText: 'OK'
+      });
+    }
+  }
+}
+
+async function generateM8() {
+
+  const inputSessionId = await Swal.fire({
+    title: 'Enter Provisioning Session ID',
+    input: 'text',
+    inputPlaceholder: 'Enter the provisioning session ID here',
+    showCancelButton: true,
+    confirmButtonText: 'Proceed',
+    cancelButtonText: 'Cancel'
+  });
+
+  if (!inputSessionId.value) {
+    Swal.fire({
+      title: 'Cancelled',
+      text: 'Provisioning session ID is required to generate M8 JSON.',
+      icon: 'info',
+      confirmButtonText: 'OK'
+    });
+    return;
+  }
+
+  const provisioningSessionId = inputSessionId.value.trim();
+
+  const result = await Swal.fire({
+    title: 'Generate M8 JSON?',
+    text: `This will generate and return the M8 configuration for provisioning session ID: ${provisioningSessionId}.`,
+    icon: 'info',
+    showCancelButton: true,
+    confirmButtonText: 'Generate',
+    cancelButtonText: 'Cancel'
+  });
+
+  if (result.value) {
+    try {
+
+      const response = await fetch(`${operatingUrl}simple_commit/${provisioningSessionId}`, {
+        method: 'POST',
+      });
+
+      if (!response.ok) {
+        if (response.status === 404) {
+          Swal.fire({
+            title: 'Provisioning session not found.',
+            text: 'The provisioning session might have been deleted or is inaccessible.',
+            icon: 'warning',
+            confirmButtonText: 'OK'
+          });
+        } else {
+          Swal.fire({
+            title: 'Failed to generate M8 JSON.',
+            text: 'An error occurred while generating the M8 configuration.',
+            icon: 'error',
+            confirmButtonText: 'OK'
+          });
+        }
+        return;
+      }
+
+      const data = await response.json();
+
+      if (data.status === 'success' && data.m8_content) {
+        Swal.fire({
+          title: 'M8 JSON Generated Successfully!',
+          html: `<pre>${JSON.stringify(data.m8_content, null, 2)}</pre>`,
+          icon: 'success',
+          confirmButtonText: 'OK'
+        });
+      } else {
+        Swal.fire({
+          title: 'M8 JSON Generation Completed.',
+          text: 'The M8 generation process completed, but no content was returned.',
+          icon: 'info',
+          confirmButtonText: 'OK'
+        });
+      }
+
+    } catch (error) {
+      Swal.fire({
+        title: 'Error',
+        text: 'An error occurred while generating the M8 JSON.',
         icon: 'error',
         confirmButtonText: 'OK'
       });
