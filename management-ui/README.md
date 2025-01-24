@@ -57,6 +57,7 @@ Subsequently, install the Python dependencies required for Management UI:
 ```
 cd ~/rt-5gms-application-provider
 python3 -m pip install ./python
+cd management-ui/
 pip3 install -r requirements.txt
 ```
 
