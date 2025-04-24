@@ -20,7 +20,7 @@ from fastapi.responses import JSONResponse, FileResponse, PlainTextResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from fastapi.middleware.cors import CORSMiddleware
-from utils import lib_to_sys_path
+from .utils import lib_to_sys_path
 from fastapi.encoders import jsonable_encoder
 
 
@@ -102,22 +102,19 @@ async def new_provisioning_session(app_id: Optional[str] = None, asp_id: Optiona
     
     return {"provisioning_session_id": provisioning_session_id}
 
-
 async def create_media_session_dependency():
-    global _media_session
-    global _media_configuration
-    
-    if _media_session is None:
-        media_configuration = await initialize_media_configuration()
-        app_id = app_configuration.get('external_app_id')
-        asp_id = app_configuration.get('asp_id')
+    media_configuration = await initialize_media_configuration()
+    app_id = app_configuration.get('external_app_id')
+    asp_id = app_configuration.get('asp_id')
 
-        _media_session = await media_configuration.newMediaSession(
-            is_downlink=True,
-            external_app_id=app_id,
-            asp_id=asp_id
-        )
-    return _media_session
+    
+    media_session = await media_configuration.newMediaSession(
+        is_downlink=True,
+        external_app_id=app_id,
+        asp_id=asp_id
+    )
+    return media_session
+
 
 @app.post("/create_media_session")
 async def create_media_session():
@@ -692,7 +689,7 @@ async def simple_commit(provisioning_session_id):
             media_entry.addAppDistribution(app_distribution)
 
         await media_configuration.synchronise()
-        m8_output_dir = app_configuration.get("m8_output_dir", "/home/stepski/Desktop/m8")
+        m8_output_dir = "/usr/share/nginx/html/m8"
         m8_file_path = f"{m8_output_dir}/m8.json"
         print(f"Expected M8 JSON file path: {m8_file_path}")
 
