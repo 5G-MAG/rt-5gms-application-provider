@@ -1,27 +1,32 @@
 /*
 License: 5G-MAG Public License (v1.0)
-Author: Vuk Stojkovic
+Author: Vuk Stojkovic, Erik Gaida
 Copyright: (C) Fraunhofer FOKUS
 For full license terms please see the LICENSE file distributed with this
 program. If this file is missing then the license can be retrieved from
 https://drive.google.com/file/d/1cinCiA778IErENZ3JN52VFW-1ffHpx7Z/view
 */
 
-import { createChcFromJson } from "./modules/contentHostingConfiguration.js";
+import { openContentHostingConfigurationForm, downloadContentHostingConfiguration } from "./modules/contentHostingConfiguration.js";
 import { createNewCertificate, showCertificateDetails } from "./modules/serverCertificates.js";
 import { showProtocols } from "./modules/protocols.js";
-import { setConsumptionReporting,showConsumptionReporting, deleteConsumptionReporting } from "./modules/consumptionReporting.js";
+import { setConsumptionReporting, showConsumptionReporting, deleteConsumptionReporting } from "./modules/consumptionReporting.js";
 import { createMetricsJson, showMetricsReporting, confirmMetricsDeletion, deleteMetricsConfiguration } from "./modules/metricsReporting.js";
 import { setDynamicPolicy, showDynamicPolicies, deleteDynamicPolicy } from "./modules/dynamicPolicies.js";
+import { openDetails } from "./modules/details.js";
+import { notifyInfo, notifySuccess, notifyError, confirmPrompt } from "./modules/notify.js";
 
 let operatingUrl = '';
-//let operatingUrl = 'http://127.0.0.1:8000/'
+// let operatingUrl = 'http://127.0.0.1:8000/'
 let isConnectionLost = false;
+
+const LS_KEY = 'selectedSessions';
+const selectedSessions = new Set(JSON.parse(localStorage.getItem(LS_KEY) || '[]'));
 
 window.createNewSession = createNewSession;
 window.deleteProvisioningSession = deleteProvisioningSession;
 window.getProvisioningSessionDetails = getProvisioningSessionDetails;
-window.createChcFromJson = createChcFromJson;
+
 window.createNewCertificate = createNewCertificate;
 window.showProtocols = showProtocols;
 window.showCertificateDetails = showCertificateDetails;
@@ -35,68 +40,158 @@ window.deleteMetricsConfiguration = deleteMetricsConfiguration;
 window.setDynamicPolicy = setDynamicPolicy;
 window.showDynamicPolicies = showDynamicPolicies;
 window.deleteDynamicPolicy = deleteDynamicPolicy;
-window.generateM8 = generateM8;
+window.toggleSessionSelection = toggleSessionSelection;
+window.deleteSelectedSessions = deleteSelectedSessions;
+window.openContentHostingConfigurationForm = openContentHostingConfigurationForm;
+window.downloadContentHostingConfiguration = downloadContentHostingConfiguration;
+window.clearTable = clearTable;
+window.loadAllSessions = loadAllSessions;
+window.openDetails = openDetails;
+
+window.openDetailsForSelected = function () {
+  const ids = [...document.querySelectorAll('#m1_table tbody .session-checkbox:checked')]
+    .map(cb => cb.getAttribute('data-session-id'));
+  if (ids.length === 0) return notifyInfo("Please select at least one session.");
+  openDetails(ids);
+};
+
 
 document.addEventListener('DOMContentLoaded', async () => {
   await loadAllSessions();
 });
 
+function setAFStatus(connected) {
+  const el = document.getElementById('af-status');
+  if (!el) return;
+  el.classList.toggle('af-ok', connected);
+  el.classList.toggle('af-error', !connected);
+  el.innerHTML = `<span class="af-dot"></span>${
+    connected ? 'Application Function connected' : 'Application Function disconnected'
+  }`;
+}
+
+async function resyncAndReload() {
+  try { await fetch(`${operatingUrl}resync`, { method: 'POST' }); }
+  catch (e) { console.warn('rehydrate error:', e); }
+  clearTable();
+  await loadAllSessions();
+}
+
 function checkAFstatus() {
-  fetch(`${operatingUrl}connection_checker`)
-    .then(response => {
-      if (!response.ok && !isConnectionLost) {
-        document.getElementById('AFStatus').innerText = 'Connection with Application Function: ❌';
-        clearTable();
-        removeAllSessionsFromWebServer();
-        showConnectionLostAlert();
+  fetch(`${operatingUrl}connection_checker`, { cache: 'no-store' })
+    .then(r => {
+      const ok = r.ok;
+      setAFStatus(ok);
+
+      if (!ok && !isConnectionLost) {
         isConnectionLost = true;
-      } else if (response.ok) {
-        document.getElementById('AFStatus').innerText = 'Connection with Application Function: ✅';
+      } else if (ok && isConnectionLost) {
         isConnectionLost = false;
+        resyncAndReload();
       }
     })
-    .catch(error => {
-      console.error('Error:', error);
-      if (!isConnectionLost) {
-        document.getElementById('AFStatus').innerText = 'Connection with AF interrupted.';
-        clearTable();
-        removeAllSessionsFromWebServer();
-        showConnectionLostAlert();
-        isConnectionLost = true;
-      }
+    .catch(() => {
+      setAFStatus(false);
+      if (!isConnectionLost) { isConnectionLost = true; clearTable(); }
     });
 }
 
 function showConnectionLostAlert() {
-  Swal.fire({
-    title: 'Lost connection with Application Function!',
-    text: 'All session data has been purged.',
-    icon: 'warning',
-    confirmButtonText: 'OK'
-  });
-}
-
-function removeAllSessionsFromWebServer() {
-  fetch(`${operatingUrl}remove_all_sessions`, {
-    method: 'DELETE'
-  })
-  .then(response => {
-    if (!response.ok) {
-      console.error('Failed to purge all sessions from the backend server.');
-    }
-  })
-  .catch(error => {
-    console.error('Error clearing sessions from the backend server:', error);
-  });
+  notifyError("Lost connection with Application Function! All session data has been purged.");
 }
 
 function policyTemplateOptionsCheck(session_id, fn) {
-  fetch(`${operatingUrl}policy_template_checker/${session_id}`).then(response => (response.ok && response.json()['enabled']), response => false).then(fn);
+  fetch(`${operatingUrl}policy_template_checker/${session_id}`)
+    .then(r => r.ok ? r.json() : { enabled: false })
+    .then(data => fn(!!data.enabled))
+    .catch(() => fn(false));
 }
 
-function addSessionToTable(sessionId) {
+function toggleSessionSelection(checkbox) {
+  console.log("Bevor action",selectedSessions)
+  const sessionId = checkbox.getAttribute('data-session-id');
+  if (checkbox.checked) selectedSessions.add(sessionId);
+  else selectedSessions.delete(sessionId);
+  console.log("after action",selectedSessions)
+
+  localStorage.setItem(LS_KEY, JSON.stringify([...selectedSessions]));
+}
+
+async function deleteSelectedSessions() {
+  const sessionsToDelete = Array.from(selectedSessions);
+  if (sessionsToDelete.length === 0) {
+    notifyInfo("No sessions selected.");
+    return;
+  }
+
+  const ok = await confirmPrompt({
+    message: `Delete ${sessionsToDelete.length} selected session(s)? This action cannot be undone.`,
+    confirmText: "Delete",
+    cancelText: "Cancel",
+    tone: "danger"
+  });
+  if (!ok) return;
+
+  for (const sessionId of sessionsToDelete) {
+    const response = await fetch(`/delete_session/${sessionId}`, { method: 'DELETE' });
+    if (response.ok) {
+      removeSessionFromTable(sessionId);
+      selectedSessions.delete(sessionId);
+    } else {
+      console.warn(`Failed to delete session ${sessionId}`);
+      notifyError(`Failed to delete session ${sessionId}`);
+    }
+  }
+
+  notifySuccess("Selected sessions have been deleted.");
+}
+
+window.commitSelectedSessionsToM8 = async function commitSelectedSessionsToM8() {
+  const sessions = Array.from(selectedSessions);
+
+  if (sessions.length === 0) {
+    notifyInfo("Please select at least one session.");
+    return;
+  }
+
+  const ok = await confirmPrompt({
+    message: `Publish ${sessions.length} selected session(s) to M8 JSON and generate m8.json?`,
+    confirmText: "Publish",
+    cancelText: "Cancel",
+    tone: "primary"
+  });
+  if (!ok) return;
+
+  try {
+    const response = await fetch('/commit_selected_sessions', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ session_ids: sessions })
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.detail || 'Server returned an error.');
+    }
+
+    const result = await response.json();
+
+    if (result.status === 'success' && result.m8_content) {
+      notifySuccess('M8 JSON successfully published (open /m8/m8.json).');
+    } else {
+      notifyInfo('Sessions were committed, but no M8 content was returned.');
+    }
+  } catch (err) {
+    console.error('Error publishing selected sessions:', err);
+    notifyError(`Error publishing selection: ${err.message}`);
+  }
+};
+
+async function addSessionToTable(sessionId) {
   const m1Table = document.getElementById('m1_table');
-  let row = m1Table.insertRow(-1);
+  const tbody = document.querySelector('#m1_table tbody');
+  let row = tbody.insertRow(-1);
+  row.setAttribute('data-session-id', sessionId);
 
   let cell1 = row.insertCell(0); // Provisioning Session ID
   let cell2 = row.insertCell(1); // Content Hosting Configuration
@@ -106,278 +201,245 @@ function addSessionToTable(sessionId) {
   let cell6 = row.insertCell(5); // Dynamic Policies
   let cell7 = row.insertCell(6); // Metrics Reporting Configuration
   let cell8 = row.insertCell(7); // Session Details
-  let cell9 = row.insertCell(8); // Delete session
-  
-  cell1.innerHTML = sessionId;
+  let cell9 = row.insertCell(8); // checkBox
 
-  cell2.innerHTML = `<button onclick="createChcFromJson('${sessionId}')" class="btn btn-primary table-button">Create</button>`;
+  let content_hosting_configuration_exists = false;
+  let name_form_CHC = '';
+  const MAX_NAME_LEN = 36;
+  try {
+    const res = await fetch(`/get_content_hosting_configuration/${sessionId}`);
+    if (res.ok) {
+      const data = await res.json();
+      content_hosting_configuration_exists = true;
+      name_form_CHC = data?.name || '';
+      if (name_form_CHC.length > MAX_NAME_LEN) {
+        name_form_CHC = name_form_CHC.slice(0, MAX_NAME_LEN - 3) + '...';
+      }
+    }
+  } catch {  }
 
-  cell3.innerHTML = `<button onclick="createNewCertificate('${sessionId}')" class="btn btn-primary table-button">Create</button>
-                     <button onclick="showCertificateDetails('${sessionId}')" class="btn btn-secondary table-button">Show</button>`;
-  
+  cell1.classList.add('psid-col');
+
+  if (content_hosting_configuration_exists) {
+    cell1.innerHTML = `
+      <div class="psid-cell">
+        <div class="psid-name">${name_form_CHC || ''}</div>
+        <div class="psid-id">${sessionId}</div>
+      </div>
+    `;
+
+    cell2.innerHTML = `
+      <button onclick="openContentHostingConfigurationForm('${sessionId}', true)" class="btn btn-secondary table-button">Show/Edit</button>
+      <button type="button" class="btn btn-secondary table-button" onclick="downloadContentHostingConfiguration('${sessionId}')">Download</button>
+      <button type="button" class="btn btn-info table-button" onclick="document.getElementById('upload-chc-${sessionId}').click()">Upload</button>
+      <input type="file" id="upload-chc-${sessionId}" accept="application/json" style="display:none" />
+    `;
+  } else {
+    cell1.innerHTML = `
+      <div class="psid-cell">
+        <div class="psid-name">${sessionId}</div>
+      </div>
+    `;
+
+    cell2.innerHTML = `
+      <button onclick="openContentHostingConfigurationForm('${sessionId}', false)" class="btn btn-primary table-button">Create</button>
+      <button type="button" class="btn btn-info table-button" onclick="document.getElementById('upload-chc-${sessionId}').click()">Upload</button>
+      <input type="file" id="upload-chc-${sessionId}" accept="application/json" style="display:none" />
+    `;
+  }
+
+  const fileInput = cell2.querySelector(`#upload-chc-${sessionId}`);
+  fileInput.addEventListener('change', async (e) => {
+    const file = e.target.files && e.target.files[0];
+    if (!file) return;
+
+    try {
+      const text = await file.text();
+      const content_hosting_configuration_JSON = JSON.parse(text);
+
+      const resp = await fetch(`/set_content_hosting_configuration/${sessionId}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(content_hosting_configuration_JSON),
+      });
+
+      if (!resp.ok) {
+        const msg = (await resp.json().catch(() => { }))?.detail || resp.statusText;
+        notifyError(msg || "Upload failed.");
+      } else {
+        notifySuccess("Content Hosting Configuration uploaded & saved.");
+        clearTable();
+        await loadAllSessions();
+      }
+    } catch (err) {
+      notifyError("Error while processing CHC file.");
+    } finally {
+      e.target.value = '';
+    }
+  });
+
+  cell3.innerHTML = `
+    <button onclick="createNewCertificate('${sessionId}')" class="btn btn-primary table-button">Create</button>
+    <button onclick="showCertificateDetails('${sessionId}')" class="btn btn-secondary table-button">Show</button>`;
+
   cell4.innerHTML = `<button onclick="showProtocols('${sessionId}')" class="btn btn-secondary table-button">Show</button>`;
 
-  cell5.innerHTML = `<button onclick="setConsumptionReporting('${sessionId}')" class="btn btn-primary table-button">Set</button>
-                      <button onclick="showConsumptionReporting('${sessionId}')" class="btn btn-secondary table-button">Show</button>
-                      <button onclick="deleteConsumptionReporting('${sessionId}')" class="btn btn-danger table-button">Delete</button>`;
+  cell5.innerHTML = `
+    <button onclick="setConsumptionReporting('${sessionId}')" class="btn btn-primary table-button">Set</button>
+    <button onclick="showConsumptionReporting('${sessionId}')" class="btn btn-secondary table-button">Show</button>
+    <button onclick="deleteConsumptionReporting('${sessionId}')" class="btn btn-danger table-button">Delete</button>`;
 
   cell6.innerHTML = `
-                      <p class="policy-message"><img src="src/static/images/loading.gif" alt="loading..." /> Checking feature availability...</p>
-                      <a href="#" onclick="setDynamicPolicy('${sessionId}')" class="dynamic-policy-link font-medium text-blue-600 dark:text-blue-500 hover:underline disabled-link">Set</a><br>
-                      <a href="#" onclick="showDynamicPolicies('${sessionId}')" class="dynamic-policy-link font-medium text-green-600 dark:text-green-500 hover:underline ml-4 disabled-link">Show</a><br>
-                      <a href="#" onclick="deleteDynamicPolicy('${sessionId}')" class="dynamic-policy-link font-medium text-red-600 dark:text-red-500 hover:underline ml-4 disabled-link">Delete</a>
-                    `;
-                    
-                    policyTemplateOptionsCheck(sessionId, enabled => {
-                      const links = cell6.getElementsByClassName('dynamic-policy-link');
-                      for (let link of links) {
-                        link.classList.remove('disabled-link');
-                        if (!enabled) {
-                          link.classList.add('disabled-link');
-                          link.style.pointerEvents = 'none';
-                          link.style.color = 'white'; 
-                        } else {
-                          link.style.pointerEvents = 'auto';
-                          link.style.color = ''; 
-                        }
-                      }                   
-                      const msg = cell6.getElementsByClassName('policy-message')[0];
-                      msg.style.display = 'none'; 
-                    });
+    <p class="policy-message"><img src="src/static/images/loading.gif" alt="loading..." /> Checking feature availability...</p>
+    <a href="#" onclick="setDynamicPolicy('${sessionId}')" class="dynamic-policy-link font-medium text-blue-600 dark:text-blue-500 hover:underline disabled-link">Set</a><br>
+    <a href="#" onclick="showDynamicPolicies('${sessionId}')" class="dynamic-policy-link font-medium text-green-600 dark:text-green-500 hover:underline ml-4 disabled-link">Show</a><br>
+    <a href="#" onclick="deleteDynamicPolicy('${sessionId}')" class="dynamic-policy-link font-medium text-red-600 dark:text-red-500 hover:underline ml-4 disabled-link">Delete</a>
+  `;
 
-  cell7.innerHTML = `<button onclick="createMetricsJson('${sessionId}')" class="btn btn-primary table-button">Create</button>
-                    <button onclick="showMetricsReporting('${sessionId}')" class="btn btn-secondary table-button">Show</button>
-                    <button onclick="deleteMetricsConfiguration('${sessionId}')" class="btn btn-danger table-button">Delete</button>`;
-                    
-  cell8.innerHTML = `<button onclick="getProvisioningSessionDetails()" class="btn btn-secondary table-button">Details</button>`;
+  policyTemplateOptionsCheck(sessionId, enabled => {
+    const links = cell6.getElementsByClassName('dynamic-policy-link');
+    for (let link of links) {
+      link.classList.remove('disabled-link');
+      if (!enabled) {
+        link.classList.add('disabled-link');
+        link.style.pointerEvents = 'none';
+        link.style.color = 'white';
+      } else {
+        link.style.pointerEvents = 'auto';
+        link.style.color = '';
+      }
+    }
+    const msg = cell6.getElementsByClassName('policy-message')[0];
+    msg.style.display = 'none';
+  });
 
-  cell9.innerHTML = `<button onclick="deleteProvisioningSession('${sessionId}')" class="btn btn-danger table-button">Delete</button>`;
+  cell7.innerHTML = `
+    <button onclick="createMetricsJson('${sessionId}')" class="btn btn-primary table-button">Create</button>
+    <button onclick="showMetricsReporting('${sessionId}')" class="btn btn-secondary table-button">Show</button>
+    <button onclick="deleteMetricsConfiguration('${sessionId}')" class="btn btn-danger table-button">Delete</button>`;
+
+  cell8.innerHTML = `<button onclick="openDetails(['${sessionId}'])" class="btn btn-secondary table-button">Details</button>`;
+
+
+  cell9.innerHTML = `
+    <input type="checkbox"
+         class="session-checkbox"
+         data-session-id="${sessionId}"
+         onchange="toggleSessionSelection(this)">
+    `;
+
+  const cb = cell9.querySelector('.session-checkbox');
+  cb.checked = selectedSessions.has(sessionId);
+
 }
 
 async function loadAllSessions() {
   try {
-      const response = await fetch(`${operatingUrl}fetch_all_sessions`, {
-          method: 'GET',
-          headers: {
-              'Content-Type': 'application/json'
-          }
-      });
+    const response = await fetch(`${operatingUrl}fetch_all_sessions`, {
+      method: 'GET',
+      headers: { 'Content-Type': 'application/json' }
+    });
 
-      if (!response.ok) {
-          Swal.fire({
-              title: 'Failed to load data!',
-              text: 'Check connection with the 5GMS Application Function.',
-              icon: 'error',
-              confirmButtonText: 'OK'
-          });
-          return;
-      }
+    if (!response.ok) {
+      notifyError('Failed to load data! Check connection with the 5GMS Application Function.');
+      return;
+    }
 
-      const data = await response.json();
-      const sessionIds = data.session_ids;
-
-      sessionIds.forEach(sessionId => {
-          addSessionToTable(sessionId);
-      });
+    const data = await response.json();
+    const sessionIds = data.session_ids;
+    sessionIds.forEach(sessionId => addSessionToTable(sessionId));
 
   } catch (error) {
-      //console.error('Error:', error);
-      Swal.fire({
-          title: 'Error',
-          text: 'An unexpected error occurred while loading the sessions.',
-          icon: 'error',
-          confirmButtonText: 'OK'
-      });
+    console.error('Error:', error);
+    notifyError('Unexpected error while loading the sessions.');
   }
-};
+}
 
-async function createNewSession(){
+async function createNewSession() {
   try {
     const response = await fetch(`${operatingUrl}create_media_session`, { method: 'POST' });
     if (!response.ok) {
-      Swal.fire({
-        title: 'Failed to create new provisioning session!',
-        text: 'Please, make sure that Application Function is running!',
-        icon: 'error',
-        confirmButtonText: 'OK'
-      });
+      notifyError('Failed to create new provisioning session! Make sure the Application Function is running.');
       return;
     }
     const data = await response.json();
-    Swal.fire({
-      title: 'Created Provisioning Session',
-      text: `ID: ${data.provisioning_session_id}`,
-      icon: 'success',
-      confirmButtonText: 'OK'
-    });
+    notifySuccess(`Created Provisioning Session: ${data.provisioning_session_id}`);
     addSessionToTable(data.provisioning_session_id);
   }
   catch (error) {
     console.error('Caught error:', error);
-    Swal.fire({
-      title: 'Network Error',
-      text: 'Failed to communicate with the backend server.',
-      icon: 'error',
-      confirmButtonText: 'OK'
-    });
+    notifyError('Network error while communicating with the backend server.');
   }
-};
+}
 
 async function getProvisioningSessionDetails() {
   window.open(`${operatingUrl}details`, '_blank');
 }
 
 async function deleteProvisioningSession(sessionId) {
-  const result = await Swal.fire({
-    title: 'Delete Provisioning Session?',
-    text: "Permanently remove provisioning session and it resources?",
-    icon: 'warning',
-    showCancelButton: true,
-    confirmButtonText: 'Yes',
-    cancelButtonText: 'No'
+  const ok = await confirmPrompt({
+    message: "Delete Provisioning Session and all its resources?",
+    confirmText: "Delete",
+    cancelText: "Cancel",
+    tone: "danger"
   });
-  
-  if (result.value) {
-    try {
-      const response = await fetch(`${operatingUrl}delete_session/${sessionId}`, {
-        method: 'DELETE'
-      });
+  if (!ok) return;
 
-      if (!response.ok) {
-        if (response.status === 404) {
-          Swal.fire({
-            title: 'Provisioning session not found.',
-            text: 'The session might have already been deleted.',
-            icon: 'info',
-            confirmButtonText: 'OK'
-          });
-          removeSessionFromTable(sessionId);
-        } else {
-          Swal.fire({
-            title: 'Failed to delete the provisioning session.',
-            text: '',
-            icon: 'error',
-            confirmButtonText: 'OK'
-          });
-        }
-        return;
-      }
+  try {
+    const response = await fetch(`${operatingUrl}delete_session/${sessionId}`, { method: 'DELETE' });
 
-      Swal.fire({
-        title: 'Deleted Provisioning session',
-        text: `${sessionId} deleted with all resources`,
-        icon: 'success',
-        confirmButtonText: 'OK'
-      });
-      
-      removeSessionFromTable(sessionId);
-
-    } catch (error) {
-      Swal.fire({
-        title: 'Error',
-        text: 'An error occurred while deleting the session.',
-        icon: 'error',
-        confirmButtonText: 'OK'
-      });
-    }
-  }
-}
-
-async function generateM8() {
-
-  const inputSessionId = await Swal.fire({
-    title: 'Enter Provisioning Session ID',
-    input: 'text',
-    inputPlaceholder: 'Enter the provisioning session ID here',
-    showCancelButton: true,
-    confirmButtonText: 'Proceed',
-    cancelButtonText: 'Cancel'
-  });
-
-  if (!inputSessionId.value) {
-    Swal.fire({
-      title: 'Cancelled',
-      text: 'Provisioning session ID is required to generate M8 JSON.',
-      icon: 'info',
-      confirmButtonText: 'OK'
-    });
-    return;
-  }
-
-  const provisioningSessionId = inputSessionId.value.trim();
-
-  const result = await Swal.fire({
-    title: 'Generate M8 JSON?',
-    text: `This will generate and return the M8 configuration for provisioning session ID: ${provisioningSessionId}.`,
-    icon: 'info',
-    showCancelButton: true,
-    confirmButtonText: 'Generate',
-    cancelButtonText: 'Cancel'
-  });
-
-  if (result.value) {
-    try {
-
-      const response = await fetch(`${operatingUrl}simple_commit/${provisioningSessionId}`, {
-        method: 'POST',
-      });
-
-      if (!response.ok) {
-        if (response.status === 404) {
-          Swal.fire({
-            title: 'Provisioning session not found.',
-            text: 'The provisioning session might have been deleted or is inaccessible.',
-            icon: 'warning',
-            confirmButtonText: 'OK'
-          });
-        } else {
-          Swal.fire({
-            title: 'Failed to generate M8 JSON.',
-            text: 'An error occurred while generating the M8 configuration.',
-            icon: 'error',
-            confirmButtonText: 'OK'
-          });
-        }
-        return;
-      }
-
-      const data = await response.json();
-
-      if (data.status === 'success' && data.m8_content) {
-        Swal.fire({
-          title: 'M8 JSON Generated Successfully!',
-          html: `<pre>${JSON.stringify(data.m8_content, null, 2)}</pre>`,
-          icon: 'success',
-          confirmButtonText: 'OK'
-        });
+    if (!response.ok) {
+      if (response.status === 404) {
+        notifyInfo('Provisioning session not found. It might have already been deleted.');
+        removeSessionFromTable(sessionId);
       } else {
-        Swal.fire({
-          title: 'M8 JSON Generation Completed.',
-          text: 'The M8 generation process completed, but no content was returned.',
-          icon: 'info',
-          confirmButtonText: 'OK'
-        });
+        notifyError('Failed to delete the provisioning session.');
       }
-
-    } catch (error) {
-      Swal.fire({
-        title: 'Error',
-        text: 'An error occurred while generating the M8 JSON.',
-        icon: 'error',
-        confirmButtonText: 'OK'
-      });
+      return;
     }
+
+    notifySuccess(`Deleted Provisioning session ${sessionId} with all resources`);
+    removeSessionFromTable(sessionId);
+
+  } catch (error) {
+    notifyError('An error occurred while deleting the session.');
   }
 }
+
+window.selectAllCheckboxes = function () {
+  selectedSessions.clear();
+  document.querySelectorAll('#m1_table tbody .session-checkbox').forEach(cb => {
+    cb.checked = true;
+    selectedSessions.add(cb.getAttribute('data-session-id'));
+  });
+  localStorage.setItem(LS_KEY, JSON.stringify([...selectedSessions]));
+};
+
+window.unselectAllCheckboxes = function () {
+  document.querySelectorAll('#m1_table tbody .session-checkbox').forEach(cb => cb.checked = false);
+  selectedSessions.clear();
+  localStorage.setItem(LS_KEY, JSON.stringify([...selectedSessions]));
+};
+
+document.getElementById('scrollTopBtn').onclick = () => {
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+};
 
 function removeSessionFromTable(sessionId) {
-  let m1_table = document.getElementById('m1_table');
-  for (let i = 1; i < m1_table.rows.length; i++) {
-    if (m1_table.rows[i].cells[0].innerHTML === sessionId) {
-      m1_table.deleteRow(i);
-      break;
-    }
+  const esc = (window.CSS && CSS.escape)
+    ? CSS.escape(sessionId)
+    : sessionId.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  let row = document.querySelector(`#m1_table tbody tr[data-session-id="${esc}"]`);
+  if (!row) {
+    row = Array.from(document.querySelectorAll('#m1_table tbody tr')).find(tr => {
+      const idEl = tr.querySelector('.psid-id');
+      return idEl && idEl.textContent.trim() === sessionId;
+    });
   }
+  if (row) row.remove();
+
+  selectedSessions.delete(sessionId);
+  localStorage.setItem(LS_KEY, JSON.stringify([...selectedSessions]));
 }
 
 function clearTable() {
@@ -387,6 +449,13 @@ function clearTable() {
   }
 }
 
-window.onload = function() {
+document.addEventListener('sessions:reload', async () => {
+  clearTable();
+  await loadAllSessions();
+});
+
+
+window.onload = function () {
+  checkAFstatus();
   setInterval(checkAFstatus, 5000);
-}
+};

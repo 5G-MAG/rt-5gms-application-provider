@@ -11,13 +11,13 @@
 				"relativePath": "manifest(format=mpd-time-csf)",
 				"contentType": "application/dash+xml",
 				"profiles": ["urn:mpeg:dash:profile:isoff-live:2011"]
-			}
+				}
 		},
 		{
-                        "entryPoint": {
-                                "relativePath": "manifest(format=m3u8-aapl-v3)",
-                                "contentType": "application/vnd.apple.mpegurl"
-                        }
+		"entryPoint": {
+				"relativePath": "manifest(format=m3u8-aapl-v3)",
+				"contentType": "application/vnd.apple.mpegurl"
+				}
 		}
 	]
 }

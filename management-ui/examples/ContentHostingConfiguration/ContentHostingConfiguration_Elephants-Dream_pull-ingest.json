@@ -14,10 +14,10 @@
 			}
 		},
 		{
-                        "entryPoint": {
-                                "relativePath": "manifest(format=m3u8-aapl-v3)",
-                                "contentType": "application/vnd.apple.mpegurl"
-                        }
+			"entryPoint": {
+					"relativePath": "manifest(format=m3u8-aapl-v3)",
+					"contentType": "application/vnd.apple.mpegurl"
+			}
 		}
 	]
 }
