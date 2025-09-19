@@ -272,6 +272,12 @@ button:disabled {
   transform: scale(1.1);
 }
 
+.session-checkbox {
+  transform: scale(2);
+  cursor: pointer;
+
+}
+
 .modal {
   display: none;
   position: fixed;

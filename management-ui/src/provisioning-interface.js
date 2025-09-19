@@ -205,9 +205,10 @@ async function addSessionToTable(sessionId) {
 
   let content_hosting_configuration_exists = false;
   let name_form_CHC = '';
-  const MAX_NAME_LEN = 36;
+  const MAX_NAME_LEN = 15;
   try {
-    const res = await fetch(`/get_content_hosting_configuration/${sessionId}`);
+    const res = await fetch(`/get_content_hosting_configuration/${sessionId}`, { cache: 'no-store' });
+
     if (res.ok) {
       const data = await res.json();
       content_hosting_configuration_exists = true;
@@ -223,12 +224,12 @@ async function addSessionToTable(sessionId) {
   if (content_hosting_configuration_exists) {
     cell1.innerHTML = `
       <div class="psid-cell">
-        <div class="psid-name">${name_form_CHC || ''}</div>
-        <div class="psid-id">${sessionId}</div>
+        <div class="psid-name">${sessionId}</div>
       </div>
     `;
 
     cell2.innerHTML = `
+      <div class="psid-name">${name_form_CHC || ''}</div>
       <button onclick="openContentHostingConfigurationForm('${sessionId}', true)" class="btn btn-secondary table-button">Show/Edit</button>
       <button type="button" class="btn btn-secondary table-button" onclick="downloadContentHostingConfiguration('${sessionId}')">Download</button>
       <button type="button" class="btn btn-info table-button" onclick="document.getElementById('upload-chc-${sessionId}').click()">Upload</button>

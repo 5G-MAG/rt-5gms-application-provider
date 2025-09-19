@@ -13,6 +13,7 @@ import requests
 import asyncio
 import httpx
 import aiofiles
+from datetime import datetime, timezone
 from dotenv import load_dotenv
 from typing import Optional, Dict
 from fastapi import FastAPI, Query, Depends, HTTPException, Response, Request, APIRouter
@@ -26,13 +27,12 @@ from pathlib import Path
 load_dotenv()
 lib_to_sys_path()
 
-from rt_m1_client.types import ResourceId, ApplicationId, ConsumptionReportingConfiguration, PolicyTemplate, MetricsReportingConfiguration
+from rt_m1_client.types import ResourceId, ApplicationId, ConsumptionReportingConfiguration, PolicyTemplate, MetricsReportingConfiguration, ContentHostingConfiguration
 from rt_m1_client.configuration import Configuration
 from rt_m1_client.session import M1Session
 from rt_m1_client.data_store import JSONFileDataStore
 from rt_m1_client.exceptions import M1Error
 from rt_m1_client import app_configuration
-
 from rt_media_configuration import MediaConfiguration, MediaEntry, MediaDistribution, MediaEntryPoint, MediaAppDistribution, MediaMetricsReportingConfiguration, MediaServerCertificate, MediaGeoFencing, MediaConsumptionReportingConfiguration, MediaDynamicPolicy
 
 config = Configuration()
@@ -53,7 +53,7 @@ app.mount("/m8", StaticFiles(directory="/usr/share/nginx/html/m8"), name="m8")
 def get_config():
     return Configuration()
 
-async def get_session():
+async def get_M1Session():
     global _m1_session
     if _m1_session is None:
         data_store_dir = app_configuration.get('data_store')
@@ -68,7 +68,7 @@ async def get_session():
 
 async def get_media_configuration():
     global _media_configuration
-    session = await get_session()
+    session = await get_M1Session()
     if _media_configuration is None:
         _media_configuration = await MediaConfiguration(
             persistent_data_store=session.data_store(),
@@ -93,7 +93,7 @@ def landing_page():
 
 @app.post("/create_session")
 async def new_provisioning_session(app_id: Optional[str] = None, asp_id: Optional[str] = None):
-    session = await get_session()
+    session = await get_M1Session()
     app_id = app_id or config.get('external_app_id')
     asp_id = asp_id or config.get('asp_id')
 
@@ -154,7 +154,7 @@ def generate_relative_path(media_entry_name):
    
 @app.get("/fetch_all_sessions")
 async def get_all_sessions():
-    session = await get_session()
+    session = await get_M1Session()
     session_ids = await session.provisioningSessionIds() 
     return {"session_ids": list(session_ids)}
 
@@ -164,14 +164,14 @@ async def resync():
     media_configuration = await get_media_configuration()
     await media_configuration.synchronise()
 
-    session = await get_session()
+    session = await get_M1Session()
     af_ids = list(await session.provisioningSessionIds() or [])
     return {"status": "ok", "session_ids": af_ids}
 
 
 @app.delete("/remove_all_sessions")
 async def remove_all_sessions():    
-    session = await get_session()
+    session = await get_M1Session()
     session_ids = await session.provisioningSessionIds()
 
     for session_id in session_ids:
@@ -185,7 +185,7 @@ async def remove_all_sessions():
 
 @app.delete("/delete_session/{provisioning_session_id}")
 async def cmd_delete_session(provisioning_session_id: str, config: Configuration = Depends(get_config)):
-    session = await get_session()
+    session = await get_M1Session()
     media_configuration = await get_media_configuration()
 
     
@@ -213,61 +213,51 @@ async def cmd_delete_session(provisioning_session_id: str, config: Configuration
         status_code=200
     )
 
-
-
 @app.post("/set_content_hosting_configuration/{provisioning_session_id}")
-async def set_content_hosting_configuration(provisioning_session_id: str, request: Request, config = Depends(get_config)):
+async def set_content_hosting_configuration(
+    provisioning_session_id: str,
+    request: Request,
+    config = Depends(get_config),
+):
     try:
-        content_hosting_configuration_JSON = await request.json()
-        print("[CHC][POST] Incoming payload:\n", json.dumps(content_hosting_configuration_JSON, indent=2))
+        payload = await request.json()
+        print("[CHC][POST] Incoming payload:\n", json.dumps(payload, indent=2))
 
-        media_configuration = await get_media_configuration()
+        m1_session = await get_M1Session()
+        chc = ContentHostingConfiguration(payload)
 
-        media_session = await media_configuration.mediaSessionByProvisioningSessionId(provisioning_session_id)
-        if media_session is None:
-            raise HTTPException(status_code=404, detail="Provisioning session not found")
-
-        # Distributions mapping
-        distributions = [
-            MediaDistribution(
-                domain_name_alias=dc.get("domainNameAlias"),
-                entry_point=MediaEntryPoint(
-                    relative_path=dc.get("entryPoint", {}).get("relativePath"),
-                    content_type=dc.get("entryPoint", {}).get("contentType"),
-                    profiles=dc.get("entryPoint", {}).get("profiles"),
-                )
-            )
-            for dc in content_hosting_configuration_JSON.get("distributionConfigurations", [])
-        ]
-
-        # Create MediaEntry 
-        if media_session.media_entry is None:
-            media_session.media_entry = MediaEntry(
-                name = content_hosting_configuration_JSON.get("name", ""),
-                ingest_url_prefix =  content_hosting_configuration_JSON.get("ingestConfiguration", "").get("baseURL", ""),
-                protocol = content_hosting_configuration_JSON.get("ingestConfiguration", "").get("protocol", "urn:3gpp:5gms:content-protocol:http-pull-ingest"),
-                is_pull = bool(content_hosting_configuration_JSON.get("ingestConfiguration", "").get("pull", True)),
-                distributions=distributions,
-            )
-        # Update MediaEntry
+        exists = await m1_session.contentHostingConfigurationGet(provisioning_session_id)
+        if exists is None:
+            ok = await m1_session.contentHostingConfigurationCreate(provisioning_session_id, chc)
+            action = "created"
         else:
-            media_entry = media_session.media_entry
-            media_entry.name = content_hosting_configuration_JSON.get("name", "")
-            media_entry.ingest_url_prefix = content_hosting_configuration_JSON.get("ingestConfiguration", "").get("baseURL", "")
-            media_entry.protocol = content_hosting_configuration_JSON.get("ingestConfiguration", "").get("protocol", "urn:3gpp:5gms:content-protocol:http-pull-ingest")
-            media_entry.is_pull = bool(content_hosting_configuration_JSON.get("ingestConfiguration", "").get("pull", True))
-            media_entry.distributions = distributions
+            ok = await m1_session.contentHostingConfigurationUpdate(provisioning_session_id, chc)
+            action = "updated"
+            ps_map = getattr(m1_session, "_M1Session__provisioning_sessions", {})
+            if provisioning_session_id in ps_map:
+                ps_map[provisioning_session_id]["content-hosting-configuration"] = None
+                ps_map[provisioning_session_id]["last-modified"] = datetime.now(timezone.utc).isoformat()
+        if not ok:
+            raise HTTPException(status_code=500, detail="Operation failed")
 
-        await media_configuration.synchronise()
-
-    
-        if media_session is None:
-            raise HTTPException(status_code=404, detail="Provisioning session not found")
+        chc_json = chc.toJSON() if hasattr(chc, "toJSON") else payload
 
         return JSONResponse(
-            content={"message": f"Stream configuration saved for provisioning session {provisioning_session_id}"},
+            content={
+                "message": f"CHC successfully {action} for session {provisioning_session_id}",
+                "contentHostingConfiguration": chc_json,
+            },
             status_code=200,
         )
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        print("error:", e)
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+
     except HTTPException:
         raise
     except Exception as e:
@@ -283,48 +273,19 @@ Path: /get_content_hosting_configuration/{provisioning_session_id}
 """
 @app.get("/get_content_hosting_configuration/{provisioning_session_id}")
 async def get_content_hosting_configuration(
-    provisioning_session_id: str,        
+    provisioning_session_id: str,
     config = Depends(get_config)
 ):
     try:
-        media_configuration = await get_media_configuration()
-        await media_configuration.synchronise()
+        m1_session = await get_M1Session()
+        chc: ContentHostingConfiguration = await m1_session.contentHostingConfigurationGet(provisioning_session_id)
 
-        media_session = await media_configuration.mediaSessionByProvisioningSessionId(provisioning_session_id)
-        if media_session is None or media_session.media_entry is None:
+        if chc is None:
             raise HTTPException(status_code=404, detail="No CHC configuration found for this session")
-
-        media_entry = media_session.media_entry
-
-
-        distribution_configurations = []
-        for dist in getattr(media_entry, "distributions", []) or []:
-            entry_point_dict = {}
-            if dist.entry_point is not None:
-                entry_point_dict["relativePath"] = getattr(dist.entry_point, "relative_path", None)
-                entry_point_dict["contentType"]  = getattr(dist.entry_point, "content_type", None)
-                profiles_val = getattr(dist.entry_point, "profiles", None)
-
-                if profiles_val is not None:
-                    entry_point_dict["profiles"] = profiles_val
-
-            distribution_configurations.append({
-                "domainNameAlias": getattr(dist, "domain_name_alias", None),
-                "entryPoint": entry_point_dict if entry_point_dict else None
-            })
-
-        result = {
-            "name": getattr(media_entry, "name", None),
-            "ingestConfiguration": {
-                "pull":     getattr(media_entry, "is_pull", None),
-                "protocol": getattr(media_entry, "protocol", None),
-                "baseURL":  getattr(media_entry, "ingest_url_prefix", None),
-            },
-            "distributionConfigurations": distribution_configurations
-        }
-
-        
-        import json
+        try:
+            result = chc.toJSON()
+        except AttributeError:
+            result = chc.__dict__ if hasattr(chc, "__dict__") else dict(chc)
         print(f"\n[CHC][GET] Response preview for provisioning_session_id={provisioning_session_id}\n"
               f"{json.dumps(result, indent=2)}\n[CHC][GET] End preview\n")
 
@@ -333,7 +294,10 @@ async def get_content_hosting_configuration(
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error fetching CHC configuration: {str(e)}")
+        raise HTTPException(
+            status_code=500,
+            detail=f"Error fetching CHC configuration: {str(e)}"
+        )
 """
 Endpoint: Retrieve all provisioning sessions details
 HTTP Method: GET
@@ -372,7 +336,7 @@ async def get_session_details(session, ps_id):
 
 @app.get("/details")
 async def get_provisioning_session_details():
-    session = await get_session()
+    session = await get_M1Session()
     ps_ids = await session.provisioningSessionIds()
     async def safe(ps_id):
         try:
@@ -394,7 +358,7 @@ async def get_provisioning_session_details():
 @app.post("/certificate/{provisioning_session_id}")
 async def new_certificate(provisioning_session_id: str, csr: bool = Query(False), extra_domain_names: Optional[str] = Query(None)):
     media_configuration = await get_media_configuration()
-    session = await get_session()
+    session = await get_M1Session()
     cert_id = None
     domain_names = extra_domain_names.split(",") if extra_domain_names else None
 
@@ -451,7 +415,7 @@ async def new_certificate(provisioning_session_id: str, csr: bool = Query(False)
 @app.get("/list_certificate_ids/{provisioning_session_id}")
 async def list_certificate_ids(provisioning_session_id: str):
     config = Configuration()
-    session = await get_session()
+    session = await get_M1Session()
     try:
         cert_ids = await session.certificateIds(provisioning_session_id)
         if cert_ids is None:
@@ -463,7 +427,7 @@ async def list_certificate_ids(provisioning_session_id: str):
 
 @app.get("/show_certificate/{provisioning_session_id}/{certificate_id}")
 async def show_certificate(provisioning_session_id: str, certificate_id: str):
-    session = await get_session()
+    session = await get_M1Session()
     cert = await session.certificateGet(provisioning_session_id, certificate_id)
     if cert is None:
         raise HTTPException(status_code=404, detail="Certificate not found")
@@ -473,7 +437,7 @@ async def show_certificate(provisioning_session_id: str, certificate_id: str):
 @app.get("/show_protocol/{provisioning_session_id}")
 async def show_protocol(provisioning_session_id: str):
     media_configuration = await get_media_configuration()
-    session = await get_session()
+    session = await get_M1Session()
     try:
         protocols = await session.provisioningSessionProtocols(provisioning_session_id)
         if protocols is None:
@@ -513,7 +477,7 @@ async def show_protocol(provisioning_session_id: str):
 
 @app.post("/set_consumption/{provisioning_session_id}")
 async def set_consumption(provisioning_session_id: str, crc: ConsumptionReportingConfiguration):
-    session = await get_session()
+    session = await get_M1Session()
     media_configuration = await get_media_configuration()
     try:
         media_crc = await MediaConsumptionReportingConfiguration.from3GPPObject(crc)
@@ -533,7 +497,7 @@ async def set_consumption(provisioning_session_id: str, crc: ConsumptionReportin
 
 @app.get("/show_consumption/{provisioning_session_id}")
 async def show_consumption(provisioning_session_id: str):
-    session = await get_session()
+    session = await get_M1Session()
     crc = await session.consumptionReportingConfigurationGet(provisioning_session_id)
     if crc is None:
         return {"message": "No consumption reporting configured"}
@@ -560,7 +524,7 @@ async def del_consumption(provisioning_session_id: str):
 
 @app.post("/create_policy_template/{provisioning_session_id}")
 async def create_policy_template(provisioning_session_id: str, request: Request):
-    session = await get_session()
+    session = await get_M1Session()
     media_configuration = await get_media_configuration()
     try:
         request_body = await request.json()
@@ -606,7 +570,7 @@ async def list_policy_template_ids(provisioning_session_id: str):
 
 @app.get("/show_policy_template/{provisioning_session_id}/{policy_template_id}")
 async def show_policy_template(provisioning_session_id: str, policy_template_id: str):
-    session = await get_session()    
+    session = await get_M1Session()    
     policy_template: Optional[PolicyTemplate] = await session.policyTemplateGet(provisioning_session_id, policy_template_id)
     if policy_template is None:
         raise HTTPException(status_code=404, detail="PolicyTemplate not found")
@@ -635,7 +599,7 @@ async def delete_policy_template(provisioning_session_id: str, policy_template_i
     
 @app.post("/create_metrics/{provisioning_session_id}")
 async def create_metrics(provisioning_session_id: str, request: Request):
-    session = await get_session()
+    session = await get_M1Session()
     request_body = await request.body()
     media_configuration = await get_media_configuration()
     try:
@@ -667,7 +631,7 @@ async def create_metrics(provisioning_session_id: str, request: Request):
 
 @app.get("/show_metrics/{provisioning_session_id}/{metrics_reporting_configuration_id}")
 async def show_metrics(provisioning_session_id: str, metrics_reporting_configuration_id: str):    
-    session = await get_session()
+    session = await get_M1Session()
     metrics_reporting_configuration: Optional[MetricsReportingConfiguration] = await session.metricsReportingConfigurationGet(provisioning_session_id, metrics_reporting_configuration_id)
     if metrics_reporting_configuration is None:
         raise HTTPException(status_code=404, detail="MetricsReportingConfiguration not found")
@@ -854,7 +818,7 @@ async def commit_selected_sessions(selection_ids: list[str]):
         await media_configuration.synchronise()
 
         
-        m1_session = await get_session()
+        m1_session = await get_M1Session()
         live_ids = set(await m1_session.provisioningSessionIds() or [])
         chosen = [ps for ps in selection.session_ids if ps in live_ids]
         if not chosen:
