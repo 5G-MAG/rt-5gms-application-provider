@@ -44,6 +44,7 @@ app = FastAPI()
 _m1_session = None
 _media_configuration = None
 _media_session = None
+media_create_lock = asyncio.Lock()
 
 M8_DIR = Path("/usr/share/nginx/html/m8")
 M8_EXTENDED_FILE = M8_DIR / "m8-extended.json"
@@ -123,18 +124,19 @@ async def create_media_session_dependency():
 
 @app.post("/create_media_session")
 async def create_media_session():
-    try:
-        media_session = await create_media_session_dependency()
+    async with media_create_lock:
+        try:
+            media_session = await create_media_session_dependency()
 
-        await _media_configuration.synchronise()
-        response_data = {
-            "media_session_id": media_session.id,
-            "provisioning_session_id": media_session.provisioning_session_id
-        }
-        print(f"Media session created: {response_data}")
-        return response_data
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Failed to create media session: {e}")
+            await _media_configuration.synchronise()
+            response_data = {
+                "media_session_id": media_session.id,
+                "provisioning_session_id": media_session.provisioning_session_id
+            }
+            print(f"Media session created: {response_data}")
+            return response_data
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=f"Failed to create media session: {e}")
 
 async def get_media_session():
     if _media_session is None:
@@ -182,36 +184,57 @@ async def remove_all_sessions():
             raise HTTPException(status_code=500, detail=f"Failed to remove session {session_id}")
     return {"message": "All provisioning sessions were destroyed"}
 
+from fastapi import Request
 
-@app.delete("/delete_session/{provisioning_session_id}")
-async def cmd_delete_session(provisioning_session_id: str, config: Configuration = Depends(get_config)):
-    session = await get_M1Session()
+@app.post("/delete_sessions")
+async def delete_sessions(request: Request):
+    body = await request.json()
+    session_ids = body.get("session_ids", [])
+
+    to_delete = [str(s) for s in dict.fromkeys(session_ids)]
+    m1 = await get_M1Session()
     media_configuration = await get_media_configuration()
 
-    
-    result = await session.provisioningSessionDestroy(provisioning_session_id)
-    if result is None:
-        raise HTTPException(status_code=404, detail=f"Provisioning Session {provisioning_session_id} not found")
-    if not result:
-        raise HTTPException(status_code=500, detail=f"Failed to destroy Provisioning Session {provisioning_session_id}")
+    deleted = []
+    not_found = []
+    failed = []
 
-    ms = await media_configuration.mediaSessionByProvisioningSessionId(provisioning_session_id)
-    if ms is not None:
+    for psid in to_delete:
         try:
-            await media_configuration.removeMediaSession(entry=ms)
+            result = await m1.provisioningSessionDestroy(psid)
+            if result is None:
+                not_found.append(psid)
+                continue
+            if not result:
+                failed.append(psid)
+                continue
+            ms = await media_configuration.mediaSessionByProvisioningSessionId(psid)
+            if ms is not None:
+                try:
+                    await media_configuration.removeMediaSession(entry=ms)
+                except Exception:
+                    pass
+            try:
+                await media_configuration.unset_data_store_app_distributions(psid)
+            except Exception:
+                pass
+
+            deleted.append(psid)
+
         except Exception:
-            pass
+            failed.append(psid)
+
     try:
-        await media_configuration.unset_data_store_app_distributions(provisioning_session_id)
+        await media_configuration.synchronise()
     except Exception:
-        pass
+        failed.extend(deleted)
+        deleted.clear()
 
-    await media_configuration.synchronise()
-
-    return JSONResponse(
-        content={"message": f"Provisioning Session {provisioning_session_id} and all its resources were destroyed"},
-        status_code=200
-    )
+    return {
+        "deleted": deleted,
+        "not_found": not_found,
+        "failed": failed,
+    }
 
 @app.post("/set_content_hosting_configuration/{provisioning_session_id}")
 async def set_content_hosting_configuration(

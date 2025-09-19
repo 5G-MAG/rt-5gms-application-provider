@@ -91,9 +91,11 @@ https://drive.google.com/file/d/1cinCiA778IErENZ3JN52VFW-1ffHpx7Z/view
             <th>Session Details</th>
             
             <th>
-              Select<br>
-              <button onclick="selectAllCheckboxes()" class="btn btn-xs btn-success">All</button>
-              <button onclick="unselectAllCheckboxes()" class="btn btn-xs btn-danger">None</button>
+              <button id="toggle-select-btn"
+                      class="btn btn-primary fixed-toggle-btn"
+                      onclick="toggleSelectAll()">
+                Select all sessions
+              </button>
             </th>
           </tr>
         </thead>

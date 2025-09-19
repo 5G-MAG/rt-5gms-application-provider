@@ -24,29 +24,35 @@ const LS_KEY = 'selectedSessions';
 const selectedSessions = new Set(JSON.parse(localStorage.getItem(LS_KEY) || '[]'));
 
 window.createNewSession = createNewSession;
-window.deleteProvisioningSession = deleteProvisioningSession;
-window.getProvisioningSessionDetails = getProvisioningSessionDetails;
 
 window.createNewCertificate = createNewCertificate;
 window.showProtocols = showProtocols;
 window.showCertificateDetails = showCertificateDetails;
+
 window.setConsumptionReporting = setConsumptionReporting;
 window.showConsumptionReporting = showConsumptionReporting;
 window.deleteConsumptionReporting = deleteConsumptionReporting;
+
 window.createMetricsJson = createMetricsJson;
 window.showMetricsReporting = showMetricsReporting;
 window.confirmMetricsDeletion = confirmMetricsDeletion;
 window.deleteMetricsConfiguration = deleteMetricsConfiguration;
+
 window.setDynamicPolicy = setDynamicPolicy;
 window.showDynamicPolicies = showDynamicPolicies;
 window.deleteDynamicPolicy = deleteDynamicPolicy;
+
 window.toggleSessionSelection = toggleSessionSelection;
 window.deleteSelectedSessions = deleteSelectedSessions;
+
 window.openContentHostingConfigurationForm = openContentHostingConfigurationForm;
 window.downloadContentHostingConfiguration = downloadContentHostingConfiguration;
+
 window.clearTable = clearTable;
 window.loadAllSessions = loadAllSessions;
+
 window.openDetails = openDetails;
+window.getProvisioningSessionDetails = getProvisioningSessionDetails;
 
 window.openDetailsForSelected = function () {
   const ids = [...document.querySelectorAll('#m1_table tbody .session-checkbox:checked')]
@@ -107,6 +113,60 @@ function policyTemplateOptionsCheck(session_id, fn) {
     .catch(() => fn(false));
 }
 
+function getAllSessionCheckboxes() {
+  return Array.from(document.querySelectorAll('#m1_table tbody .session-checkbox'));
+}
+
+function updateToggleButton() {
+  const btn = document.getElementById('toggle-select-btn');
+  if (!btn) return;
+
+  const boxes = getAllSessionCheckboxes();
+  const total = boxes.length;
+  const checked = boxes.filter(cb => cb.checked).length;
+
+  btn.disabled = total === 0;
+
+  if (total === 0) {
+    btn.textContent = 'Select all sessions';
+    btn.classList.remove('btn-success', 'btn-danger');
+    btn.classList.add('btn-secondary');
+  } else {
+    const allSelected = checked === total;
+    if (allSelected) {
+      btn.textContent = 'Deselect all sessions';
+      btn.classList.remove('btn-success', 'btn-secondary');
+      btn.classList.add('btn-danger');
+    } else {
+      btn.textContent = 'Select all sessions';
+      btn.classList.remove('btn-danger', 'btn-secondary');
+      btn.classList.add('btn-success');
+    }
+  }
+}
+
+
+window.toggleSelectAll = function () {
+  const boxes = getAllSessionCheckboxes();
+  console.log(boxes)
+  const total = boxes.length;
+  const checked = boxes.filter(cb => cb.checked).length;
+
+  const shouldDeselect = total > 0 && checked === total;
+
+  if (shouldDeselect) {
+    boxes.forEach(cb => { cb.checked = false; });
+    selectedSessions.clear();
+  } else {
+    boxes.forEach(cb => {
+      cb.checked = true;
+      selectedSessions.add(cb.getAttribute('data-session-id'));
+    });
+  }
+  localStorage.setItem(LS_KEY, JSON.stringify([...selectedSessions]));
+  updateToggleButton();
+};
+
 function toggleSessionSelection(checkbox) {
   console.log("Bevor action",selectedSessions)
   const sessionId = checkbox.getAttribute('data-session-id');
@@ -115,10 +175,11 @@ function toggleSessionSelection(checkbox) {
   console.log("after action",selectedSessions)
 
   localStorage.setItem(LS_KEY, JSON.stringify([...selectedSessions]));
+  updateToggleButton();
 }
 
 async function deleteSelectedSessions() {
-  const sessionsToDelete = Array.from(selectedSessions);
+  const sessionsToDelete = Array.from(new Set(selectedSessions));
   if (sessionsToDelete.length === 0) {
     notifyInfo("No sessions selected.");
     return;
@@ -132,19 +193,43 @@ async function deleteSelectedSessions() {
   });
   if (!ok) return;
 
-  for (const sessionId of sessionsToDelete) {
-    const response = await fetch(`/delete_session/${sessionId}`, { method: 'DELETE' });
-    if (response.ok) {
-      removeSessionFromTable(sessionId);
-      selectedSessions.delete(sessionId);
-    } else {
-      console.warn(`Failed to delete session ${sessionId}`);
-      notifyError(`Failed to delete session ${sessionId}`);
-    }
-  }
+  try {
+    const resp = await fetch('/delete_sessions', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ session_ids: sessionsToDelete })
+    });
 
-  notifySuccess("Selected sessions have been deleted.");
+    if (!resp.ok) {
+      const err = await resp.json().catch(() => ({}));
+      throw new Error(err.detail || 'Server error.');
+    }
+
+    const result = await resp.json();
+    (result.deleted || []).forEach(id => {
+      removeSessionFromTable(id);
+      selectedSessions.delete(id);
+    });
+
+    if ((result.not_found || []).length) {
+      notifyInfo(`Not found: ${result.not_found.join(', ')}`);
+    }
+    if ((result.failed || []).length) {
+      notifyError(`Failed: ${result.failed.join(', ')}`);
+    }
+
+    localStorage.setItem(LS_KEY, JSON.stringify([...selectedSessions]));
+    updateToggleButton();
+
+    const nDel = (result.deleted || []).length;
+    if (nDel) notifySuccess(`Deleted ${nDel} session(s).`);
+
+  } catch (e) {
+    console.error(e);
+    notifyError(e.message || 'Batch delete failed.');
+  }
 }
+
 
 window.commitSelectedSessionsToM8 = async function commitSelectedSessionsToM8() {
   const sessions = Array.from(selectedSessions);
@@ -331,7 +416,7 @@ async function addSessionToTable(sessionId) {
 
   const cb = cell9.querySelector('.session-checkbox');
   cb.checked = selectedSessions.has(sessionId);
-
+  updateToggleButton();
 }
 
 async function loadAllSessions() {
@@ -349,7 +434,7 @@ async function loadAllSessions() {
     const data = await response.json();
     const sessionIds = data.session_ids;
     sessionIds.forEach(sessionId => addSessionToTable(sessionId));
-
+    updateToggleButton();
   } catch (error) {
     console.error('Error:', error);
     notifyError('Unexpected error while loading the sessions.');
@@ -376,55 +461,6 @@ async function createNewSession() {
 async function getProvisioningSessionDetails() {
   window.open(`${operatingUrl}details`, '_blank');
 }
-
-async function deleteProvisioningSession(sessionId) {
-  const ok = await confirmPrompt({
-    message: "Delete Provisioning Session and all its resources?",
-    confirmText: "Delete",
-    cancelText: "Cancel",
-    tone: "danger"
-  });
-  if (!ok) return;
-
-  try {
-    const response = await fetch(`${operatingUrl}delete_session/${sessionId}`, { method: 'DELETE' });
-
-    if (!response.ok) {
-      if (response.status === 404) {
-        notifyInfo('Provisioning session not found. It might have already been deleted.');
-        removeSessionFromTable(sessionId);
-      } else {
-        notifyError('Failed to delete the provisioning session.');
-      }
-      return;
-    }
-
-    notifySuccess(`Deleted Provisioning session ${sessionId} with all resources`);
-    removeSessionFromTable(sessionId);
-
-  } catch (error) {
-    notifyError('An error occurred while deleting the session.');
-  }
-}
-
-window.selectAllCheckboxes = function () {
-  selectedSessions.clear();
-  document.querySelectorAll('#m1_table tbody .session-checkbox').forEach(cb => {
-    cb.checked = true;
-    selectedSessions.add(cb.getAttribute('data-session-id'));
-  });
-  localStorage.setItem(LS_KEY, JSON.stringify([...selectedSessions]));
-};
-
-window.unselectAllCheckboxes = function () {
-  document.querySelectorAll('#m1_table tbody .session-checkbox').forEach(cb => cb.checked = false);
-  selectedSessions.clear();
-  localStorage.setItem(LS_KEY, JSON.stringify([...selectedSessions]));
-};
-
-document.getElementById('scrollTopBtn').onclick = () => {
-  window.scrollTo({ top: 0, behavior: 'smooth' });
-};
 
 function removeSessionFromTable(sessionId) {
   const esc = (window.CSS && CSS.escape)
@@ -455,6 +491,9 @@ document.addEventListener('sessions:reload', async () => {
   await loadAllSessions();
 });
 
+document.getElementById('scrollTopBtn').onclick = () => {
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+};
 
 window.onload = function () {
   checkAFstatus();
