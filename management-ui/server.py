@@ -16,7 +16,7 @@ import aiofiles
 from datetime import datetime, timezone
 from dotenv import load_dotenv
 from typing import Optional, Dict
-from fastapi import FastAPI, Query, Depends, HTTPException, Response, Request, APIRouter
+from fastapi import Body,FastAPI, Query, Depends, HTTPException, Response, Request, APIRouter
 from fastapi.responses import JSONResponse, FileResponse, PlainTextResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
@@ -47,7 +47,7 @@ _media_session = None
 media_create_lock = asyncio.Lock()
 
 M8_DIR = Path("/usr/share/nginx/html/m8")
-M8_EXTENDED_FILE = M8_DIR / "m8-extended.json"
+M8_FILE = M8_DIR / "m8.json"
 app.mount("/m8", StaticFiles(directory="/usr/share/nginx/html/m8"), name="m8")
 
 # Auxiliary function to pass proper configuration as dependency injection parameter
@@ -69,8 +69,8 @@ async def get_M1Session():
 
 async def get_media_configuration():
     global _media_configuration
-    session = await get_M1Session()
     if _media_configuration is None:
+        session = await get_M1Session()
         _media_configuration = await MediaConfiguration(
             persistent_data_store=session.data_store(),
             m1_session=session)
@@ -138,21 +138,6 @@ async def create_media_session():
         except Exception as e:
             raise HTTPException(status_code=500, detail=f"Failed to create media session: {e}")
 
-async def get_media_session():
-    if _media_session is None:
-        raise HTTPException(status_code=404, detail="Media session not created. Please create a session first.")
-    return _media_session
-
-
-def generate_relative_path(media_entry_name):
-    if media_entry_name == "VoD: Elephant's Dream":
-        return f"elephants_dream/1/client_manifest-all.mpd"
-    elif media_entry_name == "VoD: Big Buck Bunny":
-        return f"bbb/2/client_manifest-common_init.mpd"
-    elif media_entry_name == "VoD: Testcard":
-        return f"testcard/vod/manifests/avc-full.mpd"
-    return None
-
    
 @app.get("/fetch_all_sessions")
 async def get_all_sessions():
@@ -170,21 +155,6 @@ async def resync():
     af_ids = list(await session.provisioningSessionIds() or [])
     return {"status": "ok", "session_ids": af_ids}
 
-
-@app.delete("/remove_all_sessions")
-async def remove_all_sessions():    
-    session = await get_M1Session()
-    session_ids = await session.provisioningSessionIds()
-
-    for session_id in session_ids:
-        result = await session.provisioningSessionDestroy(session_id)
-        if result is None:
-            raise HTTPException(status_code=404, detail=f"Provisioning Session {session_id} not found")
-        if not result:
-            raise HTTPException(status_code=500, detail=f"Failed to remove session {session_id}")
-    return {"message": "All provisioning sessions were destroyed"}
-
-from fastapi import Request
 
 @app.post("/delete_sessions")
 async def delete_sessions(request: Request):
@@ -248,7 +218,7 @@ async def set_content_hosting_configuration(
 
         m1_session = await get_M1Session()
         chc = ContentHostingConfiguration(payload)
-
+        
         exists = await m1_session.contentHostingConfigurationGet(provisioning_session_id)
         if exists is None:
             ok = await m1_session.contentHostingConfigurationCreate(provisioning_session_id, chc)
@@ -257,29 +227,23 @@ async def set_content_hosting_configuration(
             ok = await m1_session.contentHostingConfigurationUpdate(provisioning_session_id, chc)
             action = "updated"
             ps_map = getattr(m1_session, "_M1Session__provisioning_sessions", {})
+
             if provisioning_session_id in ps_map:
-                ps_map[provisioning_session_id]["content-hosting-configuration"] = None
-                ps_map[provisioning_session_id]["last-modified"] = datetime.now(timezone.utc).isoformat()
+                ps_map[provisioning_session_id]["content-hosting-configuration"] = {
+                    "contenthostingconfiguration": payload,
+                    "last-modified": datetime.now(timezone.utc).isoformat(),
+                    "cache-until": datetime.max.replace(tzinfo=timezone.utc),
+                }
         if not ok:
             raise HTTPException(status_code=500, detail="Operation failed")
-
-        chc_json = chc.toJSON() if hasattr(chc, "toJSON") else payload
 
         return JSONResponse(
             content={
                 "message": f"CHC successfully {action} for session {provisioning_session_id}",
-                "contentHostingConfiguration": chc_json,
+                "contentHostingConfiguration": payload,
             },
             status_code=200,
         )
-
-    except HTTPException:
-        raise
-    except Exception as e:
-        print("error:", e)
-        raise HTTPException(status_code=500, detail=str(e))
-
-
 
     except HTTPException:
         raise
@@ -740,63 +704,6 @@ async def list_metrics_ids(provisioning_session_id: str):
         raise HTTPException(status_code=404, detail="No MetricsReportingConfiguration found")
     return metrics_ids
 
-@app.post("/simple_commit/{provisioning_session_id}")
-async def simple_commit(provisioning_session_id):
-    try:
-        media_configuration = await get_media_configuration()
-        print("Media configuration initialized.")
-        media_session = await media_configuration.mediaSessionByProvisioningSessionId(provisioning_session_id)
-        print(f"Media session retrieved: ID={media_session.id}")
-        entries = [
-            {"name": "VoD: Elephant's Dream", "profiles": ["urn:mpeg:dash:profile:isoff-live:2011"]},
-            {"name": "VoD: Big Buck Bunny", "profiles": ["urn:mpeg:dash:profile:isoff-live:2011"]},
-            {"name": "VoD: Testcard", "profiles": ["urn:mpeg:dash:profile:isoff-live:2011"]},
-        ]
-        distribution = MediaDistribution(
-            domain_name_alias="alias.example.com",
-        )
-        media_entry = MediaEntry(
-            name="Generic VoD stream",
-            ingest_url_prefix="http://example.com/ingest",
-            is_pull=True,
-            distributions=[distribution]
-        )
-        media_session.media_entry = media_entry
-        for entry in entries:
-            relative_path = generate_relative_path(entry["name"])
-            if not relative_path:
-                continue
-            entry_point = MediaEntryPoint(
-                relative_path=relative_path,
-                content_type="application/dash+xml",
-                profiles=entry["profiles"]
-            )
-            app_distribution = MediaAppDistribution(
-                name=entry["name"],
-                entry_points=[entry_point]
-            )
-            media_entry.addAppDistribution(app_distribution)
-
-        await media_configuration.synchronise()
-        m8_output_dir = "/usr/share/nginx/html/m8"
-        m8_file_path = f"{m8_output_dir}/m8.json"
-        print(f"Expected M8 JSON file path: {m8_file_path}")
-
-        async with aiofiles.open(m8_file_path, mode='r') as m8_file:
-            m8_content = await m8_file.read()
-
-        return {
-            "status": "success",
-            "message": "Configuration committed and M8 generated successfully",
-            "m8_content": json.loads(m8_content),
-        }
-    except Exception as e:
-        print(f"Error occurred during execution: {e}")
-        raise HTTPException(
-            status_code=500,
-            detail=f"An error occurred during simple commit: {str(e)}"
-        )
-
 app.add_middleware(
     CORSMiddleware,
     allow_origins=CORS_ORIGINS,
@@ -835,66 +742,54 @@ async def policy_template_checker(provisioning_session_id: str):
 
 
 @app.post("/commit_selected_sessions")
-async def commit_selected_sessions(selection_ids: list[str]):
-    try:
-        media_configuration = await get_media_configuration()
-        await media_configuration.synchronise()
+async def commit_selected_sessions(selection_ids: list[str] = Body(...)):
 
-        
-        m1_session = await get_M1Session()
-        live_ids = set(await m1_session.provisioningSessionIds() or [])
-        chosen = [ps for ps in selection.session_ids if ps in live_ids]
-        if not chosen:
-            raise HTTPException(status_code=400, detail="No valid provisioning_session_ids selected")
+    m1Session = await get_M1Session()
+    live_ids = set(await m1Session.provisioningSessionIds() or [])
 
-        
-        async def safe(ps_id: str):
-            try:
-                return await get_session_details(m1_session, ps_id) 
-            except Exception as e:
-                return ps_id, {
-                    "Certificates": {},
-                    "ContentHostingConfiguration": "Not defined",
-                    "ConsumptionReportingConfiguration": "Not defined",
-                    "PolicyTemplates": {},
-                    "MetricsReportingConfigurations": {},
-                    "_error": str(e),
-                }
 
-        pairs = await asyncio.gather(*(safe(ps) for ps in chosen))
 
-        m5_base = f"http://{app_configuration.get('m1_address','localhost')}:{app_configuration.get('m1_port',7777)}/3gpp-m5/v2/"
-        service_list = []
-        for ps_id, details in pairs:
-            name = None
-            chc = details.get("ContentHostingConfiguration")
-            if isinstance(chc, dict):
-                name = chc.get("name")
-            service_entry = {
-                "provisioningSessionId": ps_id,
-                "name": name or "",
-                "details": details
-            }
-            service_list.append(service_entry)
+    m5_base = os.getenv("M5_BASE_URL", "http://rt.5g-mag.com:7778/3gpp-m5/v2/")
+    service_list = []
 
-        extended = {"m5BaseUrl": m5_base, "serviceList": service_list}
+    for ps_id in selection_ids:
+        chc = await m1Session.contentHostingConfigurationGet(ps_id)
+        if chc is None:
+            continue
+        else:
+            name = ""
+            entry_points = []
+            content = dict(chc)
+            name = content.get("name") or ""
+            for dist in (content.get("distributionConfigurations") or []):
+                base = dist.get("baseURL") or ""
+                ep   = dist.get("entryPoint") or {}
+                rel  = ep.get("relativePath")
+                if not (base and rel):
+                    continue
+                if not base.endswith("/"):
+                    base += "/"
+                locator_http = base + rel
 
-        M8_DIR.mkdir(parents=True, exist_ok=True)
-        async with aiofiles.open(M8_EXTENDED_FILE, "w", encoding="utf-8") as f:
-            await f.write(json.dumps(extended, ensure_ascii=False, indent=2))
-        async with aiofiles.open(M8_EXTENDED_FILE, "r", encoding="utf-8") as f:
-            content = json.loads(await f.read())
+                locators = [locator_http]
+                for loc in locators:
+                    item = {"locator": loc, "contentType": ep.get("contentType")}
+                    profiles = ep.get("profiles")
+                    if profiles:
+                        item["profiles"] = profiles
+                    if item not in entry_points:
+                        entry_points.append(item)
 
-        return {
-            "status": "success",
-            "written_to": str(M8_EXTENDED_FILE),
-            "m8_extended": content,
-        }
+        entry = {"provisioningSessionId": ps_id, "name": name}
+        if entry_points:
+            entry["entryPoints"] = entry_points
+        service_list.append(entry)
+    if service_list:
+        output = {"m5BaseUrl": m5_base, "serviceList": service_list}
+    else:
+        raise HTTPException(status_code=404, detail="One Session musst have at last one Conetent Hosting Configuration")
 
-    except HTTPException:
-        raise
-    except Exception as exc:
-        raise HTTPException(
-            status_code=500,
-            detail=f"commit_selected_sessions failed: {exc}",
-        )
+    M8_DIR.mkdir(parents=True, exist_ok=True)
+    async with aiofiles.open(M8_FILE, "w", encoding="utf-8") as f:
+        await f.write(json.dumps(output, ensure_ascii=False, indent=2))
+    return {"status": "success", "written_to": str(M8_FILE), "m8_content": output}

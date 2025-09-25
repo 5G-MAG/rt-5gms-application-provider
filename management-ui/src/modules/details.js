@@ -1,7 +1,6 @@
 /*
 License: 5G-MAG Public License (v1.0)
 Author: Erik Gaida
-Edits: ChatGPT (notifications modularized)
 Copyright: (C) Fraunhofer FOKUS
 For full license terms please see the LICENSE file distributed with this
 program. If this file is missing then the license can be retrieved from

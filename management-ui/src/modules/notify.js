@@ -1,7 +1,6 @@
 /*
 License: 5G-MAG Public License (v1.0)
 Author: Erik Gaida
-Edits: ChatGPT (notifications modularized)
 Copyright: (C) Fraunhofer FOKUS
 For full license terms please see the LICENSE file distributed with this
 program. If this file is missing then the license can be retrieved from
@@ -54,11 +53,17 @@ export function confirmPrompt({
   confirmText = "OK",
   cancelText = "Cancel",
   tone = "danger",
+  // optionaler Download-Button:
+  // download: { url: string, fileName?: string, text?: string }
+  download
 } = {}) {
+  // wenn kein Download übergeben wird, bleibt das alte Verhalten (boolean) erhalten
+  const returnMode = download ? "tri" : "bool";
+
   return new Promise(resolve => {
     const overlay = document.createElement("div");
     overlay.className = "notify-confirm__overlay";
-    overlay.style.zIndex = Z;
+    overlay.style.zIndex = 2147483647;
 
     const card = document.createElement("div");
     card.className = "notify-confirm__card";
@@ -84,22 +89,40 @@ export function confirmPrompt({
     okBtn.type = "button";
     okBtn.textContent = confirmText;
 
-    const done = (val) => {
+    const finish = (val) => {
       window.removeEventListener("keydown", onKey);
       overlay.remove();
       resolve(val);
     };
     const onKey = (e) => {
-      if (e.key === "Escape") done(false);
-      if (e.key === "Enter")  done(true);
+      if (e.key === "Escape") finish(returnMode === "bool" ? false : "cancel");
+      if (e.key === "Enter")  finish(returnMode === "bool" ? true  : "ok");
     };
 
-    cancelBtn.addEventListener("click", () => done(false));
-    okBtn.addEventListener("click", () => done(true));
-    overlay.addEventListener("click", (e) => { if (e.target === overlay) done(false); });
+    cancelBtn.addEventListener("click", () => finish(returnMode === "bool" ? false : "cancel"));
+    okBtn.addEventListener("click", () => finish(returnMode === "bool" ? true  : "ok"));
+    overlay.addEventListener("click", (e) => { if (e.target === overlay) finish(returnMode === "bool" ? false : "cancel"); });
     window.addEventListener("keydown", onKey);
 
     actions.append(cancelBtn, okBtn);
+
+    if (download && download.url) {
+      const dlBtn = document.createElement("button");
+      dlBtn.className = "notify-btn notify-btn--ok notify-btn--success";
+      dlBtn.type = "button";
+      dlBtn.textContent = download.text || "Download";
+      dlBtn.addEventListener("click", () => {
+        const a = document.createElement("a");
+        a.href = download.url;
+        if (download.fileName) a.download = download.fileName;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        finish("download");
+      });
+      actions.append(dlBtn);
+    }
+
     card.append(title, msg, actions);
     overlay.append(card);
     document.body.append(overlay);

@@ -71,9 +71,8 @@ function setAFStatus(connected) {
   if (!el) return;
   el.classList.toggle('af-ok', connected);
   el.classList.toggle('af-error', !connected);
-  el.innerHTML = `<span class="af-dot"></span>${
-    connected ? 'Application Function connected' : 'Application Function disconnected'
-  }`;
+  el.innerHTML = `<span class="af-dot"></span>${connected ? 'Application Function connected' : 'Application Function disconnected'
+    }`;
 }
 
 async function resyncAndReload() {
@@ -168,11 +167,11 @@ window.toggleSelectAll = function () {
 };
 
 function toggleSessionSelection(checkbox) {
-  console.log("Bevor action",selectedSessions)
+  console.log("Bevor action", selectedSessions)
   const sessionId = checkbox.getAttribute('data-session-id');
   if (checkbox.checked) selectedSessions.add(sessionId);
   else selectedSessions.delete(sessionId);
-  console.log("after action",selectedSessions)
+  console.log("after action", selectedSessions)
 
   localStorage.setItem(LS_KEY, JSON.stringify([...selectedSessions]));
   updateToggleButton();
@@ -194,7 +193,7 @@ async function deleteSelectedSessions() {
   if (!ok) return;
 
   try {
-    const resp = await fetch('/delete_sessions', {
+    const resp = await fetch(`${operatingUrl}delete_sessions`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ session_ids: sessionsToDelete })
@@ -210,9 +209,13 @@ async function deleteSelectedSessions() {
       removeSessionFromTable(id);
       selectedSessions.delete(id);
     });
+    const notFound = result.not_found || [];
 
-    if ((result.not_found || []).length) {
-      notifyInfo(`Not found: ${result.not_found.join(', ')}`);
+    if (notFound.length) {
+      notFound.forEach(id => {
+        selectedSessions.delete(id);
+      });
+      notifyInfo(`Not found (already gone): ${notFound.join(', ')}`);
     }
     if ((result.failed || []).length) {
       notifyError(`Failed: ${result.failed.join(', ')}`);
@@ -233,7 +236,6 @@ async function deleteSelectedSessions() {
 
 window.commitSelectedSessionsToM8 = async function commitSelectedSessionsToM8() {
   const sessions = Array.from(selectedSessions);
-
   if (sessions.length === 0) {
     notifyInfo("Please select at least one session.");
     return;
@@ -248,10 +250,10 @@ window.commitSelectedSessionsToM8 = async function commitSelectedSessionsToM8() 
   if (!ok) return;
 
   try {
-    const response = await fetch('/commit_selected_sessions', {
+    const response = await fetch(`${operatingUrl}commit_selected_sessions`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ session_ids: sessions })
+      body: JSON.stringify(sessions)
     });
 
     if (!response.ok) {
@@ -261,16 +263,33 @@ window.commitSelectedSessionsToM8 = async function commitSelectedSessionsToM8() 
 
     const result = await response.json();
 
-    if (result.status === 'success' && result.m8_content) {
-      notifySuccess('M8 JSON successfully published (open /m8/m8.json).');
+    if (result.status === 'success') {
+      const fileName = (result.written_to || '').split('/').pop() || 'm8.json';
+      const publicUrl = new URL(`m8/${fileName}`, operatingUrl || window.location.origin + '/').href;
+
+      const choice = await confirmPrompt({
+        message: `M8 JSON was written successfully.\nOpen ${fileName}?`,
+        confirmText: "Open",
+        cancelText: "Cancel",
+        tone: "primary",
+        download: { url: publicUrl, fileName, text: "Download" }
+      });
+
+      if (choice === true || choice === 'ok') {
+        const w = window.open(publicUrl, '_blank', 'noopener');
+        if (!w) location.href = publicUrl;
+      } else if (choice === 'download') {
+        notifySuccess('Download started.');
+      } else {
+        notifySuccess('M8 JSON successfully published.');
+      }
     } else {
       notifyInfo('Sessions were committed, but no M8 content was returned.');
     }
   } catch (err) {
-    console.error('Error publishing selected sessions:', err);
     notifyError(`Error publishing selection: ${err.message}`);
   }
-};
+}
 
 async function addSessionToTable(sessionId) {
   const m1Table = document.getElementById('m1_table');
@@ -292,7 +311,7 @@ async function addSessionToTable(sessionId) {
   let name_form_CHC = '';
   const MAX_NAME_LEN = 15;
   try {
-    const res = await fetch(`/get_content_hosting_configuration/${sessionId}`, { cache: 'no-store' });
+    const res = await fetch(`${operatingUrl}get_content_hosting_configuration/${sessionId}`, { cache: 'no-store' });
 
     if (res.ok) {
       const data = await res.json();
@@ -302,7 +321,7 @@ async function addSessionToTable(sessionId) {
         name_form_CHC = name_form_CHC.slice(0, MAX_NAME_LEN - 3) + '...';
       }
     }
-  } catch {  }
+  } catch { }
 
   cell1.classList.add('psid-col');
 
@@ -343,7 +362,7 @@ async function addSessionToTable(sessionId) {
       const text = await file.text();
       const content_hosting_configuration_JSON = JSON.parse(text);
 
-      const resp = await fetch(`/set_content_hosting_configuration/${sessionId}`, {
+      const resp = await fetch(`${operatingUrl}set_content_hosting_configuration/${sessionId}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(content_hosting_configuration_JSON),
