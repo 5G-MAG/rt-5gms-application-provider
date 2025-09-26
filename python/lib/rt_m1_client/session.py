@@ -362,7 +362,12 @@ class M1Session:
         if provisioning_session_id not in self.__provisioning_sessions:
             return None
         await self.__connect()
-        return await self.__m1_client.uploadServerCertificate(provisioning_session_id, certificate_id, pem)
+        result: Optional[bool] = await self.__m1_client.uploadServerCertificate(provisioning_session_id, certificate_id, pem)
+        if result is not None and result:
+            ps = await self.__getProvisioningSessionCache(provisioning_session_id)
+            if ps is not None and 'certificates' in ps and certificate_id in ps['certificates']:
+                del ps['certificates'][certificate_id]
+        return result
 
     async def certificateDelete(self, provisioning_session_id: ResourceId, certificate_id: ResourceId) -> Optional[bool]:
         '''Delete the server certificate in a provisioning session
@@ -434,7 +439,30 @@ class M1Session:
         if provisioning_session not in self.__provisioning_sessions:
             return False
         await self.__connect()
-        return await self.__m1_client.updateContentHostingConfiguration(provisioning_session, chc)
+        result: bool = await self.__m1_client.updateContentHostingConfiguration(provisioning_session, chc)
+        # Clear the cache if update successful
+        if result:
+            ps = await self.__getProvisioningSessionCache(provisioning_session)
+            if ps is not None and ps['content-hosting-configuration'] is not None:
+                ps['content-hosting-configuration'] = None
+        return result
+
+    async def contentHostingConfigurationDelete(self, provisioning_session: ResourceId) -> bool:
+        '''Delete the `ContentHostingConfiguration` for a provisioning session
+
+        :param provisioning_session: The provisioning session id of the provisioning session to delete the
+                                     `ContentHostingConfiguration` from.
+        :return: ``True`` if the `ContentHostingConfiguration` was successfully delete or ``False`` if the deletion failed
+        '''
+        if provisioning_session not in self.__provisioning_sessions:
+            return False
+        await self.__connect()
+        result: bool = await self.__m1_client.destroyContentHostingConfiguration(provisioning_session)
+        if result:
+            ps = await self.__getProvisioningSessionCache(provisioning_session)
+            if ps is not None and ps['content-hosting-configuration'] is not None:
+                ps['content-hosting-configuration'] = None
+        return result
 
     # ConsumptionReportingConfiguration methods
 
@@ -487,7 +515,13 @@ class M1Session:
         if provisioning_session not in self.__provisioning_sessions:
             return False
         await self.__connect()
-        return await self.__m1_client.updateConsumptionReportingConfiguration(provisioning_session, crc)
+        result: bool = await self.__m1_client.updateConsumptionReportingConfiguration(provisioning_session, crc)
+        # Clear cache if update successful
+        if result:
+            ps = await self.__getProvisioningSessionCache(provisioning_session)
+            if ps is not None and ps['consumption-reporting-configuration'] is not None:
+                ps['consumption-reporting-configuration'] = None
+        return result
 
     async def consumptionReportingConfigurationDelete(self, provisioning_session: ResourceId) -> bool:
         '''Remove the `ConsumptionReportingConfiguration` for a provisioning session
@@ -500,7 +534,12 @@ class M1Session:
         if provisioning_session not in self.__provisioning_sessions:
             return False
         await self.__connect()
-        return await self.__m1_client.destroyConsumptionReportingConfiguration(provisioning_session)
+        result: bool = await self.__m1_client.destroyConsumptionReportingConfiguration(provisioning_session)
+        if result:
+            ps = await self.__getProvisioningSessionCache(provisioning_session)
+            if ps is not None and ps['consumption-reporting-configuration'] is not None:
+                ps['consumption-reporting-configuration'] = None
+        return result
 
     # PolicyTemplate methods
 
@@ -570,7 +609,13 @@ class M1Session:
         if provisioning_session_id not in self.__provisioning_sessions:
             return False
         await self.__connect()
-        return await self.__m1_client.updatePolicyTemplate(provisioning_session_id, policy_template_id, policy_template)
+        result: Optional[bool] = await self.__m1_client.updatePolicyTemplate(provisioning_session_id, policy_template_id, policy_template)
+        # Clear cache if update successful
+        if result is not None and result:
+            ps = await self.__getProvisioningSessionCache(provisioning_session)
+            if ps is not None and 'policyTemplates' in ps and ps['policyTemplates'] is not None and policy_template_id in ps['policyTemplates']:
+                del ps['policyTemplates'][policy_template_id]
+        return result
 
     async def policyTemplateDelete(self, provisioning_session_id: ResourceId, policy_template_id: ResourceId) -> bool:
         '''Delete a policy template
@@ -579,7 +624,12 @@ class M1Session:
         if provisioning_session_id not in self.__provisioning_sessions:
             return False
         await self.__connect()
-        return await self.__m1_client.destroyPolicyTemplate(provisioning_session_id, policy_template_id)
+        result: bool = await self.__m1_client.destroyPolicyTemplate(provisioning_session_id, policy_template_id)
+        if result:
+            ps = await self.__getProvisioningSessionCache(provisioning_session)
+            if ps is not None and 'policyTemplates' in ps and ps['policyTemplates'] is not None and policy_template_id in ps['policyTemplates']:
+                del ps['policyTemplates'][policy_template_id]
+        return result
     
     # Metrics Reporting Configuration methods
                
@@ -651,7 +701,13 @@ class M1Session:
         if provisioning_session_id not in self.__provisioning_sessions:
             return False
         await self.__connect()
-        return await self.__m1_client.updateMetricsReportingConfiguration(provisioning_session_id, metrics_reporting_configuration_id, metrics_reporting_configuration)
+        result: Optional[bool] = await self.__m1_client.updateMetricsReportingConfiguration(provisioning_session_id, metrics_reporting_configuration_id, metrics_reporting_configuration)
+        # Clear cache if update successful
+        if result is not None and result:
+            ps = await self.__getProvisioningSessionCache(provisioning_session_id)
+            if ps is not None and 'metricsReportingConfigurations' in ps and ps['metricsReportingConfigurations'] is not None and metrics_reporting_configuration_id in ps['metricsReportingConfigurations']:
+                del ps['metricsReportingConfigurations'][metrics_reporting_configuration_id]
+        return result
 
     async def metricsReportingConfigurationDelete(self, provisioning_session_id: ResourceId, metrics_reporting_configuration_id: ResourceId) -> bool:
         '''
@@ -660,8 +716,12 @@ class M1Session:
         if provisioning_session_id not in self.__provisioning_sessions:
             return False
         await self.__connect()
-        return await self.__m1_client.destroyMetricsReportingConfiguration(provisioning_session_id, metrics_reporting_configuration_id)
-
+        result: bool = await self.__m1_client.destroyMetricsReportingConfiguration(provisioning_session_id, metrics_reporting_configuration_id)
+        if result:
+            ps = await self.__getProvisioningSessionCache(provisioning_session_id)
+            if ps is not None and 'metricsReportingConfigurations' in ps and ps['metricsReportingConfigurations'] is not None and metrics_reporting_configuration_id in ps['metricsReportingConfigurations']:
+                del ps['metricsReportingConfigurations'][metrics_reporting_configuration_id]
+        return result
 
     # Convenience methods
 
@@ -828,10 +888,6 @@ class M1Session:
 
     async def __pathToContentType(self, path: str) -> str:
         self.__log.debug(f'__pathToContentType({path!r})')
-        type_map = {
-                'mpd': 'application/dash+xml',
-                'm3u8': 'application/vnd.apple.mpegurl',
-                }
         suffix = path.rsplit('.',1)[-1]
         if suffix in self.__file_suffix_to_mime:
             return self.__file_suffix_to_mime[suffix]
