@@ -188,12 +188,10 @@ async def delete_sessions(request: Request):
                 await media_configuration.unset_data_store_app_distributions(psid)
             except Exception:
                 pass
-
             deleted.append(psid)
 
         except Exception:
             failed.append(psid)
-
     try:
         await media_configuration.synchronise()
     except Exception:
@@ -207,41 +205,44 @@ async def delete_sessions(request: Request):
     }
 
 @app.post("/set_content_hosting_configuration/{provisioning_session_id}")
-async def set_content_hosting_configuration(
-    provisioning_session_id: str,
-    request: Request,
-    config = Depends(get_config),
-):
+async def set_content_hosting_configuration(provisioning_session_id: str, request: Request, config = Depends(get_config)):
     try:
-        payload = await request.json()
-        print("[CHC][POST] Incoming payload:\n", json.dumps(payload, indent=2))
-
-        m1_session = await get_M1Session()
-        chc = ContentHostingConfiguration(payload)
-        
-        exists = await m1_session.contentHostingConfigurationGet(provisioning_session_id)
-        if exists is None:
-            ok = await m1_session.contentHostingConfigurationCreate(provisioning_session_id, chc)
-            action = "created"
+        content_hosting_configuration_JSON = await request.json()
+        print("[CHC][POST] Incoming payload:\n", json.dumps(content_hosting_configuration_JSON, indent=2))
+        media_configuration = await get_media_configuration()
+        media_session = await media_configuration.mediaSessionByProvisioningSessionId(provisioning_session_id)
+        if media_session is None:
+            raise HTTPException(status_code=404, detail="Provisioning session not found")
+        distributions = [
+            MediaDistribution(
+                domain_name_alias=distribution.get("domainNameAlias"),
+                entry_point=MediaEntryPoint(
+                    relative_path=distribution.get("entryPoint", {}).get("relativePath"),
+                    content_type=distribution.get("entryPoint", {}).get("contentType"),
+                    profiles=distribution.get("entryPoint", {}).get("profiles"),
+                )
+            )
+            for distribution in content_hosting_configuration_JSON.get("distributionConfigurations", [])
+        ]
+        if media_session.media_entry is None:
+            media_session.media_entry = MediaEntry(
+                name = content_hosting_configuration_JSON.get("name", ""),
+                ingest_url_prefix =  content_hosting_configuration_JSON.get("ingestConfiguration", "").get("baseURL", ""),
+                protocol = content_hosting_configuration_JSON.get("ingestConfiguration", "").get("protocol", "urn:3gpp:5gms:content-protocol:http-pull-ingest"),
+                is_pull = bool(content_hosting_configuration_JSON.get("ingestConfiguration", "").get("pull", True)),
+                distributions=distributions,
+            )
         else:
-            ok = await m1_session.contentHostingConfigurationUpdate(provisioning_session_id, chc)
-            action = "updated"
-            ps_map = getattr(m1_session, "_M1Session__provisioning_sessions", {})
+            media_entry = media_session.media_entry
+            media_entry.name = content_hosting_configuration_JSON.get("name", "")
+            media_entry.ingest_url_prefix = content_hosting_configuration_JSON.get("ingestConfiguration", "").get("baseURL", "")
+            media_entry.protocol = content_hosting_configuration_JSON.get("ingestConfiguration", "").get("protocol", "urn:3gpp:5gms:content-protocol:http-pull-ingest")
+            media_entry.is_pull = bool(content_hosting_configuration_JSON.get("ingestConfiguration", "").get("pull", True))
+            media_entry.distributions = distributions
 
-            if provisioning_session_id in ps_map:
-                ps_map[provisioning_session_id]["content-hosting-configuration"] = {
-                    "contenthostingconfiguration": payload,
-                    "last-modified": datetime.now(timezone.utc).isoformat(),
-                    "cache-until": datetime.max.replace(tzinfo=timezone.utc),
-                }
-        if not ok:
-            raise HTTPException(status_code=500, detail="Operation failed")
-
+        await media_configuration.synchronise()
         return JSONResponse(
-            content={
-                "message": f"CHC successfully {action} for session {provisioning_session_id}",
-                "contentHostingConfiguration": payload,
-            },
+            content={"message": f"Stream configuration saved for provisioning session {provisioning_session_id}"},
             status_code=200,
         )
 
@@ -251,8 +252,6 @@ async def set_content_hosting_configuration(
         print("error:", e)
         raise HTTPException(status_code=500, detail=str(e))
 
-
-
 """
 Endpoint: returns the Content Hosting Configuration
 HTTP Method: GET
@@ -260,31 +259,45 @@ Path: /get_content_hosting_configuration/{provisioning_session_id}
 """
 @app.get("/get_content_hosting_configuration/{provisioning_session_id}")
 async def get_content_hosting_configuration(
-    provisioning_session_id: str,
-    config = Depends(get_config)
-):
+    provisioning_session_id: str,        
+    config = Depends(get_config)):
     try:
-        m1_session = await get_M1Session()
-        chc: ContentHostingConfiguration = await m1_session.contentHostingConfigurationGet(provisioning_session_id)
-
-        if chc is None:
+        media_configuration = await get_media_configuration()
+        await media_configuration.synchronise()
+        media_session = await media_configuration.mediaSessionByProvisioningSessionId(provisioning_session_id)
+        if media_session is None or media_session.media_entry is None:
             raise HTTPException(status_code=404, detail="No CHC configuration found for this session")
-        try:
-            result = chc.toJSON()
-        except AttributeError:
-            result = chc.__dict__ if hasattr(chc, "__dict__") else dict(chc)
+        media_entry = media_session.media_entry
+        distribution_configurations = []
+        for dist in getattr(media_entry, "distributions", []) or []:
+            entry_point_dict = {}
+            if dist.entry_point is not None:
+                entry_point_dict["relativePath"] = getattr(dist.entry_point, "relative_path", None)
+                entry_point_dict["contentType"]  = getattr(dist.entry_point, "content_type", None)
+                profiles_val = getattr(dist.entry_point, "profiles", None)
+                if profiles_val is not None:
+                    entry_point_dict["profiles"] = profiles_val
+            distribution_configurations.append({
+                "domainNameAlias": getattr(dist, "domain_name_alias", None),
+                "entryPoint": entry_point_dict if entry_point_dict else None
+            })
+        result = {
+            "name": getattr(media_entry, "name", None),
+            "ingestConfiguration": {
+                "pull":     getattr(media_entry, "is_pull", None),
+                "protocol": getattr(media_entry, "protocol", None),
+                "baseURL":  getattr(media_entry, "ingest_url_prefix", None),
+            },
+            "distributionConfigurations": distribution_configurations
+        }
         print(f"\n[CHC][GET] Response preview for provisioning_session_id={provisioning_session_id}\n"
               f"{json.dumps(result, indent=2)}\n[CHC][GET] End preview\n")
-
         return JSONResponse(content=result, status_code=200)
-
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(
-            status_code=500,
-            detail=f"Error fetching CHC configuration: {str(e)}"
-        )
+        raise HTTPException(status_code=500, detail=f"Error fetching CHC configuration: {str(e)}")
+
 """
 Endpoint: Retrieve all provisioning sessions details
 HTTP Method: GET

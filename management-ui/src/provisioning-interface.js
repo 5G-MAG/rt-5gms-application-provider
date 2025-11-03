@@ -12,7 +12,7 @@ import { createNewCertificate, showCertificateDetails } from "./modules/serverCe
 import { showProtocols } from "./modules/protocols.js";
 import { setConsumptionReporting, showConsumptionReporting, deleteConsumptionReporting } from "./modules/consumptionReporting.js";
 import { createMetricsJson, showMetricsReporting, confirmMetricsDeletion, deleteMetricsConfiguration } from "./modules/metricsReporting.js";
-import { setDynamicPolicy, showDynamicPolicies, deleteDynamicPolicy } from "./modules/dynamicPolicies.js";
+import { openDynamicPolicyForm } from "./modules/dynamicPolicies.js";
 import { openDetails } from "./modules/details.js";
 import { notifyInfo, notifySuccess, notifyError, confirmPrompt } from "./modules/notify.js";
 
@@ -38,9 +38,7 @@ window.showMetricsReporting = showMetricsReporting;
 window.confirmMetricsDeletion = confirmMetricsDeletion;
 window.deleteMetricsConfiguration = deleteMetricsConfiguration;
 
-window.setDynamicPolicy = setDynamicPolicy;
-window.showDynamicPolicies = showDynamicPolicies;
-window.deleteDynamicPolicy = deleteDynamicPolicy;
+window.openDynamicPolicyForm = openDynamicPolicyForm
 
 window.toggleSessionSelection = toggleSessionSelection;
 window.deleteSelectedSessions = deleteSelectedSessions;
@@ -395,10 +393,7 @@ async function addSessionToTable(sessionId) {
     <button onclick="deleteConsumptionReporting('${sessionId}')" class="btn btn-danger table-button">Delete</button>`;
 
   cell6.innerHTML = `
-    <p class="policy-message"><img src="src/static/images/loading.gif" alt="loading..." /> Checking feature availability...</p>
-    <a href="#" onclick="setDynamicPolicy('${sessionId}')" class="dynamic-policy-link font-medium text-blue-600 dark:text-blue-500 hover:underline disabled-link">Set</a><br>
-    <a href="#" onclick="showDynamicPolicies('${sessionId}')" class="dynamic-policy-link font-medium text-green-600 dark:text-green-500 hover:underline ml-4 disabled-link">Show</a><br>
-    <a href="#" onclick="deleteDynamicPolicy('${sessionId}')" class="dynamic-policy-link font-medium text-red-600 dark:text-red-500 hover:underline ml-4 disabled-link">Delete</a>
+    <button onclick="openDynamicPolicyForm('${sessionId}')" class="btn btn-primary table-button">Set</button>
   `;
 
   policyTemplateOptionsCheck(sessionId, enabled => {

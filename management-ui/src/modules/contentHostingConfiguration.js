@@ -59,7 +59,7 @@ function getContentHostingConfigurationModalHtml(sessionId) {
     <div class="modal-content" style="display:flex; flex-direction:column; max-height:90vh; padding:0;">
       
       
-        <div class="chc-modal-header"
+        <div class="modal-header"
             style="position:sticky; top:0; z-index:2; background:#fff;
                     padding:12px 16px; border-bottom:1px solid #e5e7eb;
                     display:flex; flex-direction:column; align-items:flex-start; gap:2px;">
@@ -75,7 +75,7 @@ function getContentHostingConfigurationModalHtml(sessionId) {
             style="display:flex; flex-direction:column; flex:1; min-height:0;">
         
         
-        <div class="chc-form-scrollable"
+        <div class="form-scrollable"
              style="flex:1 1 auto; overflow:auto; padding:16px; display:flex; flex-direction:column; gap:12px;">
           
           <div id="chc-error-${sessionId}" style="display:none;color:#c00;font-weight:bold;"></div>
@@ -126,7 +126,7 @@ function getContentHostingConfigurationModalHtml(sessionId) {
         </div>
 
         
-        <div class="chc-modal-footer"
+        <div class="modal-footer"
              style="position:sticky; bottom:0; z-index:2; background:#fff; 
                     border-top:1px solid #e5e7eb; padding:12px 16px;
                     display:flex; justify-content:flex-end; gap:10px;">
