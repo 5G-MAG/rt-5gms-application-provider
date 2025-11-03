@@ -195,16 +195,21 @@ configuration with the 5GMS AF.
         if self.__m1_session is None:
             m1_authority = (self.__config.get('m1_address'),self.__config.get('m1_port'))
             cert_signer = self.__config.get('certificate_signing_class')
-            self.__m1_session = await M1Session(host_address=m1_authority, persistent_data_store=self.__data_store,
+            self.__m1_session = await M1Session(host_address=m1_authority,
+                                                persistent_data_store=self.__data_store,
                                                 certificate_signer=cert_signer)
-        af_mc = await MediaConfiguration(self.__extraConfigFile, asp_id=self.__model['aspId'], persistent_data_store=self.__data_store, m1_session=self.__m1_session)
-        af_imp = await M1SessionImporter(self.__m1_session)
-        await af_imp.import_to(af_mc)
+        af_mc = await MediaConfiguration(self.__extraConfigFile,
+                                        asp_id=self.__model['aspId'],
+                                        persistent_data_store=self.__data_store,
+                                        m1_session=self.__m1_session)
+        af_imp = await M1SessionImporter(self.__m1_session) 
+        await af_imp.import_to(af_mc) 
         deltas = await af_mc.deltas(self)
         self.__log.info('Synchronising model to 5GMS AF')
         for d in deltas:
             self.__log.debug(str(d))
             await d.apply_delta(self.__m1_session)
+
         self.__model = af_mc.__model
         await self.updateM8Files()
 
@@ -216,14 +221,32 @@ configuration with the 5GMS AF.
         to_del = []
         have = []
         to_add = list(other.__model['sessions'].values())
-        for session in self.__model['sessions'].values():
-            for o_session in to_add:
-                if session.shallow_eq(o_session):
-                    have += [(session, o_session)]
-                    to_add.remove(o_session)
-                    break
-            else:
-                to_del += [session]
+ 
+        other_psid_map = {
+            s.provisioning_session_id: s for s in to_add 
+            if s.provisioning_session_id is not None
+        }  
+  
+        for session in self.__model['sessions'].values(): 
+            matched_o_session = None
+             
+            if session.provisioning_session_id is not None:
+                matched_o_session = other_psid_map.get(session.provisioning_session_id)   
+             
+            if matched_o_session is not None:
+                 
+                have += [(session, matched_o_session)]
+                to_add.remove(matched_o_session)  
+                del other_psid_map[session.provisioning_session_id]  
+            
+            else:  
+                for o_session in to_add:
+                    if session.shallow_eq(o_session):
+                        have += [(session, o_session)]
+                        to_add.remove(o_session)
+                        break
+                else:
+                    to_del += [session]
         ret += [await MediaSessionDeltaOperation(self, add=session) for session in to_add]
         ret += [await MediaSessionDeltaOperation(self, remove=session) for session in to_del]
         # check sub-structures of sessions we have for changes
