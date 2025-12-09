@@ -24,6 +24,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from .utils import lib_to_sys_path
 from fastapi.encoders import jsonable_encoder
 from pathlib import Path
+import traceback
+
 load_dotenv()
 lib_to_sys_path()
 
@@ -33,7 +35,13 @@ from rt_m1_client.session import M1Session
 from rt_m1_client.data_store import JSONFileDataStore
 from rt_m1_client.exceptions import M1Error
 from rt_m1_client import app_configuration
-from rt_media_configuration import MediaConfiguration, MediaEntry, MediaDistribution, MediaEntryPoint, MediaAppDistribution, MediaMetricsReportingConfiguration, MediaServerCertificate, MediaGeoFencing, MediaConsumptionReportingConfiguration, MediaDynamicPolicy
+from rt_media_configuration import MediaConfiguration, MediaEntry, MediaDistribution, MediaEntryPoint, MediaAppDistribution, MediaMetricsReportingConfiguration, MediaServerCertificate, MediaGeoFencing, MediaConsumptionReportingConfiguration
+
+from rt_media_configuration.media_charging_specification import MediaChargingSpecification
+from rt_media_configuration.media_qos_parameters import MediaQoSParameters
+from rt_media_configuration.media_dynamic_policy_session_context import MediaDynamicPolicySessionContext
+from rt_media_configuration.media_dynamic_policy import MediaDynamicPolicy
+from rt_media_configuration.bitrate import Bitrate
 
 config = Configuration()
 
@@ -522,21 +530,85 @@ async def del_consumption(provisioning_session_id: str):
             detail=f"An error occurred while deleting consumption reporting: {str(e)}"
         )
 
-@app.post("/create_policy_template/{provisioning_session_id}")
+@app.post("/create_policy_template/{provisioning_session_id}") 
 async def create_policy_template(provisioning_session_id: str, request: Request):
     session = await get_M1Session()
     media_configuration = await get_media_configuration()
     try:
-        request_body = await request.json()
-        policy_template = PolicyTemplate.fromJSON(request_body)
+        request_body_dict = await request.json()
+        
+        if "externalReference" in request_body_dict:
+            request_body_dict["externalReference"] = str(request_body_dict["externalReference"])
+
+        policy_template_obj = PolicyTemplate.fromJSON(json.dumps(request_body_dict))
+
     except Exception as e:
-        raise HTTPException(status_code=422, detail=f"Error processing policy template data: {str(e)}")
+        print(f"Parsing Error: {e}")
+        raise HTTPException(status_code=422, detail=f"Invalid Policy Template input: {str(e)}")
+
+    # --- Mapping (M1 -> MediaConfig) ---
     try:
-        media_policy = MediaDynamicPolicy.fromJSONObject(policy_template.toJSONObject())
+        qos_params = None
+        if 'qoSSpecification' in policy_template_obj:
+            m1_qos = policy_template_obj['qoSSpecification']
+            
+            ul_bitrate = None
+            if 'maxAuthBtrUl' in m1_qos:
+                val_bps = int(m1_qos['maxAuthBtrUl'].bitrate()) 
+                ul_bitrate = Bitrate(bps=val_bps) 
+
+            dl_bitrate = None
+            if 'maxAuthBtrDl' in m1_qos:
+                val_bps = int(m1_qos['maxAuthBtrDl'].bitrate())
+                dl_bitrate = Bitrate(bps=val_bps)
+
+            qos_params = MediaQoSParameters(
+                reference=str(m1_qos.get('qosReference', '')),
+                max_auth_bitrate_uplink=ul_bitrate,
+                max_auth_bitrate_downlink=dl_bitrate,
+                default_packet_loss_rate_uplink=m1_qos.get('defPacketLossRateUl'),
+                default_packet_loss_rate_downlink=m1_qos.get('defPacketLossRateDl')
+            )
+
+        charging_spec = None
+        if 'chargingSpecification' in policy_template_obj:
+            m1_charging = policy_template_obj['chargingSpecification']
+            media_charging_dict = {}
+            
+            if 'sponId' in m1_charging:
+                media_charging_dict['sponId'] = str(m1_charging['sponId'])
+            
+            if 'sponStatus' in m1_charging:
+                status_str = str(m1_charging['sponStatus'])
+                media_charging_dict['sponsorEnabled'] = (status_str == "SPONSOR_ENABLED")
+            
+            if 'gpsi' in m1_charging:
+                media_charging_dict['gpsi'] = m1_charging['gpsi']
+                
+            charging_spec = MediaChargingSpecification.fromJSONObject(media_charging_dict)
+
+        session_context = None
+        if 'applicationSessionContext' in policy_template_obj:
+            asc_dict = policy_template_obj['applicationSessionContext']
+            try:
+                asc_json_str = json.dumps(asc_dict)
+                session_context = MediaDynamicPolicySessionContext.deserialise(asc_json_str)
+            except Exception as ctx_e:
+                print(f"WARN: Context mapping failed: {ctx_e}")
+        ext_ref_str = str(policy_template_obj['externalReference'])
+        media_policy = MediaDynamicPolicy(
+            local_id= ext_ref_str,
+            policy_template_id=ext_ref_str,
+            session_context=session_context,
+            qos_parameters=qos_params,
+            charging=charging_spec
+        )
+
     except Exception as e:
+        traceback.print_exc()
         raise HTTPException(
-            status_code=500,
-            detail=f"Error converting PolicyTemplate to MediaDynamicPolicy: {str(e)}"
+            status_code=500, 
+            detail=f"Error mapping M1 to MediaConfig types: {str(e)}"
         )
     media_session = await media_configuration.mediaSessionByProvisioningSessionId(provisioning_session_id)
     if media_session is None:
@@ -545,10 +617,11 @@ async def create_policy_template(provisioning_session_id: str, request: Request)
             external_app_id="default_app",
             provisioning_session_id=provisioning_session_id
         )
+
     media_session.addDynamicPolicy(media_policy.policy_template_id, media_policy)
     await media_configuration.synchronise()
-    return {"policy_template_id": media_policy.policy_template_id}
 
+    return {"status": "created", "policy_template_id": media_policy.policy_template_id}
 
 @app.get("/list_policy_template_ids/{provisioning_session_id}")
 async def list_policy_template_ids(provisioning_session_id: str):
@@ -636,7 +709,7 @@ async def show_metrics(provisioning_session_id: str, metrics_reporting_configura
     if metrics_reporting_configuration is None:
         raise HTTPException(status_code=404, detail="MetricsReportingConfiguration not found")
     return metrics_reporting_configuration
-  
+
 
 @app.put("/update_metrics/{provisioning_session_id}/{metrics_reporting_configuration_id}")
 async def update_metrics(provisioning_session_id: str, metrics_reporting_configuration_id: str, request: Request):

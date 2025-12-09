@@ -12,7 +12,7 @@ import { createNewCertificate, showCertificateDetails } from "./modules/serverCe
 import { showProtocols } from "./modules/protocols.js";
 import { setConsumptionReporting, showConsumptionReporting, deleteConsumptionReporting } from "./modules/consumptionReporting.js";
 import { createMetricsJson, showMetricsReporting, confirmMetricsDeletion, deleteMetricsConfiguration } from "./modules/metricsReporting.js";
-import { openDynamicPolicyForm } from "./modules/dynamicPolicies.js";
+import { openPolicyTemplateForm } from "./modules/policyTemplate.js";
 import { openDetails } from "./modules/details.js";
 import { notifyInfo, notifySuccess, notifyError, confirmPrompt } from "./modules/notify.js";
 
@@ -38,7 +38,7 @@ window.showMetricsReporting = showMetricsReporting;
 window.confirmMetricsDeletion = confirmMetricsDeletion;
 window.deleteMetricsConfiguration = deleteMetricsConfiguration;
 
-window.openDynamicPolicyForm = openDynamicPolicyForm
+window.openPolicyTemplateForm = openPolicyTemplateForm
 
 window.toggleSessionSelection = toggleSessionSelection;
 window.deleteSelectedSessions = deleteSelectedSessions;
@@ -393,7 +393,7 @@ async function addSessionToTable(sessionId) {
     <button onclick="deleteConsumptionReporting('${sessionId}')" class="btn btn-danger table-button">Delete</button>`;
 
   cell6.innerHTML = `
-    <button onclick="openDynamicPolicyForm('${sessionId}')" class="btn btn-primary table-button">Set</button>
+    <button onclick="openPolicyTemplateForm('${sessionId}')" class="btn btn-primary table-button">Create</button>
   `;
 
   policyTemplateOptionsCheck(sessionId, enabled => {
@@ -423,9 +423,9 @@ async function addSessionToTable(sessionId) {
 
   cell9.innerHTML = `
     <input type="checkbox"
-         class="session-checkbox"
-         data-session-id="${sessionId}"
-         onchange="toggleSessionSelection(this)">
+        class="session-checkbox"
+        data-session-id="${sessionId}"
+        onchange="toggleSessionSelection(this)">
     `;
 
   const cb = cell9.querySelector('.session-checkbox');
