@@ -298,14 +298,14 @@ configuration with the 5GMS AF.
                     ret += [await MediaEntryDeltaOperation(session, add=o_session.media_entry)]
 
             if session.dynamic_policies is None and o_session.dynamic_policies is not None:
-                ret += [await MediaDynamicPolicyDeltaOperation(session, add=dp) for dp in o_session.dynamic_policies]
+                ret += [await MediaDynamicPolicyDeltaOperation(session, add=dp) for dp in o_session.dynamic_policies.values()]
             elif session.dynamic_policies is not None and o_session.dynamic_policies is None:
                 ret += [await MediaDynamicPolicyDeltaOperation(session, remove=dp) for dp in session.dynamic_policies]
             elif session.dynamic_policies is not None and o_session.dynamic_policies is not None:
                 # make deltas for individual dynamic policies
                 for dp_id,dp in o_session.dynamic_policies.items():
                     if dp_id not in session.dynamic_policies:
-                        ret += [await MediaDynamicPolicyDeltaOperation(session, add=(dp_id,dp))]
+                        ret += [await MediaDynamicPolicyDeltaOperation(session, add=(dp))]
                     elif dp != session.dynamic_policies[dp_id]:
                         ret += [await MediaDynamicPolicyDeltaOperation(session, modify(dp_id,dp))]
                 for dp_id in session.dynamic_policies.keys():

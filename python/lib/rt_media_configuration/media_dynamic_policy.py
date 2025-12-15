@@ -197,3 +197,36 @@ This class models the QoS parameters, charging rules and application rules for d
             if not isinstance(value, MediaChargingSpecification):
                 raise TypeError('MediaDynamicPolicy.charging can be either None or a MediaChargingSpecification object')
         self.__charging = value
+
+    @classmethod
+    async def from3GPPObject(cls, pt: dict) -> "MediaDynamicPolicy":
+        kwargs = {}
+        if 'externalReference' in pt:
+            kwargs['local_id'] = pt['externalReference']
+            kwargs['policy_template_id'] = pt['externalReference']
+        elif 'policyTemplateId' in pt:
+            kwargs['policy_template_id'] = pt['policyTemplateId']
+
+        if 'applicationSessionContext' in pt:
+            kwargs['session_context'] = MediaDynamicPolicySessionContext.fromJSONObject(pt['applicationSessionContext'])
+
+        if 'qoSSpecification' in pt:
+            qos_dict = pt['qoSSpecification'].copy()
+            bitrate_fields = ['maxAuthBtrUl', 'maxAuthBtrDl', 'maxBtrUl', 'maxBtrDl']
+            for field in bitrate_fields:
+                if field in qos_dict:
+                    qos_dict[field] = str(qos_dict[field])
+            kwargs['qos_parameters'] = MediaQoSParameters.fromJSONObject(qos_dict)
+
+        if 'chargingSpecification' in pt:
+            m1_charge = pt['chargingSpecification']
+            internal_charge = {}            
+            if 'sponId' in m1_charge:
+                internal_charge['sponId'] = m1_charge['sponId']
+            if 'sponStatus' in m1_charge:
+                status_str = str(m1_charge['sponStatus'])
+                internal_charge['sponsorEnabled'] = (status_str == 'SPONSOR_ENABLED')
+            if 'gpsi' in m1_charge:
+                internal_charge['gpsi'] = m1_charge['gpsi']
+            kwargs['charging'] = MediaChargingSpecification.fromJSONObject(internal_charge)
+        return cls(**kwargs)
