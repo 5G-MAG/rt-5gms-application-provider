@@ -65,7 +65,10 @@ MediaDynamicPolicy.
             return False
         if self.__enabled != other.__enabled:
             return False
-        return sorted(self.__gpsis) == sorted(other.__gpsis)
+        my_gpsis = self.__gpsis if self.__gpsis is not None else []
+        other_gpsis = other.__gpsis if other.__gpsis is not None else []
+
+        return sorted(my_gpsis) == sorted(other_gpsis)
 
     def __ne__(self, other: "MediaChargingSpecification") -> bool:
         return not self == other
