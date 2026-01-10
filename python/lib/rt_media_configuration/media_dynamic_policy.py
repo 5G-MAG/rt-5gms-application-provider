@@ -203,8 +203,7 @@ This class models the QoS parameters, charging rules and application rules for d
         kwargs = {}
         if 'externalReference' in pt:
             kwargs['local_id'] = pt['externalReference']
-            kwargs['policy_template_id'] = pt['externalReference']
-        elif 'policyTemplateId' in pt:
+        if 'policyTemplateId' in pt:
             kwargs['policy_template_id'] = pt['policyTemplateId']
 
         if 'applicationSessionContext' in pt:
