@@ -213,6 +213,76 @@ window.toggleSponsorInput = function(sessionId) {
   }
 };
 
+export async function listAllPolicyTemplate(sessionId) {
+  try {
+      const response = await fetch(`/list_policy_template_ids/${sessionId}`, {
+        method: 'GET'
+      });
+
+      if (!response.ok) {
+        const err = await response.json().catch(() => ({}));
+        throw new Error(err.detail || JSON.stringify(err) || `Error ${response.status}: ${response.statusText}`);
+      }
+
+      const policyIds = await response.json();
+      console.log("Gefundene Policies:", policyIds);
+
+      const modalId = `PolicyListModal-${sessionId}`;
+      const prev = document.getElementById(modalId);
+      if (prev) prev.remove();
+
+      let listContent = "";
+      
+      if (Array.isArray(policyIds) && policyIds.length > 0) {
+          const listItems = policyIds.map(id => `
+            <div style="background: #f9fafb; border: 1px solid #e5e7eb; padding: 12px; border-radius: 6px; display: flex; align-items: center; justify-content: space-between;">
+                <div>
+                    <span style="font-size: 11px; text-transform: uppercase; color: #6b7280; font-weight: 700; letter-spacing: 0.05em;">ID</span>
+                    <div style="font-family: monospace; font-size: 14px; font-weight: 600; color: #111827;">${id}</div>
+                </div>
+                </div>
+          `).join('');
+          
+          listContent = `<div style="display: flex; flex-direction: column; gap: 8px;">${listItems}</div>`;
+      } else {
+          listContent = `
+            <div style="text-align: center; padding: 30px; color: #6b7280;">
+                <p style="margin: 0; font-weight: 500;">No Policy Templates found.</p>
+                <p style="margin: 5px 0 0 0; font-size: 12px;">Create one to see it here.</p>
+            </div>
+          `;
+      }
+
+      const modalHtml = `
+      <div id="${modalId}" class="modal" style="display: flex;">
+        <div class="modal-content" style="max-width: 500px; display:flex; flex-direction:column; max-height:80vh; padding: 0;">
+          
+          <div class="modal-header" style="padding: 16px; border-bottom: 1px solid #e5e7eb; background: #fff; display: flex; justify-content: space-between; align-items: center;">
+            <h3 style="margin:0; font-weight:600;">Active Policy Templates</h3>
+            <button type="button" class="btn-close" onclick="document.getElementById('${modalId}').remove()" style="background:none; border:none; font-size:20px; cursor:pointer;">&times;</button>
+          </div>
+
+          <div class="modal-body" style="padding: 16px; overflow-y: auto; background-color: #fff;">
+            ${listContent}
+          </div>
+
+          <div class="modal-footer" style="padding: 12px 16px; border-top: 1px solid #e5e7eb; background: #f9fafb; text-align: right;">
+            <button class="btn btn-secondary" onclick="document.getElementById('${modalId}').remove()">Close</button>
+          </div>
+
+        </div>
+      </div>
+      `;
+
+      const wrapper = document.createElement('div');
+      wrapper.innerHTML = modalHtml;
+      document.body.appendChild(wrapper.firstElementChild);
+
+    } catch (e) {
+      console.error(e);
+      alert("Fehler beim Laden der Policies: " + e.message);
+    } 
+}
 
 
 export async function openPolicyTemplateForm(sessionId) {

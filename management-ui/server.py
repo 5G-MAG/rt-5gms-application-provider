@@ -21,7 +21,7 @@ from fastapi.responses import JSONResponse, FileResponse, PlainTextResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from fastapi.middleware.cors import CORSMiddleware
-from .utils import lib_to_sys_path
+from utils import lib_to_sys_path
 from fastapi.encoders import jsonable_encoder
 from pathlib import Path
 import traceback
@@ -58,6 +58,54 @@ M8_DIR = Path("/usr/share/nginx/html/m8")
 M8_FILE = M8_DIR / "m8.json"
 app.mount("/m8", StaticFiles(directory="/usr/share/nginx/html/m8"), name="m8")
 
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=CORS_ORIGINS,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+# UI rendering
+app.mount("/src", StaticFiles(directory="src"), name="src")
+templates = Jinja2Templates(directory="src/templates")
+@app.get("/")
+def landing_page():
+    return FileResponse("src/templates/index.html")
+
+"""
+Endpoint: Connection checker
+HTTP Method: GET
+Path: /connection_checker
+Description: This endpoint will check the connection to the M1 interface sending an OPTIONS request.
+"""
+@app.get("/connection_checker")
+async def connection_checker():
+    try:
+        response = requests.options(OPTIONS_ENDPOINT)
+        if response.status_code == 204:
+            return {"status": "STABLE"}
+        else:
+            return {"status": "UNSTABLE"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/fetch_all_sessions")
+async def get_all_sessions():
+    session = await get_M1Session()
+    session_ids = await session.provisioningSessionIds() 
+    return {"session_ids": list(session_ids)}
+
+
+@app.post("/resync")
+async def resync():
+    media_configuration = await get_media_configuration()
+    await media_configuration.synchronise()
+
+    session = await get_M1Session()
+    af_ids = list(await session.provisioningSessionIds() or [])
+    return {"status": "ok", "session_ids": af_ids}
+
 # Auxiliary function to pass proper configuration as dependency injection parameter
 def get_config():
     return Configuration()
@@ -91,13 +139,6 @@ async def m1_error_handler(request: Request, exc: M1Error):
     if exc.args[2] is not None:
         return JSONResponse(status_code=exc.args[1], content=exc.args[2])
     return PlainTextResponse(status_code=exc.args[1], content=exc.args[0])
-
-# UI rendering
-app.mount("/src", StaticFiles(directory="src"), name="src")
-templates = Jinja2Templates(directory="src/templates")
-@app.get("/")
-def landing_page():
-    return FileResponse("src/templates/index.html")
 
 
 @app.post("/create_session")
@@ -146,22 +187,7 @@ async def create_media_session():
         except Exception as e:
             raise HTTPException(status_code=500, detail=f"Failed to create media session: {e}")
 
-   
-@app.get("/fetch_all_sessions")
-async def get_all_sessions():
-    session = await get_M1Session()
-    session_ids = await session.provisioningSessionIds() 
-    return {"session_ids": list(session_ids)}
 
-
-@app.post("/resync")
-async def resync():
-    media_configuration = await get_media_configuration()
-    await media_configuration.synchronise()
-
-    session = await get_M1Session()
-    af_ids = list(await session.provisioningSessionIds() or [])
-    return {"status": "ok", "session_ids": af_ids}
 
 
 @app.post("/delete_sessions")
@@ -530,75 +556,96 @@ async def del_consumption(provisioning_session_id: str):
             detail=f"An error occurred while deleting consumption reporting: {str(e)}"
         )
 
+# =====================================
+#   policy template
+# =====================================
 @app.post("/create_policy_template/{provisioning_session_id}") 
 async def create_policy_template(provisioning_session_id: str, request: Request):
-    session = await get_M1Session()
     media_configuration = await get_media_configuration()
     try:
         request_body_dict = await request.json()
-        
         if "externalReference" in request_body_dict:
             request_body_dict["externalReference"] = str(request_body_dict["externalReference"])
 
-        policy_template_obj = PolicyTemplate.fromJSON(json.dumps(request_body_dict))
-
     except Exception as e:
         print(f"Parsing Error: {e}")
-        raise HTTPException(status_code=422, detail=f"Invalid Policy Template input: {str(e)}")
+        raise HTTPException(status_code=422, detail=f"Invalid JSON input: {str(e)}")
 
-    # --- Mapping (M1 -> MediaConfig) ---
+    def parse_bitrate(value_str):
+        if not isinstance(value_str, str):
+            return int(value_str)
+        
+        try:
+            parts = value_str.split()
+            val = float(parts[0])
+            unit = parts[1] if len(parts) > 1 else 'bps'
+            
+            multipliers = {
+                'bps': 1,
+                'Kbps': 1000,
+                'Mbps': 1000000,
+                'Gbps': 1000000000,
+                'Tbps': 1000000000000
+            }
+            return int(val * multipliers.get(unit, 1))
+        except Exception:
+            print(f"Warnung: Konnte Bitrate '{value_str}' nicht parsen, nutze 0.")
+            return 0
+
     try:
+        ext_ref_str = str(request_body_dict['externalReference'])
+
         qos_params = None
-        if 'qoSSpecification' in policy_template_obj:
-            m1_qos = policy_template_obj['qoSSpecification']
+        if 'qoSSpecification' in request_body_dict:
+            json_qos = request_body_dict['qoSSpecification']
             
             ul_bitrate = None
-            if 'maxAuthBtrUl' in m1_qos:
-                val_bps = int(m1_qos['maxAuthBtrUl'].bitrate()) 
+            if 'maxAuthBtrUl' in json_qos:
+                val_bps = parse_bitrate(json_qos['maxAuthBtrUl'])
                 ul_bitrate = Bitrate(bps=val_bps) 
 
             dl_bitrate = None
-            if 'maxAuthBtrDl' in m1_qos:
-                val_bps = int(m1_qos['maxAuthBtrDl'].bitrate())
+            if 'maxAuthBtrDl' in json_qos:
+                val_bps = parse_bitrate(json_qos['maxAuthBtrDl'])
                 dl_bitrate = Bitrate(bps=val_bps)
 
             qos_params = MediaQoSParameters(
-                reference=str(m1_qos.get('qosReference', '')),
+                reference=str(json_qos.get('qosReference', '')),
                 max_auth_bitrate_uplink=ul_bitrate,
                 max_auth_bitrate_downlink=dl_bitrate,
-                default_packet_loss_rate_uplink=m1_qos.get('defPacketLossRateUl'),
-                default_packet_loss_rate_downlink=m1_qos.get('defPacketLossRateDl')
+                default_packet_loss_rate_uplink=json_qos.get('defPacketLossRateUl'),
+                default_packet_loss_rate_downlink=json_qos.get('defPacketLossRateDl')
             )
 
         charging_spec = None
-        if 'chargingSpecification' in policy_template_obj:
-            m1_charging = policy_template_obj['chargingSpecification']
+        if 'chargingSpecification' in request_body_dict:
+            json_charging = request_body_dict['chargingSpecification']
             media_charging_dict = {}
             
-            if 'sponId' in m1_charging:
-                media_charging_dict['sponId'] = str(m1_charging['sponId'])
+            if 'sponId' in json_charging:
+                media_charging_dict['sponId'] = str(json_charging['sponId'])
             
-            if 'sponStatus' in m1_charging:
-                status_str = str(m1_charging['sponStatus'])
+            if 'sponStatus' in json_charging:
+                status_str = str(json_charging['sponStatus'])
                 media_charging_dict['sponsorEnabled'] = (status_str == "SPONSOR_ENABLED")
             
-            if 'gpsi' in m1_charging:
-                media_charging_dict['gpsi'] = m1_charging['gpsi']
+            if 'gpsi' in json_charging:
+                media_charging_dict['gpsi'] = json_charging['gpsi']
                 
             charging_spec = MediaChargingSpecification.fromJSONObject(media_charging_dict)
 
         session_context = None
-        if 'applicationSessionContext' in policy_template_obj:
-            asc_dict = policy_template_obj['applicationSessionContext']
+        if 'applicationSessionContext' in request_body_dict:
+            asc_dict = request_body_dict['applicationSessionContext']
             try:
                 asc_json_str = json.dumps(asc_dict)
                 session_context = MediaDynamicPolicySessionContext.deserialise(asc_json_str)
             except Exception as ctx_e:
                 print(f"WARN: Context mapping failed: {ctx_e}")
-        ext_ref_str = str(policy_template_obj['externalReference'])
+        
         media_policy = MediaDynamicPolicy(
-            local_id= ext_ref_str,
-            policy_template_id=ext_ref_str,
+            local_id=ext_ref_str,
+            policy_template_id=None,
             session_context=session_context,
             qos_parameters=qos_params,
             charging=charging_spec
@@ -608,8 +655,8 @@ async def create_policy_template(provisioning_session_id: str, request: Request)
         traceback.print_exc()
         raise HTTPException(
             status_code=500, 
-            detail=f"Error mapping M1 to MediaConfig types: {str(e)}"
-        )
+            detail=f"Error mapping JSON to MediaConfig types: {str(e)}"
+        )    
     media_session = await media_configuration.mediaSessionByProvisioningSessionId(provisioning_session_id)
     if media_session is None:
         media_session = await media_configuration.newMediaSession(
@@ -618,27 +665,26 @@ async def create_policy_template(provisioning_session_id: str, request: Request)
             provisioning_session_id=provisioning_session_id
         )
 
-    media_session.addDynamicPolicy(media_policy.policy_template_id, media_policy)
-    await media_configuration.synchronise()
-
+    media_session.addDynamicPolicy(media_policy.id , media_policy)
+    print(f"VOR SYNC ID: {media_policy.policy_template_id}")
+    
+    await media_configuration.synchronise()    
+    print(f"NACH SYNC ID: {media_policy.policy_template_id}")
     return {"status": "created", "policy_template_id": media_policy.policy_template_id}
 
 @app.get("/list_policy_template_ids/{provisioning_session_id}")
 async def list_policy_template_ids(provisioning_session_id: str):
-    provisionig_session_url = f"{OPTIONS_ENDPOINT}/{provisioning_session_id}"
-    try:
-        async with httpx.AsyncClient() as client:
-            response = await client.get(provisionig_session_url)
-            response.raise_for_status() 
-    except httpx.HTTPStatusError as e:
-        raise HTTPException(status_code=e.response.status_code, detail=f"Error when listing policy template IDs: {str(e)}")
-    except httpx.RequestError as e:
-        raise HTTPException(status_code=500, detail="Connection error to M1 interface")
-    all_data = response.json()
-    policy_template_ids = all_data.get("policyTemplateIds")
-    if not policy_template_ids:
-        raise HTTPException(status_code=404, detail="No PolicyTemplate found")
-    return policy_template_ids    
+    media_configuration = await get_media_configuration()
+    await media_configuration.synchronise()
+    media_session = await media_configuration.mediaSessionByProvisioningSessionId(provisioning_session_id)
+    policy_ids_and_ext_ref = []
+
+    if media_session and media_session.dynamic_policies:
+        print(media_session.dynamic_policies)
+        for policy_id, policy_obj in media_session.dynamic_policies.items():
+            ext_ref = policy_obj.id
+            policy_ids_and_ext_ref.append((policy_id,ext_ref))
+    return policy_ids_and_ext_ref
 
 
 @app.get("/show_policy_template/{provisioning_session_id}/{policy_template_id}")
@@ -669,7 +715,11 @@ async def delete_policy_template(provisioning_session_id: str, policy_template_i
             status_code=500,
             detail=f"An error occurred while deleting the policy template: {str(e)}"
         )
-    
+
+# ======================
+# metrics
+# ======================
+
 @app.post("/create_metrics/{provisioning_session_id}")
 async def create_metrics(provisioning_session_id: str, request: Request):
     session = await get_M1Session()
@@ -789,43 +839,6 @@ async def list_metrics_ids(provisioning_session_id: str):
     if not metrics_ids:
         raise HTTPException(status_code=404, detail="No MetricsReportingConfiguration found")
     return metrics_ids
-
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=CORS_ORIGINS,
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
-
-"""
-Endpoint: Connection checker
-HTTP Method: GET
-Path: /connection_checker
-Description: This endpoint will check the connection to the M1 interface sending an OPTIONS request.
-"""
-@app.get("/connection_checker")
-async def connection_checker():
-    try:
-        response = requests.options(OPTIONS_ENDPOINT)
-        if response.status_code == 204:
-            return {"status": "STABLE"}
-        else:
-            return {"status": "UNSTABLE"}
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
-
-@app.get("/policy_template_checker/{provisioning_session_id}")
-async def policy_template_checker(provisioning_session_id: str):
-    policy_templates_url = f"{OPTIONS_ENDPOINT}/{provisioning_session_id}/policy-templates"
-    try:
-        response = requests.options(policy_templates_url)
-        if response.status_code == 204 and 'POST' in response.headers['allow']:
-            return {"enabled": True}
-        return {"enabled": False}
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
-
 
 @app.post("/commit_selected_sessions")
 async def commit_selected_sessions(selection_ids: list[str] = Body(...)):

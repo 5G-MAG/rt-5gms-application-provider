@@ -12,7 +12,7 @@ import { createNewCertificate, showCertificateDetails } from "./modules/serverCe
 import { showProtocols } from "./modules/protocols.js";
 import { setConsumptionReporting, showConsumptionReporting, deleteConsumptionReporting } from "./modules/consumptionReporting.js";
 import { createMetricsJson, showMetricsReporting, confirmMetricsDeletion, deleteMetricsConfiguration } from "./modules/metricsReporting.js";
-import { openPolicyTemplateForm } from "./modules/policyTemplate.js";
+import { openPolicyTemplateForm, listAllPolicyTemplate } from "./modules/policyTemplate.js";
 import { openDetails } from "./modules/details.js";
 import { notifyInfo, notifySuccess, notifyError, confirmPrompt } from "./modules/notify.js";
 
@@ -38,7 +38,8 @@ window.showMetricsReporting = showMetricsReporting;
 window.confirmMetricsDeletion = confirmMetricsDeletion;
 window.deleteMetricsConfiguration = deleteMetricsConfiguration;
 
-window.openPolicyTemplateForm = openPolicyTemplateForm
+window.openPolicyTemplateForm = openPolicyTemplateForm;
+window.listAllPolicyTemplate = listAllPolicyTemplate;
 
 window.toggleSessionSelection = toggleSessionSelection;
 window.deleteSelectedSessions = deleteSelectedSessions;
@@ -103,12 +104,7 @@ function showConnectionLostAlert() {
   notifyError("Lost connection with Application Function! All session data has been purged.");
 }
 
-function policyTemplateOptionsCheck(session_id, fn) {
-  fetch(`${operatingUrl}policy_template_checker/${session_id}`)
-    .then(r => r.ok ? r.json() : { enabled: false })
-    .then(data => fn(!!data.enabled))
-    .catch(() => fn(false));
-}
+
 
 function getAllSessionCheckboxes() {
   return Array.from(document.querySelectorAll('#m1_table tbody .session-checkbox'));
@@ -394,24 +390,9 @@ async function addSessionToTable(sessionId) {
 
   cell6.innerHTML = `
     <button onclick="openPolicyTemplateForm('${sessionId}')" class="btn btn-primary table-button">Create</button>
+    <button onclick="listAllPolicyTemplate('${sessionId}')" class="btn btn-primary table-button">List Policy Template</button>
   `;
 
-  policyTemplateOptionsCheck(sessionId, enabled => {
-    const links = cell6.getElementsByClassName('dynamic-policy-link');
-    for (let link of links) {
-      link.classList.remove('disabled-link');
-      if (!enabled) {
-        link.classList.add('disabled-link');
-        link.style.pointerEvents = 'none';
-        link.style.color = 'white';
-      } else {
-        link.style.pointerEvents = 'auto';
-        link.style.color = '';
-      }
-    }
-    const msg = cell6.getElementsByClassName('policy-message')[0];
-    msg.style.display = 'none';
-  });
 
   cell7.innerHTML = `
     <button onclick="createMetricsJson('${sessionId}')" class="btn btn-primary table-button">Create</button>
