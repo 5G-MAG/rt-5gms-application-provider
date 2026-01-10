@@ -90,7 +90,7 @@ class MediaDynamicPolicyDeltaOperation(DeltaOperation):
                 return False
             self.__policy.policy_template_id = policy_id
             if update_container:
-                self.session.addDynamicPolicy(self.__policy.id, self.__policy)
+                self.session.addDynamicPolicy(policy_id, self.__policy)
         elif self.__is_update:
             pt = self.__policyTemplate3GPPObject(self.__policy)
             policy_id = await m1_session.policyTemplateUpdate(self.session.identity(), self.__policy_id, pt)
