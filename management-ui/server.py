@@ -35,13 +35,8 @@ from rt_m1_client.session import M1Session
 from rt_m1_client.data_store import JSONFileDataStore
 from rt_m1_client.exceptions import M1Error
 from rt_m1_client import app_configuration
-from rt_media_configuration import MediaConfiguration, MediaEntry, MediaDistribution, MediaEntryPoint, MediaAppDistribution, MediaMetricsReportingConfiguration, MediaServerCertificate, MediaGeoFencing, MediaConsumptionReportingConfiguration
 
-from rt_media_configuration.media_charging_specification import MediaChargingSpecification
-from rt_media_configuration.media_qos_parameters import MediaQoSParameters
-from rt_media_configuration.media_dynamic_policy_session_context import MediaDynamicPolicySessionContext
-from rt_media_configuration.media_dynamic_policy import MediaDynamicPolicy
-from rt_media_configuration.bitrate import Bitrate
+from rt_media_configuration import MediaConfiguration, MediaEntry, MediaDistribution, MediaEntryPoint, MediaAppDistribution, MediaMetricsReportingConfiguration, MediaServerCertificate, MediaGeoFencing, MediaConsumptionReportingConfiguration, MediaDynamicPolicy
 
 config = Configuration()
 
@@ -564,112 +559,46 @@ async def create_policy_template(provisioning_session_id: str, request: Request)
     media_configuration = await get_media_configuration()
     try:
         request_body_dict = await request.json()
-        if "externalReference" in request_body_dict:
-            request_body_dict["externalReference"] = str(request_body_dict["externalReference"])
-
     except Exception as e:
-        print(f"Parsing Error: {e}")
-        raise HTTPException(status_code=422, detail=f"Invalid JSON input: {str(e)}")
+        raise HTTPException(status_code=422, detail=f"Invalid JSON input: {e}")
 
-    def parse_bitrate(value_str):
-        if not isinstance(value_str, str):
-            return int(value_str)
-        
-        try:
-            parts = value_str.split()
-            val = float(parts[0])
-            unit = parts[1] if len(parts) > 1 else 'bps'
-            
-            multipliers = {
-                'bps': 1,
-                'Kbps': 1000,
-                'Mbps': 1000000,
-                'Gbps': 1000000000,
-                'Tbps': 1000000000000
-            }
-            return int(val * multipliers.get(unit, 1))
-        except Exception:
-            print(f"Warnung: Konnte Bitrate '{value_str}' nicht parsen, nutze 0.")
-            return 0
+    if "externalReference" not in request_body_dict:
+        raise HTTPException(status_code=422, detail="externalReference is required")
 
-    try:
-        ext_ref_str = str(request_body_dict['externalReference'])
+    ext_ref_str = str(request_body_dict["externalReference"]).strip()
+    if not ext_ref_str:
+        raise HTTPException(status_code=422, detail="externalReference must be non-empty")
 
-        qos_params = None
-        if 'qoSSpecification' in request_body_dict:
-            json_qos = request_body_dict['qoSSpecification']
-            
-            ul_bitrate = None
-            if 'maxAuthBtrUl' in json_qos:
-                val_bps = parse_bitrate(json_qos['maxAuthBtrUl'])
-                ul_bitrate = Bitrate(bps=val_bps) 
-
-            dl_bitrate = None
-            if 'maxAuthBtrDl' in json_qos:
-                val_bps = parse_bitrate(json_qos['maxAuthBtrDl'])
-                dl_bitrate = Bitrate(bps=val_bps)
-
-            qos_params = MediaQoSParameters(
-                reference=str(json_qos.get('qosReference', '')),
-                max_auth_bitrate_uplink=ul_bitrate,
-                max_auth_bitrate_downlink=dl_bitrate,
-                default_packet_loss_rate_uplink=json_qos.get('defPacketLossRateUl'),
-                default_packet_loss_rate_downlink=json_qos.get('defPacketLossRateDl')
-            )
-
-        charging_spec = None
-        if 'chargingSpecification' in request_body_dict:
-            json_charging = request_body_dict['chargingSpecification']
-            media_charging_dict = {}
-            
-            if 'sponId' in json_charging:
-                media_charging_dict['sponId'] = str(json_charging['sponId'])
-            
-            if 'sponStatus' in json_charging:
-                status_str = str(json_charging['sponStatus'])
-                media_charging_dict['sponsorEnabled'] = (status_str == "SPONSOR_ENABLED")
-            
-            if 'gpsi' in json_charging:
-                media_charging_dict['gpsi'] = json_charging['gpsi']
-                
-            charging_spec = MediaChargingSpecification.fromJSONObject(media_charging_dict)
-
-        session_context = None
-        if 'applicationSessionContext' in request_body_dict:
-            asc_dict = request_body_dict['applicationSessionContext']
-            try:
-                asc_json_str = json.dumps(asc_dict)
-                session_context = MediaDynamicPolicySessionContext.deserialise(asc_json_str)
-            except Exception as ctx_e:
-                print(f"WARN: Context mapping failed: {ctx_e}")
-        
-        media_policy = MediaDynamicPolicy(
-            local_id=ext_ref_str,
-            policy_template_id=None,
-            session_context=session_context,
-            qos_parameters=qos_params,
-            charging=charging_spec
+    media_session = await media_configuration.mediaSessionByProvisioningSessionId(provisioning_session_id)
+    if media_session is None:
+        media_session = await media_configuration.newMediaSession(
+            is_downlink=True,
+            external_app_id="default_app",
+            provisioning_session_id=provisioning_session_id,
         )
 
+    policies = media_session.dynamic_policies or {}
+    for _, policy_obj in policies.items():
+        if policy_obj.id == ext_ref_str:
+            raise HTTPException(status_code=409, detail="External Ref is already used")
+    try:
+        policy_payload = dict(request_body_dict)
+        charging_spec = policy_payload.get("chargingSpecification")
+        if isinstance(charging_spec, dict) and "sponStatus" in charging_spec:
+            status_str = str(charging_spec.get("sponStatus", ""))
+            charging_spec["sponsorEnabled"] = (status_str == "SPONSOR_ENABLED")
+            charging_spec.pop("sponStatus", None)
+        policy_payload.pop("externalReference", None)
+        media_policy = MediaDynamicPolicy.fromJSONObject(policy_payload)
+        media_policy.id = ext_ref_str
     except Exception as e:
         traceback.print_exc()
         raise HTTPException(
             status_code=500, 
             detail=f"Error mapping JSON to MediaConfig types: {str(e)}"
         )    
-    media_session = await media_configuration.mediaSessionByProvisioningSessionId(provisioning_session_id)
-    if media_session is None:
-        media_session = await media_configuration.newMediaSession(
-            is_downlink=True,
-            external_app_id="default_app",
-            provisioning_session_id=provisioning_session_id
-        )
-
     media_session.addDynamicPolicy(media_policy.id , media_policy)
-    print(f"VOR SYNC ID: {media_policy.policy_template_id}")
-    
     await media_configuration.synchronise()    
-    print(f"NACH SYNC ID: {media_policy.policy_template_id}")
     return {"status": "created", "policy_template_id": media_policy.policy_template_id}
 
 @app.get("/list_policy_template_ids/{provisioning_session_id}")
@@ -680,20 +609,52 @@ async def list_policy_template_ids(provisioning_session_id: str):
     policy_ids_and_ext_ref = []
 
     if media_session and media_session.dynamic_policies:
-        print(media_session.dynamic_policies)
         for policy_id, policy_obj in media_session.dynamic_policies.items():
             ext_ref = policy_obj.id
             policy_ids_and_ext_ref.append((policy_id,ext_ref))
     return policy_ids_and_ext_ref
 
+@app.get("/provisioning_session/{provisioning_session_id}/policy_template/{policy_template_id}")
+async def get_policy_template_details(provisioning_session_id: str, policy_template_id: str):
+    media_configuration = await get_media_configuration()
+    await media_configuration.synchronise()
+    
+    media_session = await media_configuration.mediaSessionByProvisioningSessionId(provisioning_session_id)
+    
+    if not media_session or not media_session.dynamic_policies:
+        raise HTTPException(status_code=404, detail="Session or Policies not found")
 
-@app.get("/show_policy_template/{provisioning_session_id}/{policy_template_id}")
-async def show_policy_template(provisioning_session_id: str, policy_template_id: str):
-    session = await get_M1Session()    
-    policy_template: Optional[PolicyTemplate] = await session.policyTemplateGet(provisioning_session_id, policy_template_id)
-    if policy_template is None:
-        raise HTTPException(status_code=404, detail="PolicyTemplate not found")
-    return policy_template
+    policy_obj = media_session.dynamic_policies.get(policy_template_id)
+    
+    if not policy_obj:
+        raise HTTPException(status_code=404, detail="Policy Template ID not found")
+    response_data = policy_obj.jsonObject()
+    return response_data
+
+@app.put("/provisioning_session/{provisioning_session_id}/policy_template/{policy_template_id}")
+async def update_policy_template(
+    provisioning_session_id: str, 
+    policy_template_id: str, 
+    request: Request
+):
+    try:
+        request_body_dict = await request.json()
+        print("Received Update Data:", request_body_dict)
+    except Exception:
+        raise HTTPException(status_code=422, detail="Invalid JSON body")
+
+    
+    media_configuration = await get_media_configuration()
+    await media_configuration.synchronise()
+    media_session = await media_configuration.mediaSessionByProvisioningSessionId(provisioning_session_id)
+    
+    if not media_session or not media_session.dynamic_policies:
+        raise HTTPException(status_code=404, detail="Session or Policies not found")
+
+    policy_obj = media_session.dynamic_policies.get(policy_template_id)
+    if not policy_obj:
+        raise HTTPException(status_code=404, detail="Policy Template ID not found")
+    #TODO implement this endpoint
 
 
 @app.delete("/delete_policy_template/{provisioning_session_id}/{policy_template_id}")

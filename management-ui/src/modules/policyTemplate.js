@@ -7,7 +7,11 @@ program. If this file is missing then the license can be retrieved from
 https://drive.google.com/file/d/1cinCiA778IErENZ3JN52VFW-1ffHpx7Z/view
 */
 
-
+function parseRateString(str) {
+  if (!str || typeof str !== 'string') return { val: '', unit: 'Mbps' };
+  const parts = str.split(' ');
+  return { val: parts[0] || '', unit: parts[1] || 'Mbps' };
+}
 
 // ========= HTML Factory =========
 function getPolicyTemplateModalHtml(sessionId) {
@@ -215,9 +219,7 @@ window.toggleSponsorInput = function(sessionId) {
 
 export async function listAllPolicyTemplate(sessionId) {
   try {
-      const response = await fetch(`/list_policy_template_ids/${sessionId}`, {
-        method: 'GET'
-      });
+      const response = await fetch(`/list_policy_template_ids/${sessionId}`, { method: 'GET' });
 
       if (!response.ok) {
         const err = await response.json().catch(() => ({}));
@@ -225,8 +227,6 @@ export async function listAllPolicyTemplate(sessionId) {
       }
 
       const policyIds = await response.json();
-      console.log("Gefundene Policies:", policyIds);
-
       const modalId = `PolicyListModal-${sessionId}`;
       const prev = document.getElementById(modalId);
       if (prev) prev.remove();
@@ -234,62 +234,97 @@ export async function listAllPolicyTemplate(sessionId) {
       let listContent = "";
       
       if (Array.isArray(policyIds) && policyIds.length > 0) {
-          const listItems = policyIds.map(id => `
-            <div style="background: #f9fafb; border: 1px solid #e5e7eb; padding: 12px; border-radius: 6px; display: flex; align-items: center; justify-content: space-between;">
-                <div>
-                    <span style="font-size: 11px; text-transform: uppercase; color: #6b7280; font-weight: 700; letter-spacing: 0.05em;">ID</span>
-                    <div style="font-family: monospace; font-size: 14px; font-weight: 600; color: #111827;">${id}</div>
-                </div>
-                </div>
-          `).join('');
+          listContent = `<div style="display: flex; flex-direction: column; gap: 8px;">`;
           
-          listContent = `<div style="display: flex; flex-direction: column; gap: 8px;">${listItems}</div>`;
+          policyIds.forEach(([id, externalRef]) => {
+            const btnId = `btn-edit-${id}`; 
+            
+            listContent += `
+            <div style="background: #f9fafb; border: 1px solid #e5e7eb; padding: 12px; border-radius: 6px; display: flex; flex-direction: column; gap: 12px; align-items: flex-start;">
+                
+                <div style="width: 100%;">
+                    <span style="font-size: 11px; text-transform: uppercase; color: #6b7280; font-weight: 700; letter-spacing: 0.05em; display: block; margin-bottom: 2px;">ID</span>
+                    <div style="font-family: monospace; font-size: 14px; font-weight: 600; color: #111827; word-break: break-all;">
+                        ${id}
+                    </div>
+                </div>
+
+                <div style="width: 100%;">
+                    <span style="font-size: 11px; text-transform: uppercase; color: #6b7280; font-weight: 700; letter-spacing: 0.05em; display: block; margin-bottom: 2px;">Ext. Ref</span>
+                    <div style="font-family: monospace; font-size: 14px; font-weight: 600; color: #4b5563; word-break: break-all;">
+                        ${externalRef || '-'}
+                    </div>
+                </div>
+
+                <button type="button" id="${btnId}" 
+                        style="background-color: #2563eb; color: white; border: none; padding: 6px 12px; border-radius: 4px; font-size: 12px; cursor: pointer; align-self: flex-end;">
+                  Edit Details
+                </button> 
+            
+            </div>`;
+          });
+          listContent += `</div>`;
+          
       } else {
           listContent = `
             <div style="text-align: center; padding: 30px; color: #6b7280;">
                 <p style="margin: 0; font-weight: 500;">No Policy Templates found.</p>
-                <p style="margin: 5px 0 0 0; font-size: 12px;">Create one to see it here.</p>
-            </div>
-          `;
+            </div>`;
       }
 
       const modalHtml = `
       <div id="${modalId}" class="modal" style="display: flex;">
         <div class="modal-content" style="max-width: 500px; display:flex; flex-direction:column; max-height:80vh; padding: 0;">
-          
           <div class="modal-header" style="padding: 16px; border-bottom: 1px solid #e5e7eb; background: #fff; display: flex; justify-content: space-between; align-items: center;">
             <h3 style="margin:0; font-weight:600;">Active Policy Templates</h3>
             <button type="button" class="btn-close" onclick="document.getElementById('${modalId}').remove()" style="background:none; border:none; font-size:20px; cursor:pointer;">&times;</button>
           </div>
-
           <div class="modal-body" style="padding: 16px; overflow-y: auto; background-color: #fff;">
             ${listContent}
           </div>
-
           <div class="modal-footer" style="padding: 12px 16px; border-top: 1px solid #e5e7eb; background: #f9fafb; text-align: right;">
             <button class="btn btn-secondary" onclick="document.getElementById('${modalId}').remove()">Close</button>
           </div>
-
         </div>
-      </div>
-      `;
+      </div>`;
 
       const wrapper = document.createElement('div');
       wrapper.innerHTML = modalHtml;
       document.body.appendChild(wrapper.firstElementChild);
+
+      if (Array.isArray(policyIds)) {
+        policyIds.forEach(([id]) => {
+            const btnId = `btn-edit-${id}`; 
+            const btn = document.getElementById(btnId);
+            if(btn) {
+                btn.onclick = async () => {
+                    try {
+
+                        const resp = await fetch(`/provisioning_session/${sessionId}/policy_template/${id}`);
+                        if(!resp.ok) throw new Error("Fetch details failed");
+                        const fullData = await resp.json();
+                        console.log(fullData)
+                        document.getElementById(modalId).remove();
+                        openPolicyTemplateForm(sessionId, fullData, id);
+                        
+                    } catch(err) {
+                        alert("Could not load policy details: " + err.message);
+                        console.error(err);
+                    }
+                };
+            }
+        });
+      }
 
     } catch (e) {
       console.error(e);
       alert("Fehler beim Laden der Policies: " + e.message);
     } 
 }
-
-
-export async function openPolicyTemplateForm(sessionId) {
+export async function openPolicyTemplateForm(sessionId, existingData = null, policyId = null) {
 
   const prev = document.getElementById(`PolicyTemplateModal-${sessionId}`);
   if (prev) prev.remove();
-
 
   const wrapper = document.createElement('div');
   wrapper.innerHTML = getPolicyTemplateModalHtml(sessionId);
@@ -299,20 +334,70 @@ export async function openPolicyTemplateForm(sessionId) {
   if (!modal) return;
   modal.style.display = "flex";
 
+  if (existingData) {
+    modal.querySelector('.modal-header h3').innerHTML = `Edit Policy Template:<br>${policyId}`;
+    modal.querySelector('.btn-success').innerText = "Save Changes";
+  }
+
+  if (existingData) {
+      if(existingData.externalReference) {
+          document.getElementById(`pt-extRef-${sessionId}`).value = existingData.externalReference;
+      }
+
+      if (existingData.qoSSpecification) {
+          const qos = existingData.qoSSpecification;
+          if (qos.qosReference) document.getElementById(`qos-ref-${sessionId}`).value = qos.qosReference;
+          
+          if (qos.maxAuthBtrUl) {
+              const p = parseRateString(qos.maxAuthBtrUl);
+              document.getElementById(`maxAuthBtrUl-val-${sessionId}`).value = p.val;
+              document.getElementById(`maxAuthBtrUl-unit-${sessionId}`).value = p.unit;
+          }
+          if (qos.maxAuthBtrDl) {
+              const p = parseRateString(qos.maxAuthBtrDl);
+              document.getElementById(`maxAuthBtrDl-val-${sessionId}`).value = p.val;
+              document.getElementById(`maxAuthBtrDl-unit-${sessionId}`).value = p.unit;
+          }
+          if (qos.defPacketLossRateDl !== undefined) document.getElementById(`defPacketLossRateDl-${sessionId}`).value = qos.defPacketLossRateDl;
+          if (qos.defPacketLossRateUl !== undefined) document.getElementById(`defPacketLossRateUl-${sessionId}`).value = qos.defPacketLossRateUl;
+      }
+
+      if (existingData.applicationSessionContext) {
+          const asc = existingData.applicationSessionContext;
+          if (asc.dnn) document.getElementById(`asc-dnn-${sessionId}`).value = asc.dnn;
+          if (asc.sliceInfo) {
+              if (asc.sliceInfo.sst !== undefined) document.getElementById(`asc-sst-${sessionId}`).value = asc.sliceInfo.sst;
+              if (asc.sliceInfo.sd) document.getElementById(`asc-sd-${sessionId}`).value = asc.sliceInfo.sd;
+          }
+      }
+
+      
+      if (existingData.chargingSpecification) {
+          const chg = existingData.chargingSpecification;
+          const sel = document.getElementById(`chg-status-${sessionId}`);
+          if (chg.sponStatus) {
+              sel.value = chg.sponStatus;
+              sel.dispatchEvent(new Event('change')); 
+              window.toggleSponsorInput(sessionId);
+          } else if (typeof chg.sponsorEnabled === "boolean") {
+              sel.value = chg.sponsorEnabled ? "SPONSOR_ENABLED" : "SPONSOR_DISABLED";
+              sel.dispatchEvent(new Event('change'));
+              window.toggleSponsorInput(sessionId);
+          }
+          if (chg.sponId) document.getElementById(`chg-sponId-${sessionId}`).value = chg.sponId;
+      }
+  }
 
   function closeMyModal() {
     modal.remove();
   }
-
 
   modal.querySelectorAll('[data-close]').forEach(btn => {
     btn.onclick = closeMyModal;
   });
 
   modal.addEventListener('click', (e) => {
-    if (e.target === modal) {
-      closeMyModal();
-    }
+    if (e.target === modal) closeMyModal();
   });
 
   const form = document.getElementById(`PolicyTemplate-form-modal-${sessionId}`);
@@ -325,8 +410,6 @@ export async function openPolicyTemplateForm(sessionId) {
 
 
     const extRefInput = document.getElementById(`pt-extRef-${sessionId}`);
-    
-
     let rawVal = extRefInput?.value || '';
     const extRef = String(rawVal).trim();
 
@@ -339,100 +422,62 @@ export async function openPolicyTemplateForm(sessionId) {
     const dnn = (document.getElementById(`asc-dnn-${sessionId}`)?.value || '').trim();
     const sstRaw = document.getElementById(`asc-sst-${sessionId}`)?.value ?? "";
     const sdRaw = (document.getElementById(`asc-sd-${sessionId}`)?.value || '').trim();
-
     const appSessionContext = {};
-
-    if (dnn) {
-      appSessionContext.dnn = dnn;
-    }
-
+    if (dnn) appSessionContext.dnn = dnn;
     const sst = sstRaw !== "" ? Number.parseInt(sstRaw, 10) : null;
     const sd = sdRaw || null;
-
     if (sst !== null || sd !== null) {
       const sliceInfo = {};
-      if (!Number.isNaN(sst)) {
-        sliceInfo.sst = sst; 
-      }
-      if (sd) {
-
-        sliceInfo.sd = String(sd); 
-      }
-      if (Object.keys(sliceInfo).length > 0) {
-        appSessionContext.sliceInfo = sliceInfo;
-      }
+      if (!Number.isNaN(sst)) sliceInfo.sst = sst; 
+      if (sd) sliceInfo.sd = String(sd); 
+      if (Object.keys(sliceInfo).length > 0) appSessionContext.sliceInfo = sliceInfo;
     }
-
 
     const qosRef = (document.getElementById(`qos-ref-${sessionId}`)?.value || '').trim();
-
     const maxAuthBtrUlVal = document.getElementById(`maxAuthBtrUl-val-${sessionId}`)?.value ?? "";
     const maxAuthBtrUlUnit = document.getElementById(`maxAuthBtrUl-unit-${sessionId}`)?.value || "Mbps";
-
     const maxAuthBtrDlVal = document.getElementById(`maxAuthBtrDl-val-${sessionId}`)?.value ?? "";
     const maxAuthBtrDlUnit = document.getElementById(`maxAuthBtrDl-unit-${sessionId}`)?.value || "Mbps";
-
     const defPlrDlRaw = document.getElementById(`defPacketLossRateDl-${sessionId}`)?.value ?? "";
     const defPlrUlRaw = document.getElementById(`defPacketLossRateUl-${sessionId}`)?.value ?? "";
-
     const qoSSpec = {};
-
-    if (qosRef) {
-      qoSSpec.qosReference = String(qosRef);
-    }
-
+    if (qosRef) qoSSpec.qosReference = String(qosRef);
     const ulVal = Number.parseFloat(maxAuthBtrUlVal);
-    if (!Number.isNaN(ulVal)) {
-      qoSSpec.maxAuthBtrUl = `${ulVal} ${maxAuthBtrUlUnit}`;
-    }
-
+    if (!Number.isNaN(ulVal)) qoSSpec.maxAuthBtrUl = `${ulVal} ${maxAuthBtrUlUnit}`;
     const dlVal = Number.parseFloat(maxAuthBtrDlVal);
-    if (!Number.isNaN(dlVal)) {
-      qoSSpec.maxAuthBtrDl = `${dlVal} ${maxAuthBtrDlUnit}`;
-    }
-
+    if (!Number.isNaN(dlVal)) qoSSpec.maxAuthBtrDl = `${dlVal} ${maxAuthBtrDlUnit}`;
     const defPlrDl = defPlrDlRaw !== "" ? Number.parseInt(defPlrDlRaw, 10) : null;
-    if (!Number.isNaN(defPlrDl) && defPlrDl !== null) {
-      qoSSpec.defPacketLossRateDl = defPlrDl;
-    }
-
+    if (!Number.isNaN(defPlrDl) && defPlrDl !== null) qoSSpec.defPacketLossRateDl = defPlrDl;
     const defPlrUl = defPlrUlRaw !== "" ? Number.parseInt(defPlrUlRaw, 10) : null;
-    if (!Number.isNaN(defPlrUl) && defPlrUl !== null) {
-      qoSSpec.defPacketLossRateUl = defPlrUl;
-    }
+    if (!Number.isNaN(defPlrUl) && defPlrUl !== null) qoSSpec.defPacketLossRateUl = defPlrUl;
 
-
+    // Charging
     const sponStatus = document.getElementById(`chg-status-${sessionId}`)?.value || "";
     const sponId = (document.getElementById(`chg-sponId-${sessionId}`)?.value || '').trim();
-
     const chargingSpec = {};
-    if (sponStatus) {
-      chargingSpec.sponStatus = sponStatus;
-    }
-    if (sponId) {
-      chargingSpec.sponId = String(sponId);
-    }
-
+    if (sponStatus) chargingSpec.sponsorEnabled = (sponStatus === "SPONSOR_ENABLED");
+    if (sponId) chargingSpec.sponId = String(sponId);
 
     const payload = {
       externalReference: extRef,
     };
-
-    if (Object.keys(appSessionContext).length > 0) {
-      payload.applicationSessionContext = appSessionContext;
-    }
-    if (Object.keys(qoSSpec).length > 0) {
-      payload.qoSSpecification = qoSSpec;
-    }
-    if (Object.keys(chargingSpec).length > 0) {
-      payload.chargingSpecification = chargingSpec;
-    }
+    if (Object.keys(appSessionContext).length > 0) payload.applicationSessionContext = appSessionContext;
+    if (Object.keys(qoSSpec).length > 0) payload.qoSSpecification = qoSSpec;
+    if (Object.keys(chargingSpec).length > 0) payload.chargingSpecification = chargingSpec;
 
     console.log("Sending Payload:", JSON.stringify(payload, null, 2));
 
     try {
-      const response = await fetch(`/create_policy_template/${sessionId}`, {
-        method: 'POST',
+      let url = `/create_policy_template/${sessionId}`;
+      let method = 'POST';
+
+      if (policyId) {
+          url = `/provisioning_session/${sessionId}/policy_template/${policyId}`; 
+          method = 'PUT'; 
+      }
+      console.log(payload)
+      const response = await fetch(url, {
+        method: method,
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
       });
@@ -446,9 +491,10 @@ export async function openPolicyTemplateForm(sessionId) {
       console.log("Success:", resData);
       closeMyModal();
 
+      listAllPolicyTemplate(sessionId);
     } catch (e) {
       console.error(e);
-      errorBox.innerText = e.message || "Unknown error while creating Policy Template.";
+      errorBox.innerText = e.message || "Unknown error while saving Policy Template.";
       errorBox.style.display = "block";
     }
   };
