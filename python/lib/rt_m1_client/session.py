@@ -605,7 +605,10 @@ class M1Session:
         ps = self.__provisioning_sessions[provisioning_session_id]        
         if ps is None or 'policyTemplates' not in ps or ps['policyTemplates'] is None or policy_template_id not in ps['policyTemplates']:
             return None
-        return PolicyTemplate(ps['policyTemplates'][policy_template_id]['policytemplate'])
+        pol = ps['policyTemplates'][policy_template_id]
+        if pol is None or pol.get('policytemplate') is None:
+            return None
+        return PolicyTemplate(pol['policytemplate'])
 
     async def policyTemplateUpdate(self, provisioning_session_id: ResourceId, policy_template_id: ResourceId, policy_template: PolicyTemplate) -> Optional[bool]:
         '''Update a policy template
@@ -617,7 +620,7 @@ class M1Session:
         result: Optional[bool] = await self.__m1_client.updatePolicyTemplate(provisioning_session_id, policy_template_id, policy_template)
         # Clear cache if update successful
         if result is not None and result:
-            ps = await self.__getProvisioningSessionCache(provisioning_session)
+            ps = await self.__getProvisioningSessionCache(provisioning_session_id)
             if ps is not None and 'policyTemplates' in ps and ps['policyTemplates'] is not None and policy_template_id in ps['policyTemplates']:
                 del ps['policyTemplates'][policy_template_id]
         return result
@@ -631,7 +634,7 @@ class M1Session:
         await self.__connect()
         result: bool = await self.__m1_client.destroyPolicyTemplate(provisioning_session_id, policy_template_id)
         if result:
-            ps = await self.__getProvisioningSessionCache(provisioning_session)
+            ps = await self.__getProvisioningSessionCache(provisioning_session_id)
             if ps is not None and 'policyTemplates' in ps and ps['policyTemplates'] is not None and policy_template_id in ps['policyTemplates']:
                 del ps['policyTemplates'][policy_template_id]
             if ps is not None and 'provisioningsession' in ps and ps['provisioningsession'] is not None:
