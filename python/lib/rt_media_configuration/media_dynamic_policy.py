@@ -132,15 +132,33 @@ This class models the QoS parameters, charging rules and application rules for d
         return MediaDynamicPolicy(**kwargs)
 
     def jsonObject(self) -> dict:
-        obj = {}
-        if self.__session_context is not None:
-            obj['applicationSessionContext'] = self.__session_context
-        if self.__qos_parameters is not None:
-            obj['qoSSpecification'] = self.__qos_parameters
-        if self.__charging is not None:
-            obj['chargingSpecification'] = self.__charging
+        obj = {'externalReference': self.__id}
         if self.__policy_template_id is not None:
             obj['policyTemplateId'] = self.__policy_template_id
+        if self.__session_context is not None:
+            obj['applicationSessionContext'] = self.__session_context.jsonObject()
+        if self.__qos_parameters is not None:
+            qos = {}
+            if self.__qos_parameters.reference is not None:
+                qos['qosReference'] = self.__qos_parameters.reference
+            if self.__qos_parameters.max_auth_bitrate_uplink is not None:
+                qos['maxAuthBtrUl'] = str(self.__qos_parameters.max_auth_bitrate_uplink)
+            if self.__qos_parameters.max_auth_bitrate_downlink is not None:
+                qos['maxAuthBtrDl'] = str(self.__qos_parameters.max_auth_bitrate_downlink)
+            if self.__qos_parameters.default_packet_loss_rate_uplink is not None:
+                qos['defPacketLossRateUl'] = self.__qos_parameters.default_packet_loss_rate_uplink
+            if self.__qos_parameters.default_packet_loss_rate_downlink is not None:
+                qos['defPacketLossRateDl'] = self.__qos_parameters.default_packet_loss_rate_downlink
+            obj['qoSSpecification'] = qos
+        if self.__charging is not None:
+            cs = {}
+            if self.__charging.sponsor_id is not None:
+                cs['sponId'] = self.__charging.sponsor_id
+            if self.__charging.enabled is not None:
+                cs['sponStatus'] = 'SPONSOR_ENABLED' if self.__charging.enabled else 'SPONSOR_DISABLED'
+            if self.__charging.gpsis is not None:
+                cs['gpsi'] = [str(gpsi) for gpsi in self.__charging.gpsis]
+            obj['chargingSpecification'] = cs
         return obj
 
     @property
@@ -200,6 +218,21 @@ This class models the QoS parameters, charging rules and application rules for d
 
     @classmethod
     async def from3GPPObject(cls, pt: dict) -> "MediaDynamicPolicy":
+        def normalize_bitrate(value):
+            if isinstance(value, str):
+                return value
+            if isinstance(value, (int, float)):
+                return f"{value} bps"
+            if isinstance(value, dict):
+                if "value" in value:
+                    unit = value.get("unit", "bps")
+                    return f"{value['value']} {unit}"
+                for key in ["bps", "kbps", "mbps", "gbps", "tbps", "Kbps", "Mbps", "Gbps", "Tbps"]:
+                    if key in value:
+                        return f"{value[key]} {key}"
+            if hasattr(value, "bitrate") and callable(value.bitrate):
+                return f"{value.bitrate()} bps"
+            return str(value)
         kwargs = {}
         if 'externalReference' in pt:
             kwargs['local_id'] = pt['externalReference']
@@ -214,7 +247,7 @@ This class models the QoS parameters, charging rules and application rules for d
             bitrate_fields = ['maxAuthBtrUl', 'maxAuthBtrDl', 'maxBtrUl', 'maxBtrDl']
             for field in bitrate_fields:
                 if field in qos_dict:
-                    qos_dict[field] = str(qos_dict[field])
+                    qos_dict[field] = normalize_bitrate(qos_dict[field])
             kwargs['qos_parameters'] = MediaQoSParameters.fromJSONObject(qos_dict)
 
         if 'chargingSpecification' in pt:
