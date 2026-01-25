@@ -639,13 +639,24 @@ async def update_policy_template(
 ):
     try:
         request_body_dict = await request.json()
-        print("Received Update Data:", request_body_dict)
+        print("Received Update Data:\n" + json.dumps(request_body_dict, indent=2, sort_keys=True))
+
     except Exception:
         raise HTTPException(status_code=422, detail="Invalid JSON body")
 
+    ext_ref_raw = request_body_dict.get("externalReference")
+    if ext_ref_raw is None:
+        raise HTTPException(status_code=422, detail="externalReference is required")
+    ext_ref_str = str(ext_ref_raw).strip()
+    if not ext_ref_str:
+        raise HTTPException(status_code=422, detail="externalReference must be non-empty")
+    
+    policy_template_id_form_request = request_body_dict.get("policyTemplateId")
+    if policy_template_id_form_request is not None and str(policy_template_id_form_request) != policy_template_id:
+        raise HTTPException(status_code=422, detail="policyTemplateId does not match path parameter")
+    print(policy_template_id_form_request)
     
     media_configuration = await get_media_configuration()
-    await media_configuration.synchronise()
     media_session = await media_configuration.mediaSessionByProvisioningSessionId(provisioning_session_id)
     
     if not media_session or not media_session.dynamic_policies:
@@ -654,7 +665,36 @@ async def update_policy_template(
     policy_obj = media_session.dynamic_policies.get(policy_template_id)
     if not policy_obj:
         raise HTTPException(status_code=404, detail="Policy Template ID not found")
-    #TODO implement this endpoint
+    
+    policies = media_session.dynamic_policies or {}
+    for other_id, other_policy in policies.items():
+        print(other_id)
+        if other_policy.id == ext_ref_str and other_id != policy_template_id:
+            raise HTTPException(status_code=409, detail="External Ref is already used")
+
+    try:
+        policy_payload = dict(request_body_dict)
+        charging_spec = policy_payload.get("chargingSpecification")
+        if isinstance(charging_spec, dict) and "sponStatus" in charging_spec:
+            status_str = str(charging_spec.get("sponStatus", ""))
+            charging_spec["sponsorEnabled"] = (status_str == "SPONSOR_ENABLED")
+            charging_spec.pop("sponStatus", None)
+        policy_payload.pop("externalReference", None)
+        policy_payload.pop("policyTemplateId", None)
+        updated_policy = MediaDynamicPolicy.fromJSONObject(policy_payload)
+        updated_policy.id = ext_ref_str
+        if updated_policy.policy_template_id is None:
+            updated_policy.policy_template_id = policy_obj.policy_template_id or policy_template_id
+    except Exception as e:
+        traceback.print_exc()
+        raise HTTPException(
+            status_code=500,
+            detail=f"Error mapping JSON to MediaConfig types: {str(e)}"
+        )
+
+    media_session.addDynamicPolicy(policy_template_id, updated_policy)
+    await media_configuration.synchronise() #BUG synchronise fails at updating
+    return {"status": "updated", "policy_template_id": policy_template_id}
 
 
 @app.delete("/delete_policy_template/{provisioning_session_id}/{policy_template_id}")

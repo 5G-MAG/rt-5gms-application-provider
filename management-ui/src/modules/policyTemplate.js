@@ -9,6 +9,26 @@ https://drive.google.com/file/d/1cinCiA778IErENZ3JN52VFW-1ffHpx7Z/view
 
 function parseRateString(str) {
   if (!str || typeof str !== 'string') return { val: '', unit: 'Mbps' };
+
+  const regex = /^(-?(?:\d*\.\d+|\d+))\s*(bps|kbps|mbps|gbps|tbps)?$/i;
+  const match = str.match(regex);
+
+  if (match) {
+    const val = match[1];
+    let unitRaw = match[2] || 'Mbps';
+
+    const unitMap = {
+      'bps': 'bps',
+      'kbps': 'Kbps',
+      'mbps': 'Mbps',
+      'gbps': 'Gbps',
+      'tbps': 'Tbps'
+    };
+    
+    const unit = unitMap[unitRaw.toLowerCase()] || 'Mbps';
+    return { val: val, unit: unit };
+  }
+
   const parts = str.split(' ');
   return { val: parts[0] || '', unit: parts[1] || 'Mbps' };
 }
@@ -59,30 +79,7 @@ function getPolicyTemplateModalHtml(sessionId) {
                 <label for="qos-ref-${sessionId}">QoS Reference:</label>
                 <input type="text" id="qos-ref-${sessionId}" placeholder="e.g. QOS_LOW_LATENCY">
               </div>
-
-              <!-- Read Only Fields (Server Defined) 
-              <div class="form-row" style="display:flex; gap:12px;">
-                <div class="form-group" style="flex:1;">
-                  <label style="font-size:12px; font-weight:600; color:#6b7280; margin-bottom:4px; display:block;">Max Bitrate UL (Read Only):</label>
-                  <input type="text" 
-                        id="maxBtrUl-${sessionId}"
-                        readonly 
-                        value="Wait for Server..." 
-                        style="width:100%; background-color:#f3f4f6; color:#6b7280; border:1px solid #d1d5db; cursor:not-allowed; padding:6px 8px; border-radius:4px;">
-                </div>
-
-                <div class="form-group" style="flex:1;">
-                  <label style="font-size:12px; font-weight:600; color:#6b7280; margin-bottom:4px; display:block;">Max Bitrate DL (Read Only):</label>
-                  <input type="text" 
-                        id="maxBtrDl-${sessionId}"
-                        readonly 
-                        value="Wait for Server..." 
-                        style="width:100%; background-color:#f3f4f6; color:#6b7280; border:1px solid #d1d5db; cursor:not-allowed; padding:6px 8px; border-radius:4px;">
-                </div>
-              </div>
-              -->
               
-              <!-- Max Auth Bitrate UL (Input Group) -->
               <div class="form-group">
                 <label>maxAuthBtrUl:</label>
                 <div style="display: flex; align-items: center;">
@@ -170,17 +167,17 @@ function getPolicyTemplateModalHtml(sessionId) {
 
               <div class="form-group">
                 <label>Sponsoring Status:</label>
-            <select id="chg-status-${sessionId}" onchange="window.toggleSponsorInput('${sessionId}')">
-              <option value="">-- Not Selected (None) --</option>
-              <option value="SPONSOR_DISABLED">DISABLED</option>
-              <option value="SPONSOR_ENABLED">ENABLED</option>
-            </select>
+                <select id="chg-status-${sessionId}" onchange="window.toggleSponsorInput('${sessionId}')">
+                  <option value="">-- Not Selected (None) --</option>
+                  <option value="SPONSOR_DISABLED">DISABLED</option>
+                  <option value="SPONSOR_ENABLED">ENABLED</option>
+                </select>
 
-              <div id="sponsor-container-${sessionId}" style="display: none; margin-top: 10px;">
-                  <label>Sponsor ID:</label>
-                  <input type="text" id="chg-sponId-${sessionId}" placeholder="e.g. Sponsor_X">
+                <div id="sponsor-container-${sessionId}" style="display: none; margin-top: 10px;">
+                    <label>Sponsor ID:</label>
+                    <input type="text" id="chg-sponId-${sessionId}" placeholder="e.g. Sponsor_X">
+                </div>
               </div>
-            </div>
               
             </div>
           </div>
@@ -434,18 +431,35 @@ export async function openPolicyTemplateForm(sessionId, existingData = null, pol
     }
 
     const qosRef = (document.getElementById(`qos-ref-${sessionId}`)?.value || '').trim();
-    const maxAuthBtrUlVal = document.getElementById(`maxAuthBtrUl-val-${sessionId}`)?.value ?? "";
+    const maxAuthBtrUlValRaw = (document.getElementById(`maxAuthBtrUl-val-${sessionId}`)?.value ?? "").trim();
     const maxAuthBtrUlUnit = document.getElementById(`maxAuthBtrUl-unit-${sessionId}`)?.value || "Mbps";
-    const maxAuthBtrDlVal = document.getElementById(`maxAuthBtrDl-val-${sessionId}`)?.value ?? "";
+    const maxAuthBtrDlValRaw = (document.getElementById(`maxAuthBtrDl-val-${sessionId}`)?.value ?? "").trim();
     const maxAuthBtrDlUnit = document.getElementById(`maxAuthBtrDl-unit-${sessionId}`)?.value || "Mbps";
     const defPlrDlRaw = document.getElementById(`defPacketLossRateDl-${sessionId}`)?.value ?? "";
     const defPlrUlRaw = document.getElementById(`defPacketLossRateUl-${sessionId}`)?.value ?? "";
     const qoSSpec = {};
     if (qosRef) qoSSpec.qosReference = String(qosRef);
-    const ulVal = Number.parseFloat(maxAuthBtrUlVal);
-    if (!Number.isNaN(ulVal)) qoSSpec.maxAuthBtrUl = `${ulVal} ${maxAuthBtrUlUnit}`;
-    const dlVal = Number.parseFloat(maxAuthBtrDlVal);
-    if (!Number.isNaN(dlVal)) qoSSpec.maxAuthBtrDl = `${dlVal} ${maxAuthBtrDlUnit}`;
+    
+    const bitrateValuePattern = /^-?(?:\d*\.\d+|\d+)$/;
+
+    if (maxAuthBtrUlValRaw !== "") {
+        if (!bitrateValuePattern.test(maxAuthBtrUlValRaw)) {
+            errorBox.innerText = "Error: maxAuthBtrUl must be a number like 10 or 10.5 (no exponent).";
+            errorBox.style.display = "block";
+            return;
+        }
+
+        qoSSpec.maxAuthBtrUl = `${maxAuthBtrUlValRaw} ${maxAuthBtrUlUnit}`;
+    }
+
+    if (maxAuthBtrDlValRaw !== "") {
+        if (!bitrateValuePattern.test(maxAuthBtrDlValRaw)) {
+            errorBox.innerText = "Error: maxAuthBtrDl must be a number like 20 or 20.5 (no exponent).";
+            errorBox.style.display = "block";
+            return;
+        }
+        qoSSpec.maxAuthBtrDl = `${maxAuthBtrDlValRaw} ${maxAuthBtrDlUnit}`;
+    }
     const defPlrDl = defPlrDlRaw !== "" ? Number.parseInt(defPlrDlRaw, 10) : null;
     if (!Number.isNaN(defPlrDl) && defPlrDl !== null) qoSSpec.defPacketLossRateDl = defPlrDl;
     const defPlrUl = defPlrUlRaw !== "" ? Number.parseInt(defPlrUlRaw, 10) : null;
@@ -461,6 +475,7 @@ export async function openPolicyTemplateForm(sessionId, existingData = null, pol
     const payload = {
       externalReference: extRef,
     };
+    if (policyId) payload.policyTemplateId = policyId;
     if (Object.keys(appSessionContext).length > 0) payload.applicationSessionContext = appSessionContext;
     if (Object.keys(qoSSpec).length > 0) payload.qoSSpecification = qoSSpec;
     if (Object.keys(chargingSpec).length > 0) payload.chargingSpecification = chargingSpec;
