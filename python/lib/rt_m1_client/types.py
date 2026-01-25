@@ -517,7 +517,7 @@ class BitRate(object):
                 self.__bitrate = args[0].bitrate()
             else:
                 raise TypeError(f'BitRate initialiser must be str, int or float: given {type(args[0]).__name__}')
-        elif len(args) == 0 and len(kwargs) == 1 and kwargs.keys()[0] in ['bps', 'kbps', 'mbps', 'gbps', 'tbps', 'pbps']:
+        elif len(args) == 0 and len(kwargs) == 1 and kwargs.keys()[0] in ['bps', 'kbps', 'mbps', 'gbps', 'tbps']:
             k,v = kwargs.items()[0]
             if k == 'bps':
                 self.__bitrate = float(v)
@@ -527,10 +527,8 @@ class BitRate(object):
                 self.__bitrate = v*1000000.0
             elif k == 'gbps':
                 self.__bitrate = v*1000000000.0
-            elif k == 'tbps':
+            else: # 'tbps'
                 self.__bitrate = v*1000000000000.0
-            else: # 'pbps'
-                self.__bitrate = v*1000000000000000.0
         else:
             raise ValueError('Only a bitrate string or one of the bitrate keywords can be used to initialise a BitRate')
 
@@ -546,9 +544,7 @@ class BitRate(object):
             return f'BitRate(mbps={self.__bitrate/1000000.0})'
         if self.__bitrate < 1000000000000:
             return f'BitRate(gbps={self.__bitrate/1000000000.0})'
-        if self.__bitrate < 1000000000000000:
-            return f'BitRate(tbps={self.__bitrate/1000000000000.0})'
-        return f'BitRate(pbps={self.__bitrate/1000000000000000.0})'
+        return f'BitRate(tbps={self.__bitrate/1000000000000.0})'
 
     def __str__(self) -> str:
         if self.__bitrate < 1000:
@@ -559,9 +555,7 @@ class BitRate(object):
             return f'{self.__bitrate/1000000.0:.3f} Mbps'
         if self.__bitrate < 1000000000000:
             return f'{self.__bitrate/1000000000.0:.3f} Gbps'
-        if self.__bitrate < 1000000000000000:
-            return f'{self.__bitrate/1000000000000.0:.3f} Tbps'
-        return f'{self.__bitrate/1000000000000000.0:.3f} Pbps'
+        return f'{self.__bitrate/1000000000000.0:.3f} Tbps'
 
     def __jsontype__(self, **options):
         return str(self)
@@ -600,8 +594,8 @@ class BitRate(object):
     def __parseBitrateString(br: str) -> float:
         val,units = (br.split(' ',1) + [None])[:2]
         val = float(val)
-        if units not in ['bps', 'Kbps', 'Mbps', 'Gbps', 'Tbps', 'Pbps']:
-            raise ValueError('BitRate string must have units of bps, Kbps, Mbps, Gbps, Tbps or Pbps')
+        if units not in ['bps', 'Kbps', 'Mbps', 'Gbps', 'Tbps']:
+            raise ValueError('BitRate string must have units of bps, Kbps, Mbps, Gbps or Tbps')
         if units == 'bps':
             return val
         if units == 'Kbps':
@@ -610,9 +604,7 @@ class BitRate(object):
             return val*1000000.0
         if units == 'Gbps':
             return val*1000000000.0
-        if units == 'Tbps':
-            return val*1000000000000.0
-        return val*1000000000000000.0
+        return val*1000000000000.0
 
 class AppSessionContext(TypedDict, total=False):
     '''
