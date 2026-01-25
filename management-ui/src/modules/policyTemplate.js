@@ -231,13 +231,13 @@ export async function listAllPolicyTemplate(sessionId) {
       let listContent = "";
       
       if (Array.isArray(policyIds) && policyIds.length > 0) {
-          listContent = `<div style="display: flex; flex-direction: column; gap: 8px;">`;
+          listContent = `<div id="policy-list-${sessionId}" style="display: flex; flex-direction: column; gap: 8px;">`;
           
           policyIds.forEach(([id, externalRef]) => {
             const btnId = `btn-edit-${id}`; 
-            
+            const deletebtn = `btn-delete-${id}`;
             listContent += `
-            <div style="background: #f9fafb; border: 1px solid #e5e7eb; padding: 12px; border-radius: 6px; display: flex; flex-direction: column; gap: 12px; align-items: flex-start;">
+            <div id= "policy-row-${id}" style="background: #f9fafb; border: 1px solid #e5e7eb; padding: 12px; border-radius: 6px; display: flex; flex-direction: column; gap: 12px; align-items: flex-start;">
                 
                 <div style="width: 100%;">
                     <span style="font-size: 11px; text-transform: uppercase; color: #6b7280; font-weight: 700; letter-spacing: 0.05em; display: block; margin-bottom: 2px;">ID</span>
@@ -257,7 +257,10 @@ export async function listAllPolicyTemplate(sessionId) {
                         style="background-color: #2563eb; color: white; border: none; padding: 6px 12px; border-radius: 4px; font-size: 12px; cursor: pointer; align-self: flex-end;">
                   Edit Details
                 </button> 
-            
+                <button type="button" id="${deletebtn}" 
+                        style="background-color: #fc0202ff; color: white; border: none; padding: 6px 12px; border-radius: 4px; font-size: 12px; cursor: pointer; align-self: flex-end;">
+                  Delete Policy Template
+                </button> 
             </div>`;
           });
           listContent += `</div>`;
@@ -293,6 +296,33 @@ export async function listAllPolicyTemplate(sessionId) {
         policyIds.forEach(([id]) => {
             const btnId = `btn-edit-${id}`; 
             const btn = document.getElementById(btnId);
+            
+            const deletebtnId = `btn-delete-${id}`;
+            const deletebtn = document.getElementById(deletebtnId);
+            if (deletebtn){
+              deletebtn.onclick = async () => {
+                  const resp = await fetch(`/provisioning_session/${sessionId}/policy_template/${id}`, {
+                    method: 'DELETE'
+                  });
+                if (resp.ok) {
+                  const row = document.getElementById(`policy-row-${id}`);
+                  row?.remove();
+
+                  const list = document.getElementById(`policy-list-${sessionId}`);
+                  if (list && list.children.length === 0) {
+                    list.outerHTML = `
+                      <div style="text-align: center; padding: 30px; color: #6b7280;">
+                          <p style="margin: 0; font-weight: 500;">No Policy Templates found.</p>
+                      </div>`;
+                  }
+                } else {
+                  throw new Error("delete failed");
+                }
+
+                const fullData = await resp.json();
+                console.log(fullData)
+              }
+            }
             if(btn) {
                 btn.onclick = async () => {
                     try {

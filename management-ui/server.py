@@ -693,11 +693,11 @@ async def update_policy_template(
         )
 
     media_session.addDynamicPolicy(policy_template_id, updated_policy)
-    await media_configuration.synchronise() #BUG synchronise fails at updating
+    await media_configuration.synchronise()
     return {"status": "updated", "policy_template_id": policy_template_id}
 
 
-@app.delete("/delete_policy_template/{provisioning_session_id}/{policy_template_id}")
+@app.delete("/provisioning_session/{provisioning_session_id}/policy_template/{policy_template_id}")
 async def delete_policy_template(provisioning_session_id: str, policy_template_id: str):
     try:
         media_configuration = await get_media_configuration()
