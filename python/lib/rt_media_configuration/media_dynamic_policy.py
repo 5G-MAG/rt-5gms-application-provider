@@ -218,21 +218,6 @@ This class models the QoS parameters, charging rules and application rules for d
 
     @classmethod
     async def from3GPPObject(cls, pt: dict) -> "MediaDynamicPolicy":
-        def normalize_bitrate(value):
-            if isinstance(value, str):
-                return value
-            if isinstance(value, (int, float)):
-                return f"{value} bps"
-            if isinstance(value, dict):
-                if "value" in value:
-                    unit = value.get("unit", "bps")
-                    return f"{value['value']} {unit}"
-                for key in ["bps", "kbps", "mbps", "gbps", "tbps", "Kbps", "Mbps", "Gbps", "Tbps"]:
-                    if key in value:
-                        return f"{value[key]} {key}"
-            if hasattr(value, "bitrate") and callable(value.bitrate):
-                return f"{value.bitrate()} bps"
-            return str(value)
         kwargs = {}
         if 'externalReference' in pt:
             kwargs['local_id'] = pt['externalReference']
@@ -247,7 +232,7 @@ This class models the QoS parameters, charging rules and application rules for d
             bitrate_fields = ['maxAuthBtrUl', 'maxAuthBtrDl', 'maxBtrUl', 'maxBtrDl']
             for field in bitrate_fields:
                 if field in qos_dict:
-                    qos_dict[field] = normalize_bitrate(qos_dict[field])
+                    qos_dict[field] = str(qos_dict[field])
             kwargs['qos_parameters'] = MediaQoSParameters.fromJSONObject(qos_dict)
 
         if 'chargingSpecification' in pt:
