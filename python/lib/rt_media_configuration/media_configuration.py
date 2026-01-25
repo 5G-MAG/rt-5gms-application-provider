@@ -306,8 +306,10 @@ configuration with the 5GMS AF.
                 for dp_id,dp in o_session.dynamic_policies.items():
                     if dp_id not in session.dynamic_policies:
                         ret += [await MediaDynamicPolicyDeltaOperation(session, add=(dp))]
-                    elif dp != session.dynamic_policies[dp_id]:
-                        ret += [await MediaDynamicPolicyDeltaOperation(session, update=(dp_id,dp))]
+                    else:
+                        current_dp = session.dynamic_policies[dp_id]
+                        if dp != current_dp or dp.id != current_dp.id:
+                            ret += [await MediaDynamicPolicyDeltaOperation(session, update=(dp_id,dp))]
                 for dp_id in session.dynamic_policies.keys():
                     if dp_id not in o_session.dynamic_policies:
                         ret += [await MediaDynamicPolicyDeltaOperation(session, remove=dp_id)]

@@ -621,8 +621,11 @@ class M1Session:
         # Clear cache if update successful
         if result is not None and result:
             ps = await self.__getProvisioningSessionCache(provisioning_session_id)
-            if ps is not None and 'policyTemplates' in ps and ps['policyTemplates'] is not None and policy_template_id in ps['policyTemplates']:
-                del ps['policyTemplates'][policy_template_id]
+            if ps is not None:
+                if ps.get('policyTemplates') is None:
+                    ps['policyTemplates'] = {policy_template_id: None}
+                elif policy_template_id in ps['policyTemplates']:
+                    ps['policyTemplates'][policy_template_id] = None
         return result
 
     async def policyTemplateDelete(self, provisioning_session_id: ResourceId, policy_template_id: ResourceId) -> bool:

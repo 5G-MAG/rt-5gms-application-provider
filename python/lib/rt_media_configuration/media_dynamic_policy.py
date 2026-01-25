@@ -61,11 +61,21 @@ This class models the QoS parameters, charging rules and application rules for d
         return self
 
     def __eq__(self, other: "MediaDynamicPolicy") -> bool:
-        if self.__session_context != other.__session_context:
+        if not isinstance(other, MediaDynamicPolicy):
             return False
-        if self.__qos_parameters != other.__qos_parameters:
+        if (self.__session_context is None) != (other.__session_context is None):
             return False
-        return self.__charging == other.__charging
+        if self.__session_context is not None and self.__session_context != other.__session_context:
+            return False
+        if (self.__qos_parameters is None) != (other.__qos_parameters is None):
+            return False
+        if self.__qos_parameters is not None and self.__qos_parameters != other.__qos_parameters:
+            return False
+        if (self.__charging is None) != (other.__charging is None):
+            return False
+        if self.__charging is not None and self.__charging != other.__charging:
+            return False
+        return True
 
     def __ne__(self, other: "MediaDynamicPolicy") -> bool:
         return not (self == other)

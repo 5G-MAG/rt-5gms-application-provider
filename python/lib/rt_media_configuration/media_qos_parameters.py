@@ -61,11 +61,17 @@ This models QoS parameters for 3GPP systems.
         return self
 
     def __eq__(self, other: "MediaQoSParameters") -> bool:
+        if not isinstance(other, MediaQoSParameters):
+            return False
         if self.__reference != other.__reference:
             return False
-        if self.__max_auth_bitrate_uplink != other.__max_auth_bitrate_uplink:
+        if (self.__max_auth_bitrate_uplink is None) != (other.__max_auth_bitrate_uplink is None):
             return False
-        if self.__max_auth_bitrate_downlink != other.__max_auth_bitrate_downlink:
+        if self.__max_auth_bitrate_uplink is not None and self.__max_auth_bitrate_uplink != other.__max_auth_bitrate_uplink:
+            return False
+        if (self.__max_auth_bitrate_downlink is None) != (other.__max_auth_bitrate_downlink is None):
+            return False
+        if self.__max_auth_bitrate_downlink is not None and self.__max_auth_bitrate_downlink != other.__max_auth_bitrate_downlink:
             return False
         if self.__default_packet_loss_rate_uplink != other.__default_packet_loss_rate_uplink:
             return False

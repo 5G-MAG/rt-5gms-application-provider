@@ -61,6 +61,8 @@ MediaDynamicPolicy.
         return self
 
     def __eq__(self, other: "MediaChargingSpecification") -> bool:
+        if not isinstance(other, MediaChargingSpecification):
+            return False
         if self.__sponsor_id != other.__sponsor_id:
             return False
         if self.__enabled != other.__enabled:
