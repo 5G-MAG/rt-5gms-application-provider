@@ -36,7 +36,7 @@ from rt_m1_client.data_store import JSONFileDataStore
 from rt_m1_client.exceptions import M1Error
 from rt_m1_client import app_configuration
 
-from rt_media_configuration import MediaConfiguration, MediaEntry, MediaDistribution, MediaEntryPoint, MediaAppDistribution, MediaMetricsReportingConfiguration, MediaServerCertificate, MediaGeoFencing, MediaConsumptionReportingConfiguration, MediaDynamicPolicy
+from rt_media_configuration import MediaConfiguration, MediaEntry, MediaDistribution, MediaEntryPoint, MediaAppDistribution, MediaMetricsReportingConfiguration, MediaServerCertificate, MediaGeoFencing, MediaConsumptionReportingConfiguration, MediaDynamicPolicy, MediaSession
 
 config = Configuration()
 
@@ -101,6 +101,34 @@ async def resync():
     af_ids = list(await session.provisioningSessionIds() or [])
     return {"status": "ok", "session_ids": af_ids}
 
+def _build_session_ui_info(session: MediaSession) -> Dict[str, bool]:
+    reporting = session.reporting_configurations
+    return {
+        "hasContentHostingConfiguration": session.media_entry is not None,
+        "hasServerCertificates": bool(session.certificates),
+        "hasConsumptionReportingConfiguration": reporting is not None and reporting.consumption is not None,
+        "hasPolicyTemplates": bool(session.dynamic_policies),
+        "hasMetricsReportingConfiguration": reporting is not None and bool(reporting.metrics),
+    }
+
+@app.get("/provisioning_sessions/build_Informations_for_UI")
+async def build_Informations_for_UI_all():
+    media_configuration = await get_media_configuration()
+    informations = {}
+    for session in await media_configuration.mediaSessions():
+        session_id = session.provisioning_session_id or session.id
+        if session_id is None:
+            continue
+        informations[session_id] = _build_session_ui_info(session)
+    return {"sessions": informations}
+
+@app.get("/provisioning_session/{sessionId}/build_Informations_for_UI")
+async def build_Informations_for_UI(sessionId: str):
+    media_configuration = await get_media_configuration()
+    session = await media_configuration.mediaSessionByProvisioningSessionId(sessionId)
+    if session is None:
+        raise HTTPException(status_code=404, detail="Provisioning session not found")
+    return _build_session_ui_info(session)
 # Auxiliary function to pass proper configuration as dependency injection parameter
 def get_config():
     return Configuration()
@@ -232,12 +260,13 @@ async def delete_sessions(request: Request):
         "not_found": not_found,
         "failed": failed,
     }
-
+# =====================================
+#   content hosting Congiguration
+# =====================================
 @app.post("/set_content_hosting_configuration/{provisioning_session_id}")
 async def set_content_hosting_configuration(provisioning_session_id: str, request: Request, config = Depends(get_config)):
     try:
         content_hosting_configuration_JSON = await request.json()
-        print("[CHC][POST] Incoming payload:\n", json.dumps(content_hosting_configuration_JSON, indent=2))
         media_configuration = await get_media_configuration()
         media_session = await media_configuration.mediaSessionByProvisioningSessionId(provisioning_session_id)
         if media_session is None:
@@ -319,13 +348,27 @@ async def get_content_hosting_configuration(
             },
             "distributionConfigurations": distribution_configurations
         }
-        print(f"\n[CHC][GET] Response preview for provisioning_session_id={provisioning_session_id}\n"
-              f"{json.dumps(result, indent=2)}\n[CHC][GET] End preview\n")
         return JSONResponse(content=result, status_code=200)
     except HTTPException:
         raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error fetching CHC configuration: {str(e)}")
+
+@app.delete("/provisioning_session/{provisioning_session_id}/contenthostingconfiguration/")
+async def delete_content_hosting_configuration(provisioning_session_id: str):
+    try:
+        media_configuration = await get_media_configuration()
+        media_session = await media_configuration.mediaSessionByProvisioningSessionId(provisioning_session_id)
+        if media_session is None or media_session.media_entry is None:
+            raise HTTPException(status_code=404, detail="No CHC configuration found for this session")
+        media_session.media_entry = None
+        await media_configuration.synchronise()
+        return Response(status_code=204)
+    except HTTPException:
+        raise
+    except Exception as e:
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=f"Error deleting CHC: {str(e)}")
 
 """
 Endpoint: Retrieve all provisioning sessions details

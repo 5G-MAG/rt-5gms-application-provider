@@ -320,7 +320,8 @@ export async function listAllPolicyTemplate(sessionId) {
                 }
 
                 const fullData = await resp.json();
-                console.log(fullData)
+                console.log(fullData);
+                document.dispatchEvent(new Event('sessions:reload'));
               }
             }
             if(btn) {
@@ -537,6 +538,7 @@ export async function openPolicyTemplateForm(sessionId, existingData = null, pol
       closeMyModal();
 
       listAllPolicyTemplate(sessionId);
+      document.dispatchEvent(new Event('sessions:reload'));
     } catch (e) {
       console.error(e);
       errorBox.innerText = e.message || "Unknown error while saving Policy Template.";

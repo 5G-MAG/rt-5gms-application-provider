@@ -233,7 +233,6 @@ button:disabled {
   transition: background .25s, filter .2s;
 }
 
-#scrollTopBtn,
 #infoBtn {
   font-size: 18px;
   font-weight: bold;
@@ -244,23 +243,6 @@ button:disabled {
   box-shadow: 0 4px 10px rgba(0, 0, 0, .3);
   transition: background .3s, transform .2s;
   z-index: 1000;
-}
-
-#scrollTopBtn {
-  background: #fff;
-  color: #0073ad;
-  border: 2px solid #0073ad;
-  bottom: 80px;
-  right: 25px;
-}
-
-#scrollTopBtn:hover {
-  background: #0073ad;
-  color: #fff;
-  transform: scale(1.1);
-}
-
-#infoBtn {
   background: #2596be;
   color: #fff;
   border: 2px solid #fff;

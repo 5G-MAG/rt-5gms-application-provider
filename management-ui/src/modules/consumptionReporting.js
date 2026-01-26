@@ -74,6 +74,7 @@ export async function setConsumptionReporting(session_id) {
         title: data.message,
         icon: 'success'
       });
+      document.dispatchEvent(new Event('sessions:reload'));
     }
   }
   
@@ -105,6 +106,7 @@ export async function deleteConsumptionReporting(sessionId) {
             icon: 'success',
             confirmButtonText: 'OK',
           });
+          document.dispatchEvent(new Event('sessions:reload'));
         } else {
           const data = await response.json();
           await Swal.fire({

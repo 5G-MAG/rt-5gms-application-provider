@@ -6,6 +6,7 @@ For full license terms please see the LICENSE file distributed with this
 program. If this file is missing then the license can be retrieved from
 https://drive.google.com/file/d/1cinCiA778IErENZ3JN52VFW-1ffHpx7Z/view
 */
+import { notifyError, notifySuccess, confirmPrompt } from "./notify.js";
 
 const profilesList = [
   { value: "urn:mpeg:dash:profile:full:2011", label: "MPEG-DASH Full profile" },
@@ -129,9 +130,15 @@ function getContentHostingConfigurationModalHtml(sessionId) {
         <div class="modal-footer"
              style="position:sticky; bottom:0; z-index:2; background:#fff; 
                     border-top:1px solid #e5e7eb; padding:12px 16px;
-                    display:flex; justify-content:flex-end; gap:10px;">
-          <button type="button" class="btn btn-danger" data-close>Cancel</button>
-          <button type="submit" class="btn btn-success">Set Content Hosting Configuration</button>
+                    display:flex; justify-content:space-between; align-items:center; gap:10px; width:100%; box-sizing:border-box;">
+          <div style="display:flex; align-items:center; gap:8px; margin-right:auto;">
+            <button type="button" class="btn btn-secondary" id="chc-upload-btn-${sessionId}">Prefill form JSON file</button>
+            <input type="file" id="chc-upload-input-${sessionId}" accept="application/json" style="display:none" />
+          </div>
+          <div style="display:flex; gap:10px; margin-left:auto;">
+            <button type="button" class="btn btn-danger" data-close>Cancel</button>
+            <button type="submit" class="btn btn-success">Set Content Hosting Configuration</button>
+          </div>
         </div>
       </form>
     </div>
@@ -419,6 +426,39 @@ export async function openContentHostingConfigurationForm(sessionId, isEdit = fa
     updateRemoveButtons(); updateTopError();
   }
 
+  function applyChcToForm(chc) {
+    if (!chc || typeof chc !== "object") return;
+    clearAllFieldErrors();
+    nameInput.value = chc.name || '';
+    baseUrlInput.value = chc.ingestConfiguration?.baseURL || '';
+
+    const preProt = (chc.ingestConfiguration?.protocol === DASH_IF_PUSH)
+      ? HTTP_PULL
+      : (chc.ingestConfiguration?.protocol || HTTP_PULL);
+
+    if (hasChoices() && protocolChoices) {
+      protocolChoices.setChoiceByValue(preProt);
+    } else {
+      const opt = Array.from(protocolSelect.options).find(o => o.value === preProt);
+      if (opt) protocolSelect.value = preProt;
+    }
+
+    renderIngestMethod(!!PROTOCOL_TO_PULL[preProt]);
+
+    if (Array.isArray(chc.distributionConfigurations) && chc.distributionConfigurations.length) {
+      distContainer.querySelectorAll('.dist-entry').forEach(e => e.remove());
+      chc.distributionConfigurations.forEach(dc => {
+        const ep = dc.entryPoint || dc;
+        addDistributionEntry({
+          relativePath: ep.relativePath || '',
+          contentType: ep.contentType || '',
+          profiles: Array.isArray(ep.profiles) ? ep.profiles : []
+        });
+      });
+    }
+    updateTopError();
+  }
+
   function updateRemoveButtons() {
     const entries = distContainer.querySelectorAll('.dist-entry');
     entries.forEach(entry => {
@@ -439,6 +479,31 @@ export async function openContentHostingConfigurationForm(sessionId, isEdit = fa
   document.getElementById(`add-dist-${sessionId}`).onclick = () => addDistributionEntry();
   addDistributionEntry();
 
+  const uploadBtn = document.getElementById(`chc-upload-btn-${sessionId}`);
+  const uploadInput = document.getElementById(`chc-upload-input-${sessionId}`);
+  if (uploadBtn && uploadInput) {
+    uploadBtn.addEventListener('click', () => uploadInput.click());
+    uploadInput.addEventListener('change', async (e) => {
+      const file = e.target.files && e.target.files[0];
+      if (!file) return;
+      try {
+        const text = await file.text();
+        const chc = JSON.parse(text);
+        applyChcToForm(chc);
+      } catch (err) {
+        const errorBox = document.getElementById(`chc-error-${sessionId}`);
+        if (errorBox) {
+          errorBox.innerText = 'Invalid CHC JSON file.';
+          errorBox.style.display = '';
+        } else {
+          Swal.fire({ title: 'Error', text: 'Invalid CHC JSON file.', icon: 'error', confirmButtonText: 'OK' });
+        }
+      } finally {
+        e.target.value = '';
+      }
+    });
+  }
+
 
 
   // --- Prefill (Edit) ---
@@ -447,36 +512,7 @@ export async function openContentHostingConfigurationForm(sessionId, isEdit = fa
       const res = await fetch(`/get_content_hosting_configuration/${sessionId}`);
       if (res.ok) {
         const chc = await res.json();
-
-        nameInput.value = chc.name || '';
-        baseUrlInput.value = chc.ingestConfiguration?.baseURL || '';
-
-       
-        const preProt = (chc.ingestConfiguration?.protocol === DASH_IF_PUSH)
-          ? HTTP_PULL
-          : (chc.ingestConfiguration?.protocol || HTTP_PULL);
-
-        if (hasChoices() && protocolChoices) protocolChoices.setChoiceByValue(preProt);
-        else {
-        
-          const opt = Array.from(protocolSelect.options).find(o => o.value === preProt);
-          if (opt) protocolSelect.value = preProt;
-        }
-
-        renderIngestMethod(!!PROTOCOL_TO_PULL[preProt]);
-
-        if (Array.isArray(chc.distributionConfigurations) && chc.distributionConfigurations.length) {
-          distContainer.querySelectorAll('.dist-entry').forEach(e => e.remove());
-          chc.distributionConfigurations.forEach(dc => {
-            const ep = dc.entryPoint || dc;
-            addDistributionEntry({
-              relativePath: ep.relativePath || '',
-              contentType: ep.contentType || '',
-              profiles: Array.isArray(ep.profiles) ? ep.profiles : []
-            });
-          });
-        }
-        updateTopError();
+        applyChcToForm(chc);
       }
     } catch (e) {
       console.warn('Edit prefill failed:', e);
@@ -486,6 +522,9 @@ export async function openContentHostingConfigurationForm(sessionId, isEdit = fa
   // --- Close ---
   function closeChcModal() { modal.remove(); }
   modal.querySelectorAll('[data-close]').forEach(btn => btn.onclick = closeChcModal);
+  modal.addEventListener('click', (e) => {
+    if (e.target === modal) closeChcModal();
+  });
 
   // --- Submit ---
   document.getElementById(`chc-form-modal-${sessionId}`).onsubmit = async function (event) {
@@ -629,15 +668,9 @@ export async function openContentHostingConfigurationForm(sessionId, isEdit = fa
       window.dispatchEvent(new CustomEvent("chc:saved", {
         detail: { sessionId, chc: freshCHC || payload }
       }));
+      document.dispatchEvent(new Event('sessions:reload'));
 
-      Promise.resolve().then(() => { clearTable(); return loadAllSessions(); });
-
-      Swal.fire({
-        title: 'Success',
-        text: 'Stream configuration saved.',
-        icon: 'success',
-        confirmButtonText: 'OK'
-      });
+      notifySuccess('Content Hosting Configuration saved.');
 
     } catch (e) {
       if (errorBox) { errorBox.innerText = 'Network error: ' + e.message; errorBox.style.display = ''; }
@@ -669,5 +702,24 @@ export async function downloadContentHostingConfiguration(sessionId) {
   } catch (err) {
     console.error("Download error:", err);
     Swal.fire("Error", "Problem while downloading Content Hosting Configuration.", "error");
+  }
+}
+
+export async function deleteContentHostingConfiguration(sessionId) {
+  try{
+    const res = await fetch(`/provisioning_session/${sessionId}/contenthostingconfiguration/`,{
+      method: 'DELETE'
+      }
+    );
+    if (res.ok){
+      notifySuccess('Content Hosting Configuration deleted.');
+      document.dispatchEvent(new Event('sessions:reload'));
+    } else {
+      notifyError('Content Hosting Configuration was not deleted.');
+    }
+  }
+  catch (err){
+    console.error("CHC Delete error:", err);
+    notifyError('Network error while deleting CHC.')
   }
 }

@@ -7,7 +7,7 @@ program. If this file is missing then the license can be retrieved from
 https://drive.google.com/file/d/1cinCiA778IErENZ3JN52VFW-1ffHpx7Z/view
 */
 
-import { openContentHostingConfigurationForm, downloadContentHostingConfiguration } from "./modules/contentHostingConfiguration.js";
+import { openContentHostingConfigurationForm, downloadContentHostingConfiguration, deleteContentHostingConfiguration} from "./modules/contentHostingConfiguration.js";
 import { createNewCertificate, showCertificateDetails } from "./modules/serverCertificates.js";
 import { showProtocols } from "./modules/protocols.js";
 import { setConsumptionReporting, showConsumptionReporting, deleteConsumptionReporting } from "./modules/consumptionReporting.js";
@@ -22,6 +22,7 @@ let isConnectionLost = false;
 
 const LS_KEY = 'selectedSessions';
 const selectedSessions = new Set(JSON.parse(localStorage.getItem(LS_KEY) || '[]'));
+let sessionUiInfo = {};
 
 window.createNewSession = createNewSession;
 
@@ -46,6 +47,7 @@ window.deleteSelectedSessions = deleteSelectedSessions;
 
 window.openContentHostingConfigurationForm = openContentHostingConfigurationForm;
 window.downloadContentHostingConfiguration = downloadContentHostingConfiguration;
+window.deleteContentHostingConfiguration = deleteContentHostingConfiguration
 
 window.clearTable = clearTable;
 window.loadAllSessions = loadAllSessions;
@@ -218,7 +220,10 @@ async function deleteSelectedSessions() {
     updateToggleButton();
 
     const nDel = (result.deleted || []).length;
-    if (nDel) notifySuccess(`Deleted ${nDel} session(s).`);
+    if (nDel) {
+      notifySuccess(`Deleted ${nDel} session(s).`);
+      document.dispatchEvent(new Event('sessions:reload'));
+    }
 
   } catch (e) {
     console.error(e);
@@ -302,103 +307,77 @@ async function addSessionToTable(sessionId) {
   let cell8 = row.insertCell(7); // Session Details
   let cell9 = row.insertCell(8); // checkBox
 
-  let content_hosting_configuration_exists = false;
-  let name_form_CHC = '';
-  const MAX_NAME_LEN = 15;
-  try {
-    const res = await fetch(`${operatingUrl}get_content_hosting_configuration/${sessionId}`, { cache: 'no-store' });
-
-    if (res.ok) {
-      const data = await res.json();
-      content_hosting_configuration_exists = true;
-      name_form_CHC = data?.name || '';
-      if (name_form_CHC.length > MAX_NAME_LEN) {
-        name_form_CHC = name_form_CHC.slice(0, MAX_NAME_LEN - 3) + '...';
-      }
-    }
-  } catch { }
-
   cell1.classList.add('psid-col');
 
-  if (content_hosting_configuration_exists) {
-    cell1.innerHTML = `
+  cell1.innerHTML = `
       <div class="psid-cell">
         <div class="psid-name">${sessionId}</div>
       </div>
     `;
+  const info = sessionUiInfo[sessionId] || {};
+  const hasContentHostingConfiguration = info.hasContentHostingConfiguration === true;
+  const hasServerCertificates = info.hasServerCertificates === true;
+  const hasConsumptionReportingConfiguration = info.hasConsumptionReportingConfiguration === true;
+  const hasPolicyTemplates = info.hasPolicyTemplates === true;
+  const hasMetricsReportingConfiguration = info.hasMetricsReportingConfiguration === true;
+  if (hasContentHostingConfiguration) {
 
     cell2.innerHTML = `
-      <div class="psid-name">${name_form_CHC || ''}</div>
       <button onclick="openContentHostingConfigurationForm('${sessionId}', true)" class="btn btn-secondary table-button">Show/Edit</button>
       <button type="button" class="btn btn-secondary table-button" onclick="downloadContentHostingConfiguration('${sessionId}')">Download</button>
-      <button type="button" class="btn btn-info table-button" onclick="document.getElementById('upload-chc-${sessionId}').click()">Upload</button>
-      <input type="file" id="upload-chc-${sessionId}" accept="application/json" style="display:none" />
+      <button type="button" class="btn btn-danger table-button" onclick="deleteContentHostingConfiguration('${sessionId}')">Delete</button>
     `;
   } else {
-    cell1.innerHTML = `
-      <div class="psid-cell">
-        <div class="psid-name">${sessionId}</div>
-      </div>
-    `;
 
     cell2.innerHTML = `
       <button onclick="openContentHostingConfigurationForm('${sessionId}', false)" class="btn btn-primary table-button">Create</button>
-      <button type="button" class="btn btn-info table-button" onclick="document.getElementById('upload-chc-${sessionId}').click()">Upload</button>
-      <input type="file" id="upload-chc-${sessionId}" accept="application/json" style="display:none" />
     `;
   }
 
-  const fileInput = cell2.querySelector(`#upload-chc-${sessionId}`);
-  fileInput.addEventListener('change', async (e) => {
-    const file = e.target.files && e.target.files[0];
-    if (!file) return;
-
-    try {
-      const text = await file.text();
-      const content_hosting_configuration_JSON = JSON.parse(text);
-
-      const resp = await fetch(`${operatingUrl}set_content_hosting_configuration/${sessionId}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(content_hosting_configuration_JSON),
-      });
-
-      if (!resp.ok) {
-        const msg = (await resp.json().catch(() => { }))?.detail || resp.statusText;
-        notifyError(msg || "Upload failed.");
-      } else {
-        notifySuccess("Content Hosting Configuration uploaded & saved.");
-        clearTable();
-        await loadAllSessions();
-      }
-    } catch (err) {
-      notifyError("Error while processing CHC file.");
-    } finally {
-      e.target.value = '';
-    }
-  });
-
-  cell3.innerHTML = `
-    <button onclick="createNewCertificate('${sessionId}')" class="btn btn-primary table-button">Create</button>
-    <button onclick="showCertificateDetails('${sessionId}')" class="btn btn-secondary table-button">Show</button>`;
+  if (hasServerCertificates) {
+    cell3.innerHTML = `
+      <button onclick="createNewCertificate('${sessionId}')" class="btn btn-primary table-button">Create</button>
+      <button onclick="showCertificateDetails('${sessionId}')" class="btn btn-secondary table-button">Show</button>
+      `;
+  } else {
+    cell3.innerHTML = `
+      <button onclick="createNewCertificate('${sessionId}')" class="btn btn-primary table-button">Create</button>`;
+  }
 
   cell4.innerHTML = `<button onclick="showProtocols('${sessionId}')" class="btn btn-secondary table-button">Show</button>`;
 
-  cell5.innerHTML = `
-    <button onclick="setConsumptionReporting('${sessionId}')" class="btn btn-primary table-button">Set</button>
-    <button onclick="showConsumptionReporting('${sessionId}')" class="btn btn-secondary table-button">Show</button>
-    <button onclick="deleteConsumptionReporting('${sessionId}')" class="btn btn-danger table-button">Delete</button>`;
+  const consumptionButtons = [
+    `<button onclick="setConsumptionReporting('${sessionId}')" class="btn btn-primary table-button">Set</button>`
+  ];
+  if (hasConsumptionReportingConfiguration) {
+    consumptionButtons.push(
+      `<button onclick="showConsumptionReporting('${sessionId}')" class="btn btn-secondary table-button">Show</button>`,
+      `<button onclick="deleteConsumptionReporting('${sessionId}')" class="btn btn-danger table-button">Delete</button>`
+    );
+  }
+  cell5.innerHTML = consumptionButtons.join('');
 
-  cell6.innerHTML = `
-    <button onclick="openPolicyTemplateForm('${sessionId}')" class="btn btn-primary table-button">Create</button>
-    <button onclick="listAllPolicyTemplate('${sessionId}')" class="btn btn-primary table-button">List Policy Template</button>
-  `;
+  const policyButtons = [
+    `<button onclick="openPolicyTemplateForm('${sessionId}')" class="btn btn-primary table-button">Create</button>`
+  ];
+  if (hasPolicyTemplates) {
+    policyButtons.push(
+      `<button onclick="listAllPolicyTemplate('${sessionId}')" class="btn btn-primary table-button">List Policy Template</button>`
+    );
+  }
+  cell6.innerHTML = policyButtons.join('');
 
 
-  cell7.innerHTML = `
-    <button onclick="createMetricsJson('${sessionId}')" class="btn btn-primary table-button">Create</button>
-    <button onclick="showMetricsReporting('${sessionId}')" class="btn btn-secondary table-button">Show</button>
-    <button onclick="deleteMetricsConfiguration('${sessionId}')" class="btn btn-danger table-button">Delete</button>`;
+  const metricsButtons = [
+    `<button onclick="createMetricsJson('${sessionId}')" class="btn btn-primary table-button">Create</button>`
+  ];
+  if (hasMetricsReportingConfiguration) {
+    metricsButtons.push(
+      `<button onclick="showMetricsReporting('${sessionId}')" class="btn btn-secondary table-button">Show</button>`,
+      `<button onclick="deleteMetricsConfiguration('${sessionId}')" class="btn btn-danger table-button">Delete</button>`
+    );
+  }
+  cell7.innerHTML = metricsButtons.join('');
 
   cell8.innerHTML = `<button onclick="openDetails(['${sessionId}'])" class="btn btn-secondary table-button">Details</button>`;
 
@@ -429,6 +408,19 @@ async function loadAllSessions() {
 
     const data = await response.json();
     const sessionIds = data.session_ids || [];
+    sessionUiInfo = {};
+    try {
+      const infoResp = await fetch(`${operatingUrl}provisioning_sessions/build_Informations_for_UI`, {
+        method: 'GET',
+        headers: { 'Content-Type': 'application/json' }
+      });
+      if (infoResp.ok) {
+        const infoData = await infoResp.json();
+        sessionUiInfo = infoData.sessions || {};
+      }
+    } catch (err) {
+      console.warn('Failed to load UI info:', err);
+    }
     const liveIds = new Set(sessionIds);
     let cleaned = false;
     selectedSessions.forEach(id => {
@@ -457,7 +449,7 @@ async function createNewSession() {
     }
     const data = await response.json();
     notifySuccess(`Created Provisioning Session: ${data.provisioning_session_id}`);
-    addSessionToTable(data.provisioning_session_id);
+    document.dispatchEvent(new Event('sessions:reload'));
   }
   catch (error) {
     console.error('Caught error:', error);
@@ -483,6 +475,7 @@ function removeSessionFromTable(sessionId) {
   if (row) row.remove();
 
   selectedSessions.delete(sessionId);
+  delete sessionUiInfo[sessionId];
   localStorage.setItem(LS_KEY, JSON.stringify([...selectedSessions]));
 }
 
@@ -497,10 +490,6 @@ document.addEventListener('sessions:reload', async () => {
   clearTable();
   await loadAllSessions();
 });
-
-document.getElementById('scrollTopBtn').onclick = () => {
-  window.scrollTo({ top: 0, behavior: 'smooth' });
-};
 
 window.onload = function () {
   checkAFstatus();
