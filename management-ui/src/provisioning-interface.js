@@ -209,7 +209,6 @@ async function deleteSelectedSessions() {
       notFound.forEach(id => {
         selectedSessions.delete(id);
       });
-      notifyInfo(`Not found (already gone): ${notFound.join(', ')}`);
     }
     if ((result.failed || []).length) {
       notifyError(`Failed: ${result.failed.join(', ')}`);
@@ -271,7 +270,9 @@ window.commitSelectedSessionsToM8 = async function commitSelectedSessionsToM8() 
 
       if (choice === true || choice === 'ok') {
         const w = window.open(publicUrl, '_blank', 'noopener');
-        if (!w) location.href = publicUrl;
+        if (!w) {
+          notifyInfo('Popup blocked. Please allow pop-ups to open m8.json.');
+        }
       } else if (choice === 'download') {
         notifySuccess('Download started.');
       } else {
@@ -427,7 +428,18 @@ async function loadAllSessions() {
     }
 
     const data = await response.json();
-    const sessionIds = data.session_ids;
+    const sessionIds = data.session_ids || [];
+    const liveIds = new Set(sessionIds);
+    let cleaned = false;
+    selectedSessions.forEach(id => {
+      if (!liveIds.has(id)) {
+        selectedSessions.delete(id);
+        cleaned = true;
+      }
+    });
+    if (cleaned) {
+      localStorage.setItem(LS_KEY, JSON.stringify([...selectedSessions]));
+    }
     sessionIds.forEach(sessionId => addSessionToTable(sessionId));
     updateToggleButton();
   } catch (error) {

@@ -843,53 +843,40 @@ async def list_metrics_ids(provisioning_session_id: str):
 
 @app.post("/commit_selected_sessions")
 async def commit_selected_sessions(selection_ids: list[str] = Body(...)):
+    if not selection_ids:
+        raise HTTPException(status_code=400, detail="No sessions selected")
 
-    m1Session = await get_M1Session()
-    live_ids = set(await m1Session.provisioningSessionIds() or [])
+    m1_session = await get_M1Session()
+    if m1_session.data_store() is None:
+        raise HTTPException(status_code=500, detail="Data store is not configured")
 
+    media_cfg = await MediaConfiguration(
+        persistent_data_store=m1_session.data_store(),
+        m1_session=m1_session
+    )
+    restored = await media_cfg.restoreModel()
+    if not restored:
+        raise HTTPException(status_code=500, detail="Failed to restore media configuration")
 
+    selected = set(selection_ids)
+    sessions = list(await media_cfg.mediaSessions())
+    for session in sessions:
+        if session.provisioning_session_id not in selected:
+            await media_cfg.removeMediaSession(entry=session)
 
-    m5_base = os.getenv("M5_BASE_URL", "http://rt.5g-mag.com:7778/3gpp-m5/v2/")
-    service_list = []
+    remaining = list(await media_cfg.mediaSessions())
+    has_entries = any(s.media_entry is not None for s in remaining)
+    if not has_entries:
+        raise HTTPException(status_code=404, detail="Selected sessions have no Content Hosting Configuration")
 
-    for ps_id in selection_ids:
-        chc = await m1Session.contentHostingConfigurationGet(ps_id)
-        if chc is None:
-            continue
-        else:
-            name = ""
-            entry_points = []
-            content = dict(chc)
-            name = content.get("name") or ""
-            for dist in (content.get("distributionConfigurations") or []):
-                base = dist.get("baseURL") or ""
-                ep   = dist.get("entryPoint") or {}
-                rel  = ep.get("relativePath")
-                if not (base and rel):
-                    continue
-                if not base.endswith("/"):
-                    base += "/"
-                locator_http = base + rel
+    await media_cfg.updateM8Files()
 
-                locators = [locator_http]
-                for loc in locators:
-                    item = {"locator": loc, "contentType": ep.get("contentType")}
-                    profiles = ep.get("profiles")
-                    if profiles:
-                        item["profiles"] = profiles
-                    if item not in entry_points:
-                        entry_points.append(item)
+    m8_content = None
+    if M8_FILE.exists():
+        async with aiofiles.open(M8_FILE, "r", encoding="utf-8") as f:
+            try:
+                m8_content = json.loads(await f.read())
+            except json.JSONDecodeError:
+                m8_content = None
 
-        entry = {"provisioningSessionId": ps_id, "name": name}
-        if entry_points:
-            entry["entryPoints"] = entry_points
-        service_list.append(entry)
-    if service_list:
-        output = {"m5BaseUrl": m5_base, "serviceList": service_list}
-    else:
-        raise HTTPException(status_code=404, detail="One Session musst have at last one Conetent Hosting Configuration")
-
-    M8_DIR.mkdir(parents=True, exist_ok=True)
-    async with aiofiles.open(M8_FILE, "w", encoding="utf-8") as f:
-        await f.write(json.dumps(output, ensure_ascii=False, indent=2))
-    return {"status": "success", "written_to": str(M8_FILE), "m8_content": output}
+    return {"status": "success", "written_to": str(M8_FILE), "m8_content": m8_content}

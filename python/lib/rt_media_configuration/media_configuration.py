@@ -211,7 +211,6 @@ configuration with the 5GMS AF.
             await d.apply_delta(self.__m1_session)
 
         self.__model = af_mc.__model
-        await self.updateM8Files()
 
     async def deltas(self, other: "MediaConfiguration") -> List[DeltaOperation]:
         '''Get the list of operations needed to change this configuration into the configuration in other

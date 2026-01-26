@@ -61,20 +61,41 @@ Output formatter to represent a MediaConfiguration as a 5G-MAG m8.json file
             m8_config = {'m5BaseUrl': f'http://{self.__config.get("m5_authority", section="media-configuration", default="localhost")}/3gpp-m5/v2/', 'serviceList': []}
             for session in await media_config.mediaSessions():
                 me = session.media_entry
-                if me is not None:
-                    if me.app_distributions is None:
-                        m8_config['serviceList'] += [{'provisioningSessionId': session.provisioning_session_id, 'name': me.name}]
-                    else:
-                        for ad in me.app_distributions:
-                            entryPoints = []
-                            for vep in ad.entry_points:
-                                for dc in me.distributions:
-                                    if dc.base_url is not None:
-                                        ep = {'locator': self.__join_url(dc.base_url,vep.relative_path), 'contentType': vep.content_type}
-                                        if vep.profiles is not None:
-                                            ep['profiles'] = vep.profiles
-                                        entryPoints += [ep]
-                            m8_config['serviceList'] += [{'provisioningSessionId': session.provisioning_session_id, 'name': ad.name, 'entryPoints': entryPoints}]
+                if me is None or session.provisioning_session_id is None:
+                    continue
+
+                if not me.app_distributions:
+                    entryPoints = []
+                    for dc in (me.distributions or []):
+                        if dc.base_url is None or dc.entry_point is None or dc.entry_point.relative_path is None:
+                            continue
+                        ep = {
+                            'locator': self.__join_url(dc.base_url, dc.entry_point.relative_path),
+                            'contentType': dc.entry_point.content_type
+                        }
+                        if dc.entry_point.profiles is not None:
+                            ep['profiles'] = dc.entry_point.profiles
+                        if ep not in entryPoints:
+                            entryPoints.append(ep)
+                    entry = {'provisioningSessionId': session.provisioning_session_id, 'name': me.name}
+                    if entryPoints:
+                        entry['entryPoints'] = entryPoints
+                    m8_config['serviceList'] += [entry]
+                else:
+                    for ad in me.app_distributions:
+                        entryPoints = []
+                        for vep in ad.entry_points:
+                            for dc in (me.distributions or []):
+                                if dc.base_url is not None:
+                                    ep = {'locator': self.__join_url(dc.base_url, vep.relative_path), 'contentType': vep.content_type}
+                                    if vep.profiles is not None:
+                                        ep['profiles'] = vep.profiles
+                                    if ep not in entryPoints:
+                                        entryPoints.append(ep)
+                        entry = {'provisioningSessionId': session.provisioning_session_id, 'name': ad.name}
+                        if entryPoints:
+                            entry['entryPoints'] = entryPoints
+                        m8_config['serviceList'] += [entry]
             await json_out.write(json.dumps(m8_config))
 
     @staticmethod
