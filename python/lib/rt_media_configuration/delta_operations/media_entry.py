@@ -57,8 +57,16 @@ class MediaEntryDeltaOperation(DeltaOperation):
 
     def __str__(self):
         if self.__is_add:
-            return f'Add ContentHostingConfiguration "{self.__media_entry.name}" to ProvisioningSession "{self.session.identity()}"'
-        return f'Remove ContentHostingConfiguration "{self.__media_entry.name}" from ProvisioningSession "{self.session.identity()}"'
+            name = getattr(self.__media_entry, "name", "<unknown>")
+            return f'Add ContentHostingConfiguration "{name}" to ProvisioningSession "{self.session.identity()}"'
+        name = None
+        if self.__media_entry is not None:
+            name = getattr(self.__media_entry, "name", None)
+        if name is None:
+            name = getattr(getattr(self.session, "media_entry", None), "name", None)
+        if name is None:
+            name = "<unknown>"
+        return f'Remove ContentHostingConfiguration "{name}" from ProvisioningSession "{self.session.identity()}"'
 
     def __repr__(self):
         ret = super().__repr__()[:-1]
@@ -72,10 +80,10 @@ class MediaEntryDeltaOperation(DeltaOperation):
     async def apply_delta(self, m1_session: M1Session, update_container: bool = True) -> bool:
         if self.__is_remove:
             # Remove media entry from 5GMS AF via M1
-            if not await m1_session.contentHostingConfigurationRemove(self.session.provisioning_session_id):
+            if not await m1_session.contentHostingConfigurationDelete(self.session.provisioning_session_id):
                 return False
             # Drop MediaAppDistributions from the data store
-            await self.session.configuration.unset_data_atore_app_distributions(self.session.provisioning_session_id)
+            await self.session.configuration.unset_data_store_app_distributions(self.session.provisioning_session_id)
             # Update the session by removing the media entry
             if update_container:
                 self.session.media_entry = None
