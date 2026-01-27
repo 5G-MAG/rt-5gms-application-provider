@@ -12,7 +12,6 @@ import json
 import requests
 import asyncio
 import httpx
-import aiofiles
 from datetime import datetime, timezone
 from dotenv import load_dotenv
 from typing import Optional, Dict
@@ -23,7 +22,6 @@ from fastapi.templating import Jinja2Templates
 from fastapi.middleware.cors import CORSMiddleware
 from utils import lib_to_sys_path
 from fastapi.encoders import jsonable_encoder
-from pathlib import Path
 import traceback
 
 load_dotenv()
@@ -49,8 +47,6 @@ _media_configuration = None
 _media_session = None
 media_create_lock = asyncio.Lock()
 
-M8_DIR = Path("/usr/share/nginx/html/m8")
-M8_FILE = M8_DIR / "m8.json"
 app.mount("/m8", StaticFiles(directory="/usr/share/nginx/html/m8"), name="m8")
 
 app.add_middleware(
@@ -883,43 +879,3 @@ async def list_metrics_ids(provisioning_session_id: str):
     if not metrics_ids:
         raise HTTPException(status_code=404, detail="No MetricsReportingConfiguration found")
     return metrics_ids
-
-@app.post("/commit_selected_sessions")
-async def commit_selected_sessions(selection_ids: list[str] = Body(...)):
-    if not selection_ids:
-        raise HTTPException(status_code=400, detail="No sessions selected")
-
-    m1_session = await get_M1Session()
-    if m1_session.data_store() is None:
-        raise HTTPException(status_code=500, detail="Data store is not configured")
-
-    media_cfg = await MediaConfiguration(
-        persistent_data_store=m1_session.data_store(),
-        m1_session=m1_session
-    )
-    restored = await media_cfg.restoreModel()
-    if not restored:
-        raise HTTPException(status_code=500, detail="Failed to restore media configuration")
-
-    selected = set(selection_ids)
-    sessions = list(await media_cfg.mediaSessions())
-    for session in sessions:
-        if session.provisioning_session_id not in selected:
-            await media_cfg.removeMediaSession(entry=session)
-
-    remaining = list(await media_cfg.mediaSessions())
-    has_entries = any(s.media_entry is not None for s in remaining)
-    if not has_entries:
-        raise HTTPException(status_code=404, detail="Selected sessions have no Content Hosting Configuration")
-
-    await media_cfg.updateM8Files()
-
-    m8_content = None
-    if M8_FILE.exists():
-        async with aiofiles.open(M8_FILE, "r", encoding="utf-8") as f:
-            try:
-                m8_content = json.loads(await f.read())
-            except json.JSONDecodeError:
-                m8_content = None
-
-    return {"status": "success", "written_to": str(M8_FILE), "m8_content": m8_content}

@@ -44,6 +44,7 @@ window.listAllPolicyTemplate = listAllPolicyTemplate;
 
 window.toggleSessionSelection = toggleSessionSelection;
 window.deleteSelectedSessions = deleteSelectedSessions;
+window.openM8 = openM8;
 
 window.openContentHostingConfigurationForm = openContentHostingConfigurationForm;
 window.downloadContentHostingConfiguration = downloadContentHostingConfiguration;
@@ -232,62 +233,11 @@ async function deleteSelectedSessions() {
 }
 
 
-window.commitSelectedSessionsToM8 = async function commitSelectedSessionsToM8() {
-  const sessions = Array.from(selectedSessions);
-  if (sessions.length === 0) {
-    notifyInfo("Please select at least one session.");
-    return;
-  }
-
-  const ok = await confirmPrompt({
-    message: `Publish ${sessions.length} selected session(s) to M8 JSON and generate m8.json?`,
-    confirmText: "Publish",
-    cancelText: "Cancel",
-    tone: "primary"
-  });
-  if (!ok) return;
-
-  try {
-    const response = await fetch(`${operatingUrl}commit_selected_sessions`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(sessions)
-    });
-
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
-      throw new Error(errorData.detail || 'Server returned an error.');
-    }
-
-    const result = await response.json();
-
-    if (result.status === 'success') {
-      const fileName = (result.written_to || '').split('/').pop() || 'm8.json';
-      const publicUrl = new URL(`m8/${fileName}`, operatingUrl || window.location.origin + '/').href;
-
-      const choice = await confirmPrompt({
-        message: `M8 JSON was written successfully.\nOpen ${fileName}?`,
-        confirmText: "Open",
-        cancelText: "Cancel",
-        tone: "primary",
-        download: { url: publicUrl, fileName, text: "Download" }
-      });
-
-      if (choice === true || choice === 'ok') {
-        const w = window.open(publicUrl, '_blank', 'noopener');
-        if (!w) {
-          notifyInfo('Popup blocked. Please allow pop-ups to open m8.json.');
-        }
-      } else if (choice === 'download') {
-        notifySuccess('Download started.');
-      } else {
-        notifySuccess('M8 JSON successfully published.');
-      }
-    } else {
-      notifyInfo('Sessions were committed, but no M8 content was returned.');
-    }
-  } catch (err) {
-    notifyError(`Error publishing selection: ${err.message}`);
+function openM8() {
+  const publicUrl = new URL('m8/m8.json', operatingUrl || window.location.origin + '/').href;
+  const w = window.open(publicUrl, '_blank', 'noopener');
+  if (!w) {
+    notifyInfo('Popup blocked. Please allow pop-ups to open m8.json.');
   }
 }
 
