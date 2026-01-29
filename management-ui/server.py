@@ -9,6 +9,7 @@ https://drive.google.com/file/d/1cinCiA778IErENZ3JN52VFW-1ffHpx7Z/view
 
 import os
 import json
+from pathlib import Path
 import requests
 import asyncio
 import httpx
@@ -47,7 +48,21 @@ _media_configuration = None
 _media_session = None
 media_create_lock = asyncio.Lock()
 
-app.mount("/m8", StaticFiles(directory="/usr/share/nginx/html/m8"), name="m8")
+BASE_DIR = Path(__file__).resolve().parent
+
+_default_m8_dir = "/usr/share/nginx/html/m8" if os.getuid() == 0 else os.path.expanduser(os.path.join("~", ".rt-5gms", "m8"))
+m8_dir = os.getenv("M8_DIR", _default_m8_dir)
+try:
+    os.makedirs(m8_dir, mode=0o755, exist_ok=True)
+except Exception as e:
+    traceback.print_exception(e)
+
+@app.get("/m8/m8.json")
+def get_m8_json():
+    m8_json_path = os.path.join(m8_dir, "m8.json")
+    if not os.path.exists(m8_json_path):
+        raise HTTPException(status_code=404, detail=f"m8.json not found yet at {m8_json_path}")
+    return FileResponse(m8_json_path, media_type="application/json", headers={"Cache-Control": "no-store"})
 
 app.add_middleware(
     CORSMiddleware,
