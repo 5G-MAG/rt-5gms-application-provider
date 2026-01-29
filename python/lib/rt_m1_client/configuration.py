@@ -185,8 +185,8 @@ class Configuration:
             finally:
                 os.umask(old_umask)
         with open(self.__config_filepath[section], 'w') as cfgout:
+            cfgout.write(f'[{section}]\n')
             for sect in ['DEFAULT'] + self.__config[section].sections():
-                cfgout.write(f'[{section}]\n')
                 for key in self.__config[section][sect]:
                     cfgvalue = self.__config[section].get(sect, key, raw=True)
                     defvalue = self.__default_config[section].get(sect, key, raw=True)
@@ -194,7 +194,7 @@ class Configuration:
                         if cfgvalue == defvalue:
                             cfgout.write('#')
                         cfgout.write(f'{key} = {cfgvalue}\n')
-                cfgout.write('\n')
+            cfgout.write('\n')
 
     def __str__(self):
         '''String representation of the configuration
