@@ -90,7 +90,8 @@ class Configuration:
         '''
         if section is None:
             section = self.__default_section
-        if key in self.__default_config[section]:
+        cfg = self.__default_config[section]
+        if cfg.has_option(section, key) or cfg.has_option('DEFAULT', key):
             return key
         raise ValueError('Not a valid configuration option')
 
