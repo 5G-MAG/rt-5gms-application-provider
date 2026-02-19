@@ -35,6 +35,7 @@ from rt_m1_client.data_store import JSONFileDataStore
 from rt_m1_client.exceptions import M1Error
 from rt_m1_client import app_configuration
 
+from rt_media_configuration.media_configuration import DEFAULT_CONFIG as MEDIA_DEFAULT_CONFIG
 from rt_media_configuration import MediaConfiguration, MediaEntry, MediaDistribution, MediaEntryPoint, MediaAppDistribution, MediaMetricsReportingConfiguration, MediaServerCertificate, MediaGeoFencing, MediaConsumptionReportingConfiguration, MediaDynamicPolicy, MediaSession
 
 config = Configuration()
@@ -48,14 +49,13 @@ _media_configuration = None
 _media_session = None
 media_create_lock = asyncio.Lock()
 
-BASE_DIR = Path(__file__).resolve().parent
+def _resolve_m8_dir() -> str:
+    media_cfg_path = "/etc/rt-5gms/media.conf" if os.getuid() == 0 else os.path.expanduser("~/.rt-5gms/media.conf")
+    config.addSection("media-configuration", MEDIA_DEFAULT_CONFIG, media_cfg_path)
+    return os.path.expanduser(config.get("root_dir", section="media-configuration"))
 
-_default_m8_dir = "/usr/share/nginx/html/m8" if os.getuid() == 0 else os.path.expanduser(os.path.join("~", ".rt-5gms", "m8"))
-m8_dir = os.getenv("M8_DIR", _default_m8_dir)
-try:
-    os.makedirs(m8_dir, mode=0o755, exist_ok=True)
-except Exception as e:
-    traceback.print_exception(e)
+m8_dir = _resolve_m8_dir()
+os.makedirs(m8_dir, mode=0o755, exist_ok=True)
 
 @app.get("/m8/m8.json")
 def get_m8_json():

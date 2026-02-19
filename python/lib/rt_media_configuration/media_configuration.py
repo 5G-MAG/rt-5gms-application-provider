@@ -56,7 +56,9 @@ from .importers import M1SessionImporter
 #: :private:
 DEFAULT_CONFIG = '''[media-configuration]
 m5_authority = example.com:7777
-m8outputs = FiveGMagJsonFormatter(root_dir=/usr/share/nginx/html/m8)
+format = FiveGMagJsonFormatter
+root_dir = /usr/share/nginx/html/m8
+m8outputs = %(format)s(root_dir=%(root_dir)s)
 '''
 
 class MediaConfiguration:
