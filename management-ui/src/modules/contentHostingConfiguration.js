@@ -132,7 +132,7 @@ function getContentHostingConfigurationModalHtml(sessionId) {
                     border-top:1px solid #e5e7eb; padding:12px 16px;
                     display:flex; justify-content:space-between; align-items:center; gap:10px; width:100%; box-sizing:border-box;">
           <div style="display:flex; align-items:center; gap:8px; margin-right:auto;">
-            <button type="button" class="btn btn-secondary" id="chc-upload-btn-${sessionId}">Prefill form JSON file</button>
+            <button type="button" class="btn btn-secondary" id="chc-upload-btn-${sessionId}">Prefill from JSON file</button>
             <input type="file" id="chc-upload-input-${sessionId}" accept="application/json" style="display:none" />
           </div>
           <div style="display:flex; gap:10px; margin-left:auto;">
