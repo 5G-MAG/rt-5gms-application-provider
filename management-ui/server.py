@@ -35,7 +35,6 @@ from rt_m1_client.data_store import JSONFileDataStore
 from rt_m1_client.exceptions import M1Error
 from rt_m1_client import app_configuration
 
-from rt_media_configuration.media_configuration import DEFAULT_CONFIG as MEDIA_DEFAULT_CONFIG
 from rt_media_configuration import MediaConfiguration, MediaEntry, MediaDistribution, MediaEntryPoint, MediaAppDistribution, MediaMetricsReportingConfiguration, MediaServerCertificate, MediaGeoFencing, MediaConsumptionReportingConfiguration, MediaDynamicPolicy, MediaSession
 
 config = Configuration()
@@ -48,21 +47,6 @@ _m1_session = None
 _media_configuration = None
 _media_session = None
 media_create_lock = asyncio.Lock()
-
-def _resolve_m8_dir() -> str:
-    media_cfg_path = "/etc/rt-5gms/media.conf" if os.getuid() == 0 else os.path.expanduser("~/.rt-5gms/media.conf")
-    config.addSection("media-configuration", MEDIA_DEFAULT_CONFIG, media_cfg_path)
-    return os.path.expanduser(config.get("root_dir", section="media-configuration"))
-
-m8_dir = _resolve_m8_dir()
-os.makedirs(m8_dir, mode=0o755, exist_ok=True)
-
-@app.get("/m8/m8.json")
-def get_m8_json():
-    m8_json_path = os.path.join(m8_dir, "m8.json")
-    if not os.path.exists(m8_json_path):
-        raise HTTPException(status_code=404, detail=f"m8.json not found yet at {m8_json_path}")
-    return FileResponse(m8_json_path, media_type="application/json", headers={"Cache-Control": "no-store"})
 
 app.add_middleware(
     CORSMiddleware,

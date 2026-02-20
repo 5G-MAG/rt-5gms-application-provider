@@ -234,7 +234,7 @@ async function deleteSelectedSessions() {
 
 
 function openM8() {
-  const publicUrl = new URL('m8/m8.json', operatingUrl || window.location.origin + '/').href;
+  const publicUrl = `${window.location.protocol}//${window.location.hostname}/m8.json`;
   const w = window.open(publicUrl, '_blank', 'noopener');
   if (!w) {
     notifyInfo('Popup blocked. Please allow pop-ups to open m8.json.');
