@@ -56,7 +56,9 @@ from .importers import M1SessionImporter
 #: :private:
 DEFAULT_CONFIG = '''[media-configuration]
 m5_authority = example.com:7777
-m8outputs = FiveGMagJsonFormatter(root_dir=/usr/share/nginx/html/m8)
+format = FiveGMagJsonFormatter
+root_dir = /usr/share/nginx/html
+m8outputs = %(format)s(root_dir=%(root_dir)s)
 '''
 
 class MediaConfiguration:
@@ -298,16 +300,18 @@ configuration with the 5GMS AF.
                     ret += [await MediaEntryDeltaOperation(session, add=o_session.media_entry)]
 
             if session.dynamic_policies is None and o_session.dynamic_policies is not None:
-                ret += [await MediaDynamicPolicyDeltaOperation(session, add=dp) for dp in o_session.dynamic_policies]
+                ret += [await MediaDynamicPolicyDeltaOperation(session, add=dp) for dp in o_session.dynamic_policies.values()]
             elif session.dynamic_policies is not None and o_session.dynamic_policies is None:
                 ret += [await MediaDynamicPolicyDeltaOperation(session, remove=dp) for dp in session.dynamic_policies]
             elif session.dynamic_policies is not None and o_session.dynamic_policies is not None:
                 # make deltas for individual dynamic policies
                 for dp_id,dp in o_session.dynamic_policies.items():
                     if dp_id not in session.dynamic_policies:
-                        ret += [await MediaDynamicPolicyDeltaOperation(session, add=(dp_id,dp))]
-                    elif dp != session.dynamic_policies[dp_id]:
-                        ret += [await MediaDynamicPolicyDeltaOperation(session, modify(dp_id,dp))]
+                        ret += [await MediaDynamicPolicyDeltaOperation(session, add=(dp))]
+                    else:
+                        current_dp = session.dynamic_policies[dp_id]
+                        if dp != current_dp or dp.id != current_dp.id:
+                            ret += [await MediaDynamicPolicyDeltaOperation(session, update=(dp_id,dp))]
                 for dp_id in session.dynamic_policies.keys():
                     if dp_id not in o_session.dynamic_policies:
                         ret += [await MediaDynamicPolicyDeltaOperation(session, remove=dp_id)]

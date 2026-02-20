@@ -22,6 +22,7 @@ export async function createNewCertificate(sessionId) {
                 icon: 'success',
                 confirmButtonText: 'OK'
             });
+            document.dispatchEvent(new Event('sessions:reload'));
   
           } else {
             Swal.fire({

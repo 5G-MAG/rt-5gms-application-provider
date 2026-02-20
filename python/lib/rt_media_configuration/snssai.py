@@ -108,6 +108,9 @@ This class models a 3GPP SNSSAI configuration specifier
 
     def jsonObject(self) -> dict:
         obj = {"sst": self.__sst}
+        if self.__sd is not None:
+            obj["sd"] = self.__sd
+        return obj
 
     @property
     def sst(self):

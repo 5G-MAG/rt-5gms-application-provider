@@ -61,11 +61,21 @@ This class models the QoS parameters, charging rules and application rules for d
         return self
 
     def __eq__(self, other: "MediaDynamicPolicy") -> bool:
-        if self.__session_context != other.__session_context:
+        if not isinstance(other, MediaDynamicPolicy):
             return False
-        if self.__qos_parameters != other.__qos_parameters:
+        if (self.__session_context is None) != (other.__session_context is None):
             return False
-        return self.__charging == other.__charging
+        if self.__session_context is not None and self.__session_context != other.__session_context:
+            return False
+        if (self.__qos_parameters is None) != (other.__qos_parameters is None):
+            return False
+        if self.__qos_parameters is not None and self.__qos_parameters != other.__qos_parameters:
+            return False
+        if (self.__charging is None) != (other.__charging is None):
+            return False
+        if self.__charging is not None and self.__charging != other.__charging:
+            return False
+        return True
 
     def __ne__(self, other: "MediaDynamicPolicy") -> bool:
         return not (self == other)
@@ -132,15 +142,33 @@ This class models the QoS parameters, charging rules and application rules for d
         return MediaDynamicPolicy(**kwargs)
 
     def jsonObject(self) -> dict:
-        obj = {}
-        if self.__session_context is not None:
-            obj['applicationSessionContext'] = self.__session_context
-        if self.__qos_parameters is not None:
-            obj['qoSSpecification'] = self.__qos_parameters
-        if self.__charging is not None:
-            obj['chargingSpecification'] = self.__charging
+        obj = {'externalReference': self.__id}
         if self.__policy_template_id is not None:
             obj['policyTemplateId'] = self.__policy_template_id
+        if self.__session_context is not None:
+            obj['applicationSessionContext'] = self.__session_context.jsonObject()
+        if self.__qos_parameters is not None:
+            qos = {}
+            if self.__qos_parameters.reference is not None:
+                qos['qosReference'] = self.__qos_parameters.reference
+            if self.__qos_parameters.max_auth_bitrate_uplink is not None:
+                qos['maxAuthBtrUl'] = str(self.__qos_parameters.max_auth_bitrate_uplink)
+            if self.__qos_parameters.max_auth_bitrate_downlink is not None:
+                qos['maxAuthBtrDl'] = str(self.__qos_parameters.max_auth_bitrate_downlink)
+            if self.__qos_parameters.default_packet_loss_rate_uplink is not None:
+                qos['defPacketLossRateUl'] = self.__qos_parameters.default_packet_loss_rate_uplink
+            if self.__qos_parameters.default_packet_loss_rate_downlink is not None:
+                qos['defPacketLossRateDl'] = self.__qos_parameters.default_packet_loss_rate_downlink
+            obj['qoSSpecification'] = qos
+        if self.__charging is not None:
+            cs = {}
+            if self.__charging.sponsor_id is not None:
+                cs['sponId'] = self.__charging.sponsor_id
+            if self.__charging.enabled is not None:
+                cs['sponStatus'] = 'SPONSOR_ENABLED' if self.__charging.enabled else 'SPONSOR_DISABLED'
+            if self.__charging.gpsis is not None:
+                cs['gpsi'] = [str(gpsi) for gpsi in self.__charging.gpsis]
+            obj['chargingSpecification'] = cs
         return obj
 
     @property
@@ -197,3 +225,35 @@ This class models the QoS parameters, charging rules and application rules for d
             if not isinstance(value, MediaChargingSpecification):
                 raise TypeError('MediaDynamicPolicy.charging can be either None or a MediaChargingSpecification object')
         self.__charging = value
+
+    @classmethod
+    async def from3GPPObject(cls, pt: dict) -> "MediaDynamicPolicy":
+        kwargs = {}
+        if 'externalReference' in pt:
+            kwargs['local_id'] = pt['externalReference']
+        if 'policyTemplateId' in pt:
+            kwargs['policy_template_id'] = pt['policyTemplateId']
+
+        if 'applicationSessionContext' in pt:
+            kwargs['session_context'] = MediaDynamicPolicySessionContext.fromJSONObject(pt['applicationSessionContext'])
+
+        if 'qoSSpecification' in pt:
+            qos_dict = pt['qoSSpecification'].copy()
+            bitrate_fields = ['maxAuthBtrUl', 'maxAuthBtrDl', 'maxBtrUl', 'maxBtrDl']
+            for field in bitrate_fields:
+                if field in qos_dict:
+                    qos_dict[field] = str(qos_dict[field])
+            kwargs['qos_parameters'] = MediaQoSParameters.fromJSONObject(qos_dict)
+
+        if 'chargingSpecification' in pt:
+            m1_charge = pt['chargingSpecification']
+            internal_charge = {}            
+            if 'sponId' in m1_charge:
+                internal_charge['sponId'] = m1_charge['sponId']
+            if 'sponStatus' in m1_charge:
+                status_str = str(m1_charge['sponStatus'])
+                internal_charge['sponsorEnabled'] = (status_str == 'SPONSOR_ENABLED')
+            if 'gpsi' in m1_charge:
+                internal_charge['gpsi'] = m1_charge['gpsi']
+            kwargs['charging'] = MediaChargingSpecification.fromJSONObject(internal_charge)
+        return cls(**kwargs)

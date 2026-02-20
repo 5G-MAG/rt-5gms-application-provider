@@ -1,6 +1,6 @@
 <!-- 
 License: 5G-MAG Public License (v1.0)
-Author: Vuk Stojkovic
+Author: Vuk Stojkovic, Erik Gaida
 Copyright: (C) Fraunhofer FOKUS
 For full license terms please see the LICENSE file distributed with this
 program. If this file is missing then the license can be retrieved from
@@ -9,102 +9,110 @@ https://drive.google.com/file/d/1cinCiA778IErENZ3JN52VFW-1ffHpx7Z/view
 
 <!DOCTYPE html>
 <html>
-  <head>
-    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/css/bootstrap.min.css">
-    <link rel="stylesheet" href="src/style.css">
-    <link href="https://cdn.jsdelivr.net/npm/sweetalert2@11.7.22/dist/sweetalert2.min.css" rel="stylesheet">
-    <link rel="shortcut icon" type="image/png" href="src/static/images/favico.png"/>
-    <title>5GMS Application Provider</title>
-    <script type="module" src="src/provisioning-interface.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11.7.22/dist/sweetalert2.all.min.js"></script>
-  </head>
-  
-  <body>
 
-  <h2 align="center" style="color:white;">5GMS Application Provider</h2>
-  <div class="header">
-    <img src="src/static/images/5gmag.png" alt="5GMAG Logo" class="logo">
-    <br>
-    <h4 id="AFStatus" align="center" style="color:black;">Connection with Application Function...</h4>
+<head>
+  <meta charset="UTF-8">
+  <title>5GMS Application Provider</title>
+  <link rel="shortcut icon" type="image/png" href="src/static/images/favico.png" />
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/css/bootstrap.min.css">
+  <link rel="stylesheet" href="src/style.css">
+  <link href="https://cdn.jsdelivr.net/npm/sweetalert2@11.7.22/dist/sweetalert2.min.css" rel="stylesheet">
+  <script type="module" src="src/provisioning-interface.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11.7.22/dist/sweetalert2.all.min.js"></script>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/choices.js/public/assets/styles/choices.min.css" />
+  <script src="https://cdn.jsdelivr.net/npm/choices.js/public/assets/scripts/choices.min.js"></script>
+</head>
+
+
+<body>
+
+<header class="app-header">
+  <div class="header-left">
+    <img src="src/static/images/5gmag.png" alt="5G-MAG" class="header-logo">
   </div>
 
-  <div align="center" class="container">
-    <div class="create-session">
-        <br>
-        <button onclick="createNewSession()" class="create-session-button">Create 5G Media Streamin Session</button><br>
-    </div>
-</div>
-
-<table id="m1_table">
-    <thead>
-      <tr>
-        <th>Provisioning Session ID</th>
-        <th>Content Hosting Configuration</th>
-        <th>Server Certificates</th>
-        <th>Content Protocols</th>
-        <th>Consumption Reporting</th>
-        <th>Dynamic Policy</th>
-        <th>Metrics Reporting</th>
-        <th>Session Details</th>
-        <th>Remove Provisioning Session</th>
-      </tr>
-    </thead>
-    <tbody>
-    </tbody>
-  </table>
-  </div>
-
-  <br><br>
-  <div align="center" class="container">
-    <div class="create-session">
-        <br>
-        <button onclick="generateM8()" class="create-session-button">Publish M8 json</button>
-    </div>
-  </div>
-
-  <button id="infoBtn">i</button>
-  <div id="infoModal" class="modal">
-    <div class="modal-content">
-      <span class="close">&times;</span>
-      <p>Licence and authorization are aligned with Fraunhofer Fokus, 5GMAG's and British Broadcast Company's (BBC) norms & regulations.
-        For the full license terms, please see the LICENSE file distributed along with 5GMS Reference Tools or retrieve it <a href="https://drive.google.com/file/d/1cinCiA778IErENZ3JN52VFW-1ffHpx7Z/view">here</a>.
-      </p>
-      <div class="icon-container">
-        <img src="src/static/images/fokus.png" alt="FOKUS">
-        <img src="src/static/images/bbc.png" alt="BBC">
+  <div class="header-center text-center">
+    <h2>5GMS Application Provider</h2>
+    <div class="status-row">
+      <div id="af-status" class="af-badge af-ok" aria-live="polite">
+        <span class="af-dot"></span>
+        Application Function connected
       </div>
     </div>
   </div>
 
-  <script>
-    var modal = document.getElementById('infoModal');
-    var btn = document.getElementById('infoBtn');
-    var span = document.getElementsByClassName("close")[0];
+</header>
 
-    // open
-    btn.onclick = function() {
+  <main class="container text-center">
+    <div class="button-group my-3">
+      <button onclick="createNewSession()" class="btn btn-primary">Create 5G Media Streaming Session</button>
+      <button onclick="openDetailsForSelected()" class="btn btn-primary">Details For Selected Sessions</button>
+      <button onclick="deleteSelectedSessions()" class="btn btn-danger">Delete Selected</button>
+      <button onclick="openM8()" class="btn btn-warning">Open M8 JSON</button>
+    </div>
+
+    <div class="table-responsive table-scroll">
+      <table id="m1_table" class="table table-bordered">
+        <thead>
+          <tr>
+            <th>Provisioning Session ID</th>
+            <th>Content Hosting Configuration</th>
+            <th>Server Certificates</th>
+            <th>Content Protocols</th>
+            <th>Consumption Reporting Configuration</th>
+            <th>Policy Templates</th>
+            <th>Metrics Reporting</th>
+            <th>Session Details</th>
+            
+            <th>
+              <button id="toggle-select-btn"
+                      class="btn btn-primary fixed-toggle-btn"
+                      onclick="toggleSelectAll()">
+                Select all sessions
+              </button>
+            </th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </main>
+
+  <div class="text-center my-4">
+    <button id="infoBtn" class="btn btn-info">i</button>
+  </div>
+
+  <div id="infoModal" class="modal">
+    <div class="modal-content">
+      <span class="close">&times;</span>
+      <p> For full license terms, see the LICENSE file or <a
+          href="https://drive.google.com/file/d/1cinCiA778IErENZ3JN52VFW-1ffHpx7Z/view" target="_blank">click here</a>.
+      </p>
+    </div>
+  </div>
+
+  <script>
+    const modal = document.getElementById('infoModal');
+    const btn = document.getElementById('infoBtn');
+    const span = document.getElementsByClassName("close")[0];
+
+    btn.onclick = () => {
       modal.style.display = "block";
       modal.classList.remove("modal-hiding");
-    }
+    };
 
-    // close
-    span.onclick = function() {
-      modal.classList.add('modal-hiding');
-      setTimeout(function() {
-        modal.style.display = "none";
-      }, 400);
-    }
+    span.onclick = () => {
+      modal.classList.add("modal-hiding");
+      setTimeout(() => modal.style.display = "none", 400);
+    };
 
-    // closing modal when clicking outside of it
-    window.onclick = function(event) {
+    window.onclick = (event) => {
       if (event.target === modal) {
-        modal.classList.add('modal-hiding');
-        setTimeout(function() {
-          modal.style.display = "none";
-        }, 400);
+        modal.classList.add("modal-hiding");
+        setTimeout(() => modal.style.display = "none", 400);
       }
-    }
+    };
   </script>
 
-  </body>
+</body>
 </html>

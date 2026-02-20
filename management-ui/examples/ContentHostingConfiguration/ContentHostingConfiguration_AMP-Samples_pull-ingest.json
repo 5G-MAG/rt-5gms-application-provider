@@ -6,6 +6,12 @@
 		"baseURL": "http://amssamples.streaming.mediaservices.windows.net/"
 	},
 	"distributionConfigurations": [
-		{}
+		{
+			"entryPoint": {
+				"relativePath": "manifest(format=mpd-time-csf)",
+				"contentType": "application/dash+xml",
+				"profiles": ["urn:mpeg:dash:profile:isoff-live:2011"]
+			}
+		}
 	]
 }

@@ -124,7 +124,7 @@ MediaConfiguration model.
                     for policy_id in ps['policyTemplateIds']:
                         pt = await self.__session.policyTemplateGet(psid, policy_id)
                         dynamic_policy = await MediaDynamicPolicy.from3GPPObject(pt)
-                        session.addDynamicPolicy(dynamic_policy)
+                        session.addDynamicPolicy(dynamic_policy.policy_template_id, dynamic_policy)
                 # TODO: contentPreparationTemplateIds, edgeResourcesConfigurationIds & eventDataProcessingConfigurationIds
         
         return True

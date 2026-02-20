@@ -588,6 +588,11 @@ class M1Session:
                 if pol_resp['PolicyTemplate'] is None:
                     pol_resp['PolicyTemplate'] = ps['policyTemplates'][pol_id]['policytemplate']
                 ps['policyTemplates'][pol_id] = {k.lower(): v for k,v in pol_resp.items()}
+            if 'provisioningsession' in ps and ps['provisioningsession'] is not None:
+                if 'policyTemplateIds' not in ps['provisioningsession']:
+                    ps['provisioningsession']['policyTemplateIds'] = []
+                if pol_id not in ps['provisioningsession']['policyTemplateIds']:
+                    ps['provisioningsession']['policyTemplateIds'].append(pol_id)
         return pol_id
 
     async def policyTemplateGet(self, provisioning_session_id: ResourceId, policy_template_id: ResourceId) -> Optional[PolicyTemplate]:
@@ -600,7 +605,10 @@ class M1Session:
         ps = self.__provisioning_sessions[provisioning_session_id]        
         if ps is None or 'policyTemplates' not in ps or ps['policyTemplates'] is None or policy_template_id not in ps['policyTemplates']:
             return None
-        return PolicyTemplate(ps['policyTemplates'][policy_template_id]['policytemplate'])
+        pol = ps['policyTemplates'][policy_template_id]
+        if pol is None or pol.get('policytemplate') is None:
+            return None
+        return PolicyTemplate(pol['policytemplate'])
 
     async def policyTemplateUpdate(self, provisioning_session_id: ResourceId, policy_template_id: ResourceId, policy_template: PolicyTemplate) -> Optional[bool]:
         '''Update a policy template
@@ -612,9 +620,12 @@ class M1Session:
         result: Optional[bool] = await self.__m1_client.updatePolicyTemplate(provisioning_session_id, policy_template_id, policy_template)
         # Clear cache if update successful
         if result is not None and result:
-            ps = await self.__getProvisioningSessionCache(provisioning_session)
-            if ps is not None and 'policyTemplates' in ps and ps['policyTemplates'] is not None and policy_template_id in ps['policyTemplates']:
-                del ps['policyTemplates'][policy_template_id]
+            ps = await self.__getProvisioningSessionCache(provisioning_session_id)
+            if ps is not None:
+                if ps.get('policyTemplates') is None:
+                    ps['policyTemplates'] = {policy_template_id: None}
+                elif policy_template_id in ps['policyTemplates']:
+                    ps['policyTemplates'][policy_template_id] = None
         return result
 
     async def policyTemplateDelete(self, provisioning_session_id: ResourceId, policy_template_id: ResourceId) -> bool:
@@ -626,9 +637,14 @@ class M1Session:
         await self.__connect()
         result: bool = await self.__m1_client.destroyPolicyTemplate(provisioning_session_id, policy_template_id)
         if result:
-            ps = await self.__getProvisioningSessionCache(provisioning_session)
+            ps = await self.__getProvisioningSessionCache(provisioning_session_id)
             if ps is not None and 'policyTemplates' in ps and ps['policyTemplates'] is not None and policy_template_id in ps['policyTemplates']:
                 del ps['policyTemplates'][policy_template_id]
+            if ps is not None and 'provisioningsession' in ps and ps['provisioningsession'] is not None:
+                if 'policyTemplateIds' in ps['provisioningsession']:
+                    id_list = ps['provisioningsession']['policyTemplateIds']
+                    if id_list is not None and policy_template_id in id_list:
+                        id_list.remove(policy_template_id)
         return result
     
     # Metrics Reporting Configuration methods

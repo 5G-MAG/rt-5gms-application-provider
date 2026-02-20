@@ -56,11 +56,15 @@ Tis class models a MediaDynamicPolicy application session context filter.
         return self
 
     def __eq__(self, other: "MediaDynamicPolicySessionContext") -> bool:
-        if self.snssai != other.snssai:
+        if not isinstance(other, MediaDynamicPolicySessionContext):
+            return False
+        if (self.snssai is None) != (other.snssai is None):
+            return False
+        if self.snssai is not None and self.snssai != other.snssai:
             return False
         return (self.dnn == other.dnn)
 
-    def __ne__(self, other: "MediaEntry") -> bool:
+    def __ne__(self, other: "MediaDynamicPolicySessionContext") -> bool:
         return not (self == other)
 
     def __repr__(self) -> str:
@@ -109,7 +113,7 @@ Tis class models a MediaDynamicPolicy application session context filter.
     def jsonObject(self) -> dict:
         obj = {}
         if self.snssai is not None:
-            obj['sliceInfo'] = self.snssai
+            obj['sliceInfo'] = self.snssai.jsonObject()
         if self.dnn is not None:
             obj['dnn'] = self.dnn
         return obj

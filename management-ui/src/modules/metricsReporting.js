@@ -74,6 +74,7 @@ export async function createMetricsJson(sessionId) {
         } else {
             const result = await response.json();
             Swal.fire(`Metrics Reporting Configuration successfully created`, `ID: ${result.metrics_reporting_configuration_id}`, 'success');
+            document.dispatchEvent(new Event('sessions:reload'));
         }
     } catch (error) {
         console.error('Error:', error);
@@ -170,6 +171,7 @@ export async function createMetricsJson(sessionId) {
             ).then(() => {
               Swal.close();
             });
+            document.dispatchEvent(new Event('sessions:reload'));
         } else {
             throw new Error('Failed to delete the metrics configuration');
         }
