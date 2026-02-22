@@ -345,8 +345,9 @@ configuration with the 5GMS AF.
                         else:
                             metric_to_del += [metric]
                     ret += [await MediaMetricsReportingDeltaOperation(session, add=metric) for metric in metric_to_add]
-                    ret += [await MediaMetricsReportingDeltaOperation(session, remove=metric) for metric in metric_to_del]
-                elif o_session.reporting_configurations is not None and o_session.reporting_configurations.metrics is not None:                         ret += [await MediaMetricsReportingDeltaOperation(session, add=metric) for metric in o_session.reporting_configurations.metrics]
+                    ret += [await MediaMetricsReportingDeltaOperation(session, remove=metric.metrics_reporting_configuration_id) for metric in metric_to_del]
+                elif o_session.reporting_configurations is not None and o_session.reporting_configurations.metrics is not None:
+                    ret += [await MediaMetricsReportingDeltaOperation(session, add=metric) for metric in o_session.reporting_configurations.metrics]
         return ret
 
     async def updateM8Files(self):
