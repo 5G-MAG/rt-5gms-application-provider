@@ -85,7 +85,12 @@ class MediaMetricsReportingDeltaOperation(DeltaOperation):
             if not await m1_session.metricsReportingConfigurationDelete(self.session.identity(), self.__mmrc_id):
                 return False
             if update_container:
-                self.session.removeMetricsReportingConfiguration(self.__mmrc_id)
+                rc = self.session.reporting_configurations
+                if rc is not None and rc.metrics is not None:
+                    for metric in rc.metrics:
+                        if metric.metrics_reporting_configuration_id == self.__mmrc_id:
+                            self.session.removeMetricsReportingConfiguration(metric)
+                            break
         return True
 
     @staticmethod

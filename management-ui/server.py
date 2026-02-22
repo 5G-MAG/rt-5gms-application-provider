@@ -849,7 +849,21 @@ async def delete_metrics(provisioning_session_id: str, metrics_reporting_configu
         media_session = await media_configuration.mediaSessionByProvisioningSessionId(provisioning_session_id)
         if media_session is None:
             raise HTTPException(status_code=404, detail="Provisioning session not found")
-        metrics_removed = media_session.removeMetricsReportingConfiguration(metrics_reporting_configuration_id)
+
+        reporting_configurations = media_session.reporting_configurations
+        if reporting_configurations is None or reporting_configurations.metrics is None:
+            raise HTTPException(status_code=404, detail="MetricsReportingConfiguration not found")
+
+        metric_to_delete = None
+        for metric in reporting_configurations.metrics:
+            if metric.metrics_reporting_configuration_id == metrics_reporting_configuration_id:
+                metric_to_delete = metric
+                break
+
+        if metric_to_delete is None:
+            raise HTTPException(status_code=404, detail="MetricsReportingConfiguration not found")
+
+        metrics_removed = media_session.removeMetricsReportingConfiguration(metric_to_delete)
         if not metrics_removed:
             raise HTTPException(status_code=404, detail="MetricsReportingConfiguration not found or could not be deleted")
         await media_configuration.synchronise()
@@ -857,6 +871,7 @@ async def delete_metrics(provisioning_session_id: str, metrics_reporting_configu
     except HTTPException as e:
         raise e
     except Exception as e:
+        traceback.print_exception(e)
         raise HTTPException(
             status_code=500,
             detail=f"An error occurred while deleting metrics reporting configuration: {str(e)}"
