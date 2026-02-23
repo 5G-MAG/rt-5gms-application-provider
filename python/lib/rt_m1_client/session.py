@@ -693,6 +693,11 @@ class M1Session:
                 if mrc_resp['MetricsReportingConfiguration'] is None:
                     mrc_resp['MetricsReportingConfiguration'] = ps['metricsReportingConfigurations'][mrc_id]['metricsreportingconfiguration']
                 ps['metricsReportingConfigurations'][mrc_id] = {k.lower(): v for k,v in mrc_resp.items()}
+            if 'provisioningsession' in ps and ps['provisioningsession'] is not None:
+                if 'metricsReportingConfigurationIds' not in ps['provisioningsession']:
+                    ps['provisioningsession']['metricsReportingConfigurationIds'] = []
+                if mrc_id not in ps['provisioningsession']['metricsReportingConfigurationIds']:
+                    ps['provisioningsession']['metricsReportingConfigurationIds'].append(mrc_id)
         return mrc_id
 
          
@@ -737,6 +742,11 @@ class M1Session:
             ps = await self.__getProvisioningSessionCache(provisioning_session_id)
             if ps is not None and 'metricsReportingConfigurations' in ps and ps['metricsReportingConfigurations'] is not None and metrics_reporting_configuration_id in ps['metricsReportingConfigurations']:
                 del ps['metricsReportingConfigurations'][metrics_reporting_configuration_id]
+            if ps is not None and 'provisioningsession' in ps and ps['provisioningsession'] is not None:
+                if 'metricsReportingConfigurationIds' in ps['provisioningsession']:
+                    id_list = ps['provisioningsession']['metricsReportingConfigurationIds']
+                    if id_list is not None and metrics_reporting_configuration_id in id_list:
+                        id_list.remove(metrics_reporting_configuration_id)
         return result
 
     # Convenience methods
