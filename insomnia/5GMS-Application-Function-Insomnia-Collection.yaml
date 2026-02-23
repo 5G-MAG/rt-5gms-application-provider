@@ -1,0 +1,904 @@
+type: collection.insomnia.rest/5.0
+schema_version: "5.1"
+name: 5GMS Application Function Collection
+meta:
+  id: wrk_7e6c61a1cdb545a19263be1789033ccb
+  created: 1771855690744
+  modified: 1771856206410
+  description: ""
+collection:
+  - name: M1 Interface
+    meta:
+      id: fld_1138901806e149abbd029a2d0eaa1aeb
+      created: 1771855690746
+      modified: 1771856137497
+      sortKey: -1771855871704
+      description: ""
+    children:
+      - name: Provisioning Session
+        meta:
+          id: fld_396b0b64ee424d35b1754cb96874d7ac
+          created: 1771855690747
+          modified: 1771855690747
+          sortKey: -1771855688243
+          description: ""
+        children:
+          - url: "{{_['m1_url']}}/3gpp-m1/v2/provisioning-sessions/{{_['provisioning_sessio\
+              n_id']}}"
+            name: GET Provisioning Session
+            meta:
+              id: req_5f64f5249e9e46a489c83f0a1be6b249
+              created: 1771855690747
+              modified: 1771855690747
+              isPrivate: false
+              description: ""
+              sortKey: -1771855688242
+            method: GET
+            settings:
+              renderRequestBody: true
+              encodeUrl: true
+              followRedirects: global
+              cookies:
+                send: true
+                store: true
+              rebuildPath: true
+          - url: "{{_['m1_url']}}/5gmag-rt-management/v1/provisioning-sessions"
+            name: Enumerate Provisioning Sessions
+            meta:
+              id: req_3af40b9eb1254fc298122c1e89cc75bd
+              created: 1771855690748
+              modified: 1771855690748
+              isPrivate: false
+              description: ""
+              sortKey: -1771855688241
+            method: GET
+            settings:
+              renderRequestBody: true
+              encodeUrl: true
+              followRedirects: global
+              cookies:
+                send: true
+                store: true
+              rebuildPath: true
+          - url: "{{_['m1_url']}}/3gpp-m1/v2/provisioning-sessions"
+            name: Create Provisioning Session
+            meta:
+              id: req_8047ab4913854ba2b0ced4d047765e0f
+              created: 1771855690749
+              modified: 1771855690749
+              isPrivate: false
+              description: ""
+              sortKey: -1771855688240
+            method: POST
+            body:
+              mimeType: application/json
+              text: |-
+                {
+                    "aspId": "aspId",
+                    "appId": "appId",
+                    "provisioningSessionType": "DOWNLINK"
+                }
+            headers:
+              - name: Content-Type
+                value: application/json
+            scripts:
+              afterResponse: >-
+                var insomnia.response.text() = insomnia.response.json();
+
+                var provisioningSessionId =
+                insomnia.response.text().provisioningSessionId;
+
+                insomnia.environment.set("provisioning_session_id",
+                provisioningSessionId);
+            settings:
+              renderRequestBody: true
+              encodeUrl: true
+              followRedirects: global
+              cookies:
+                send: true
+                store: true
+              rebuildPath: true
+          - url: "{{_['m1_url']}}/3gpp-m1/v2/provisioning-sessions/{{_['provisioning_sessio\
+              n_id']}}"
+            name: Delete a provisioning session
+            meta:
+              id: req_ab136c4e87394f49b8bece7f64ea6090
+              created: 1771855690749
+              modified: 1771855690749
+              isPrivate: false
+              description: ""
+              sortKey: -1771855688239
+            method: DELETE
+            settings:
+              renderRequestBody: true
+              encodeUrl: true
+              followRedirects: global
+              cookies:
+                send: true
+                store: true
+              rebuildPath: true
+      - name: Content Hosting
+        meta:
+          id: fld_9f1bcbeee9694bdc935777133d24d389
+          created: 1771855690749
+          modified: 1771855690749
+          sortKey: -1771855688238
+          description: ""
+        children:
+          - url: "{{_['m1_url']}}/3gpp-m1/v2/provisioning-sessions/{{_['provisioning_sessio\
+              n_id']}}/content-hosting-configuration"
+            name: Create Content Hosting Configuration
+            meta:
+              id: req_006cf357e221428880939ba8ec8e220a
+              created: 1771855690751
+              modified: 1771855690751
+              isPrivate: false
+              description: ""
+              sortKey: -1771855688236
+            method: POST
+            body:
+              mimeType: application/json
+              text: >-
+                {
+                    "name": "BBC R&D Demo Streams",
+                    "ingestConfiguration": {
+                        "pull": true,
+                        "protocol": "urn:3gpp:5gms:content-protocol:http-pull-ingest",
+                        "baseURL": "https://rdmedia.bbc.co.uk/"
+                    },
+                    "distributionConfigurations": [
+                        {
+                            "entryPoint": {
+                                "relativePath": "elephants_dream/1/client_manifest-all.mpd",
+                                "contentType": "application/dash+xml",
+                                "profiles": ["urn:mpeg:dash:profile:isoff-live:2011"]
+                			}
+                        }
+                    ]
+                }
+            headers:
+              - name: Content-Type
+                value: application/json
+            settings:
+              renderRequestBody: true
+              encodeUrl: true
+              followRedirects: global
+              cookies:
+                send: true
+                store: true
+              rebuildPath: true
+          - url: "{{_['m1_url']}}/3gpp-m1/v2/provisioning-sessions/{{_['provisioning_sessio\
+              n_id']}}/content-hosting-configuration"
+            name: Get Content Hosting Configuration
+            meta:
+              id: req_70e04a099833432ebb63704548a37fc7
+              created: 1771855690751
+              modified: 1771855690751
+              isPrivate: false
+              description: ""
+              sortKey: -1771855688237
+            method: GET
+            settings:
+              renderRequestBody: true
+              encodeUrl: true
+              followRedirects: global
+              cookies:
+                send: true
+                store: true
+              rebuildPath: true
+          - url: "{{_['m1_url']}}/3gpp-m1/v2/provisioning-sessions/{{_['provisioning_sessio\
+              n_id']}}/content-hosting-configuration/purge"
+            name: Purge Content Hosting Configuration
+            meta:
+              id: req_040a1030d4cc43e38a25dfc380fc94eb
+              created: 1771855690752
+              modified: 1771855690752
+              isPrivate: false
+              description: ""
+              sortKey: -1771855688235
+            method: POST
+            body:
+              mimeType: application/json
+              text: >-
+                {
+                    "name": "BBC R&D Demo Streams",
+                    "ingestConfiguration": {
+                        "pull": true,
+                        "protocol": "urn:3gpp:5gms:content-protocol:http-pull-ingest",
+                        "baseURL": "https://rdmedia.bbc.co.uk/"
+                    },
+                    "distributionConfigurations": [
+                        {
+                            "domainNameAlias": "192.168.178.56",
+                            "entryPoint": {
+                                "relativePath": "bbb/2/client_manifest-common_init.mpd",
+                                "contentType": "application/dash+xml",
+                                "profiles": ["urn:mpeg:dash:profile:isoff-live:2011"]
+                			}
+                        },
+                        {
+                            "domainNameAlias": "192.168.178.56",
+                            "entryPoint": {
+                                "relativePath": "elephants_dream/1/client_manifest-all.mpd",
+                                "contentType": "application/dash+xml",
+                                "profiles": ["urn:mpeg:dash:profile:isoff-live:2011"]
+                			}
+                        }
+                    ]
+                }
+            headers:
+              - name: Content-Type
+                value: application/json
+            settings:
+              renderRequestBody: true
+              encodeUrl: true
+              followRedirects: global
+              cookies:
+                send: true
+                store: true
+              rebuildPath: true
+          - url: "{{_['m1_url']}}/3gpp-m1/v2/provisioning-sessions/{{_['provisioning_sessio\
+              n_id']}}/content-hosting-configuration"
+            name: Delete Content Hosting Configuration
+            meta:
+              id: req_fd512c352e4441fe8587fe3db0d344eb
+              created: 1771855690752
+              modified: 1771855690752
+              isPrivate: false
+              description: ""
+              sortKey: -1771855688234
+            method: DELETE
+            settings:
+              renderRequestBody: true
+              encodeUrl: true
+              followRedirects: global
+              cookies:
+                send: true
+                store: true
+              rebuildPath: true
+      - name: Consumption Reporting
+        meta:
+          id: fld_b79f306c468448e2ba71c01565542a49
+          created: 1771855690753
+          modified: 1771855690753
+          sortKey: -1771855688233
+          description: ""
+        children:
+          - url: "{{_['m1_url']}}/3gpp-m1/v2/provisioning-sessions/{{_['provisioning_sessio\
+              n_id']}}/consumption-reporting-configuration"
+            name: Get Consumption Reporting Configuration
+            meta:
+              id: req_77df47b8bb1b4a3eb5a50070080cd903
+              created: 1771855690753
+              modified: 1771855690753
+              isPrivate: false
+              description: ""
+              sortKey: -1771855688232
+            method: GET
+            settings:
+              renderRequestBody: true
+              encodeUrl: true
+              followRedirects: global
+              cookies:
+                send: true
+                store: true
+              rebuildPath: true
+          - url: "{{_['m1_url']}}/3gpp-m1/v2/provisioning-sessions/{{_['provisioning_sessio\
+              n_id']}}/consumption-reporting-configuration"
+            name: Delete Consumption Reporting Configuration
+            meta:
+              id: req_7ae76a6f5b3c4d409165bc4be2197395
+              created: 1771855690753
+              modified: 1771855690753
+              isPrivate: false
+              description: ""
+              sortKey: -1771855688231
+            method: DELETE
+            settings:
+              renderRequestBody: true
+              encodeUrl: true
+              followRedirects: global
+              cookies:
+                send: true
+                store: true
+              rebuildPath: true
+          - url: "{{_['m1_url']}}/3gpp-m1/v2/provisioning-sessions/{{_['provisioning_sessio\
+              n_id']}}/consumption-reporting-configuration"
+            name: Update Consumption Reporting Configuration
+            meta:
+              id: req_02e01c2c5b864eacbe6d993728e621eb
+              created: 1771855690754
+              modified: 1771855690754
+              isPrivate: false
+              description: ""
+              sortKey: -1771855688230
+            method: PUT
+            body:
+              mimeType: application/json
+              text: |-
+                {
+                    "reportingInterval": 30,
+                    "samplePercentage": 50,
+                    "locationReporting": true,
+                    "accessReporting": true
+                }
+            headers:
+              - name: Content-Type
+                value: application/json
+            settings:
+              renderRequestBody: true
+              encodeUrl: true
+              followRedirects: global
+              cookies:
+                send: true
+                store: true
+              rebuildPath: true
+          - url: "{{_['m1_url']}}/3gpp-m1/v2/provisioning-sessions/{{_['provisioning_sessio\
+              n_id']}}/consumption-reporting-configuration"
+            name: Create Consumption Reporting Configuration
+            meta:
+              id: req_c0ba01ad0a3a433ea7ffd50b788144eb
+              created: 1771855690754
+              modified: 1771855690754
+              isPrivate: false
+              description: ""
+              sortKey: -1771855688229
+            method: POST
+            body:
+              mimeType: application/json
+              text: |-
+                {
+                    "reportingInterval": 10,
+                    "samplePercentage": 100,
+                    "locationReporting": true,
+                    "accessReporting": true
+                }
+            headers:
+              - name: Content-Type
+                value: application/json
+            settings:
+              renderRequestBody: true
+              encodeUrl: true
+              followRedirects: global
+              cookies:
+                send: true
+                store: true
+              rebuildPath: true
+          - url: "{{_['m1_url']}}/3gpp-m1/v2/provisioning-sessions/{{_['provisioning_sessio\
+              n_id']}}/consumption-reporting-configuration"
+            name: "Check: Create Consumption Reporting Configuration"
+            meta:
+              id: req_01669644d42a4e81a6fddc21f6526b18
+              created: 1771855690755
+              modified: 1771855690755
+              isPrivate: false
+              description: ""
+              sortKey: -1771855688228
+            method: OPTIONS
+            body:
+              mimeType: application/json
+              text: |-
+                {
+                    "reportingInterval": 10,
+                    "samplePercentage": 100,
+                    "locationReporting": true,
+                    "accessReporting": true
+                }
+            headers:
+              - name: Content-Type
+                value: application/json
+            settings:
+              renderRequestBody: true
+              encodeUrl: true
+              followRedirects: global
+              cookies:
+                send: true
+                store: true
+              rebuildPath: true
+      - name: Policy Templates
+        meta:
+          id: fld_0c7aab7795864d099a168c5e1d6a4585
+          created: 1771855690755
+          modified: 1771855690755
+          sortKey: -1771855688227
+          description: ""
+        children:
+          - url: "{{_['m1_url']}}/3gpp-m1/v2/provisioning-sessions/{{_['provisioning_sessio\
+              n_id']}}/policy-templates"
+            name: "Check: Create Policy Template Check"
+            meta:
+              id: req_019a595bcb484c008f1729818232fd9e
+              created: 1771855690756
+              modified: 1771855690756
+              isPrivate: false
+              description: ""
+              sortKey: -1771855688223
+            method: OPTIONS
+            body:
+              mimeType: application/json
+              text: |-
+                {
+                    "externalReference": "externalReference"
+                }
+            headers:
+              - name: Content-Type
+                value: application/json
+            scripts:
+              afterResponse: >-
+                var policyTemplateId =
+                insomnia.response.headers.get("Location").split("/").pop()
+
+                insomnia.environment.set("policy_template_id",
+                policyTemplateId);
+            settings:
+              renderRequestBody: true
+              encodeUrl: true
+              followRedirects: global
+              cookies:
+                send: true
+                store: true
+              rebuildPath: true
+          - url: "{{_['m1_url']}}/3gpp-m1/v2/provisioning-sessions/{{_['provisioning_sessio\
+              n_id']}}/policy-templates/{{_['policy_template_id']}}"
+            name: GET Policy Template
+            meta:
+              id: req_17780fdf3d654176939252372a527ed7
+              created: 1771855690756
+              modified: 1771855690756
+              isPrivate: false
+              description: ""
+              sortKey: -1771855688220
+            method: GET
+            settings:
+              renderRequestBody: true
+              encodeUrl: true
+              followRedirects: global
+              cookies:
+                send: true
+                store: true
+              rebuildPath: true
+          - url: "{{_['m1_url']}}/3gpp-m1/v2/provisioning-sessions/{{_['provisioning_sessio\
+              n_id']}}/policy-templates/{{_['policy_template_id']}}"
+            name: DELETE Policy Template
+            meta:
+              id: req_4345bea3b468482da2732e248eddfdc9
+              created: 1771855690756
+              modified: 1771855690756
+              isPrivate: false
+              description: ""
+              sortKey: -1771855688221
+            method: DELETE
+            settings:
+              renderRequestBody: true
+              encodeUrl: true
+              followRedirects: global
+              cookies:
+                send: true
+                store: true
+              rebuildPath: true
+          - url: "{{_['m1_url']}}/3gpp-m1/v2/provisioning-sessions/{{_['provisioning_sessio\
+              n_id']}}/policy-templates"
+            name: Create Policy Template
+            meta:
+              id: req_4a8466ec71914e82b0245c9404be8be4
+              created: 1771855690756
+              modified: 1771855690756
+              isPrivate: false
+              description: ""
+              sortKey: -1771855688224
+            method: POST
+            body:
+              mimeType: application/json
+              text: |-
+                {
+                    "externalReference": "externalReference"
+                }
+            headers:
+              - name: Content-Type
+                value: application/json
+            scripts:
+              afterResponse: >-
+                var policyTemplateId =
+                insomnia.response.headers.get("Location").split("/").pop()
+
+                insomnia.environment.set("policy_template_id",
+                policyTemplateId);
+            settings:
+              renderRequestBody: true
+              encodeUrl: true
+              followRedirects: global
+              cookies:
+                send: true
+                store: true
+              rebuildPath: true
+          - url: "{{_['m1_url']}}/3gpp-m1/v2/provisioning-sessions/{{_['provisioning_sessio\
+              n_id']}}/policy-templates/{{_['policy_template_id']}}"
+            name: Update Policy Template
+            meta:
+              id: req_8f95b27f7ff946399831b5d6ce4bf169
+              created: 1771855690756
+              modified: 1771855690756
+              isPrivate: false
+              description: ""
+              sortKey: -1771855688222
+            method: PUT
+            body:
+              mimeType: application/json
+              text: |-
+                {
+                    "externalReference": "externalReferenceUpdated2",
+                    "policyTemplateId": "editedId",
+                    "state": "INVALID",
+                    "stateReason": {
+                        "type": "type"
+                    },
+                    "qoSSpecification": {
+                        "qosReference": "qosReference",
+                        "maxBtrUl": "560 Kbps",
+                        "maxBtrDl": "500 Kbps",
+                        "maxAuthBtrUl": "400 Kbps",
+                        "maxAuthBtrDl": "300 Kbps",
+                        "defPacketLossRateDl": 1,
+                        "defPacketLossRateUl": 1
+                    },
+                    "applicationSessionContext": {
+                        "sliceInfo": {
+                            "sst": 200,
+                            "sd": "000000"
+                        },
+                        "dnn": "test"
+                    },
+                    "chargingSpecification": {
+                        "sponId": "sponId",
+                        "sponStatus": "SPONSOR_ENABLED",
+                        "gpsi": [
+                            "msisdn-12345"
+                        ]    
+                    }
+                }
+            headers:
+              - name: Content-Type
+                value: application/json
+            settings:
+              renderRequestBody: true
+              encodeUrl: true
+              followRedirects: global
+              cookies:
+                send: true
+                store: true
+              rebuildPath: true
+          - name: Flow Requests
+            meta:
+              id: fld_d2743d94197e4b04abeba34121fd7d20
+              created: 1771855690755
+              modified: 1771855690755
+              sortKey: -1771855688226
+              description: ""
+            children:
+              - url: http://192.168.2.7:5678{{update_policy_template_url}}
+                name: Update Policy Template Flow
+                meta:
+                  id: req_fe1d6807739f4e9890e47986ed6e6de1
+                  created: 1771855690755
+                  modified: 1771855690755
+                  isPrivate: false
+                  description: ""
+                  sortKey: -1771855688225
+                method: PUT
+                body:
+                  mimeType: application/json
+                  text: |-
+                    {
+                        "externalReference": "externalReferenceUpdated2",
+                        "policyTemplateId": "editedId",
+                        "state": "INVALID",
+                        "stateReason": {
+                            "type": "type"
+                        },
+                        "qoSSpecification": {
+                            "qosReference": "qosReference",
+                            "maxBtrUl": "abcde",
+                            "maxBtrDl": "abcde",
+                            "maxAuthBtrUl": "abcde",
+                            "maxAuthBtrDl": "abcde",
+                            "defPacketLossRateDl": 1,
+                            "defPacketLossRateUl": 1
+                        },
+                        "applicationSessionContext": {
+                            "sliceInfo": {
+                                "sst": 200,
+                                "sd": "GGGG"
+                            },
+                            "dnn": "test"
+                        },
+                        "chargingSpecification": {
+                            "sponId": "sponId",
+                            "sponStatus": "SPONSOR_ENABLED_INVALID",
+                            "gpsi": [
+                                "random value"
+                            ]    
+                        }
+                    }
+                headers:
+                  - name: Content-Type
+                    value: application/json
+                settings:
+                  renderRequestBody: true
+                  encodeUrl: true
+                  followRedirects: global
+                  cookies:
+                    send: true
+                    store: true
+                  rebuildPath: true
+      - name: Metrics Reporting
+        meta:
+          id: fld_0a2d267677ba4d679e14a6084ca6f877
+          created: 1771855690757
+          modified: 1771855690757
+          sortKey: -1771855688219
+          description: ""
+        children:
+          - url: "{{_['m1_url']}}/3gpp-m1/v2/provisioning-sessions/{{_['provisioning_sessio\
+              n_id']}}/metrics-reporting-configurations/{{_['metrics_reporting_\
+              configuration_id']}}"
+            name: Get Metrics Reporting Configuration
+            meta:
+              id: req_440cc97989c145ec8d5f3782e583d950
+              created: 1771855690757
+              modified: 1771855690757
+              isPrivate: false
+              description: ""
+              sortKey: -1771855688218
+            method: GET
+            settings:
+              renderRequestBody: true
+              encodeUrl: true
+              followRedirects: global
+              cookies:
+                send: true
+                store: true
+              rebuildPath: true
+          - url: "{{_['m1_url']}}/3gpp-m1/v2/provisioning-sessions/{{_['provisioning_sessio\
+              n_id']}}/metrics-reporting-configurations/{{_['metrics_reporting_\
+              configuration_id']}}"
+            name: DELETE Metrics Reporting Configuration
+            meta:
+              id: req_82c34e03c8774a84a040c862f3b194bf
+              created: 1771855690757
+              modified: 1771855690757
+              isPrivate: false
+              description: ""
+              sortKey: -1771855688217
+            method: DELETE
+            settings:
+              renderRequestBody: true
+              encodeUrl: true
+              followRedirects: global
+              cookies:
+                send: true
+                store: true
+              rebuildPath: true
+          - url: "{{_['m1_url']}}/3gpp-m1/v2/provisioning-sessions/{{_['provisioning_sessio\
+              n_id']}}/metrics-reporting-configurations"
+            name: Create Metrics Reporting Configuration
+            meta:
+              id: req_5cbe9b9c02e04aba80aec818aa7c5f2b
+              created: 1771855690758
+              modified: 1771855690758
+              isPrivate: false
+              description: ""
+              sortKey: -1771855688216
+            method: POST
+            body:
+              mimeType: application/json
+              text: >-
+                {
+                    "scheme": "",
+                    "dataNetworkName": "",
+                    "reportingInterval": 10,
+                    "samplePercentage": 100,
+                    "urlFilters": [],
+                    "samplingPeriod": 5,
+                    "metrics": ["urn:3GPP:ns:PSS:DASH:QM10#HTTPList", "urn:3GPP:ns:PSS:DASH:QM10#BufferLevel", "urn:3GPP:ns:PSS:DASH:QM10#RepSwitchList", "urn:3GPP:ns:PSS:DASH:QM10#MPDInformation"],
+                    "sliceScope": []
+                }
+            headers:
+              - name: Content-Type
+                value: application/json
+            scripts:
+              afterResponse: >-
+                var metricsReportingConfigurationId =
+                insomnia.response.headers.get("Location").split("/").pop()
+
+                insomnia.environment.set("metrics_reporting_configuration_id",
+                metricsReportingConfigurationId);
+            settings:
+              renderRequestBody: true
+              encodeUrl: true
+              followRedirects: global
+              cookies:
+                send: true
+                store: true
+              rebuildPath: true
+  - name: M5 Interface
+    meta:
+      id: fld_26b18fd34cb84f168990ec3d9f0b9cdc
+      created: 1771855949213
+      modified: 1771856107664
+      sortKey: -1771855871604
+      description: ""
+    children:
+      - name: Service Access Information API
+        meta:
+          id: fld_2cf1775752f94066b06c68d8fd3545a9
+          created: 1771855949215
+          modified: 1771855949215
+          sortKey: -1771855945920
+          description: ""
+        children:
+          - url: "{{_['m5_url']}}/3gpp-m5/v2/service-access-information/{{_['provisioning_s\
+              ession_id']}}"
+            name: GET SAI
+            meta:
+              id: req_69ba605d99494076abbbf53ae1aa75a2
+              created: 1771855949215
+              modified: 1771855949215
+              isPrivate: false
+              description: ""
+              sortKey: -1771855945919
+            method: GET
+            settings:
+              renderRequestBody: true
+              encodeUrl: true
+              followRedirects: global
+              cookies:
+                send: true
+                store: true
+              rebuildPath: true
+      - name: Consumption Reporting API
+        meta:
+          id: fld_e402e5fee5ac404085b7804ea35c861f
+          created: 1771855949215
+          modified: 1771855949215
+          sortKey: -1771855945918
+          description: ""
+        children:
+          - url: "{{_['m5_url']}}/3gpp-m5/v2/consumption-reporting/{{_['provisioning_sessio\
+              n_id']}}"
+            name: Report
+            meta:
+              id: req_afc56783c7c54660a696b9c912bb6fe1
+              created: 1771855949216
+              modified: 1771855949216
+              isPrivate: false
+              description: ""
+              sortKey: -1771855945917
+            method: POST
+            body:
+              mimeType: application/json
+              text: >
+                {
+                  "mediaPlayerEntry": "https://livesim.dashif.org/livesim/testpic_2s/Manifest.mpd",
+                  "reportingClientId": "b3559848-df2b-4140-a373-4caccda31d00",
+                  "consumptionReportingUnits": [
+                    {
+                      "mediaConsumed": "A48",
+                      "clientEndpointAddress": {
+                        "ipv4Addr": "192.168.2.4",
+                        "portNumber": 443
+                      },
+                      "serverEndpointAddress": {
+                        "domainName": "livesim.dashif.org",
+                        "portNumber": 443
+                      },
+                      "startTime": "2024-01-18T13:35:22Z",
+                      "duration": 12,
+                      "locations": []
+                    }
+                  ]
+                }
+            headers:
+              - name: Content-Type
+                value: application/json
+            settings:
+              renderRequestBody: true
+              encodeUrl: true
+              followRedirects: global
+              cookies:
+                send: true
+                store: true
+              rebuildPath: true
+      - name: Dynamic Policies API
+        meta:
+          id: fld_6a6cc1f4409343bfb66fd9a4738e11c3
+          created: 1771855949216
+          modified: 1771855949216
+          sortKey: -1771855945916
+          description: ""
+        children:
+          - url: "{{_['m5_url']}}/3gpp-m5/v2/dynamic-policies"
+            name: Create
+            meta:
+              id: req_b304a697e5514b78bcefc5fd34be5934
+              created: 1771855949216
+              modified: 1771855949216
+              isPrivate: false
+              description: ""
+              sortKey: -1771855945915
+            method: POST
+            body:
+              mimeType: application/json
+              text: |
+                {
+                    "serviceDataFlowDescriptions": [
+                        {
+                            "direction": "direction"
+                        }
+                    ],
+                    "provisioningSessionId": "{{provisioning_session_id}}",
+                    "policyTemplateId": "{{policy_template_id}}"
+                }
+            headers:
+              - name: Content-Type
+                value: application/json
+            settings:
+              renderRequestBody: true
+              encodeUrl: true
+              followRedirects: global
+              cookies:
+                send: true
+                store: true
+              rebuildPath: true
+      - name: Network Assistance API
+        meta:
+          id: fld_1e33294bd19e4f0ea3b14e893db19bfe
+          created: 1771855949217
+          modified: 1771855949217
+          sortKey: -1771855945914
+          description: ""
+        children:
+          - url: "{{_['m5_url']}}/3gpp-m5/v2/network-assistance"
+            name: Create
+            meta:
+              id: req_b4b18e1967a14a3f9977a74abf16a645
+              created: 1771855949217
+              modified: 1771855949217
+              isPrivate: false
+              description: ""
+              sortKey: -1771855945913
+            method: POST
+            body:
+              mimeType: application/json
+              text: |
+                {
+                    "serviceDataFlowDescriptions": [
+                        {
+                            "direction": "direction"
+                        }
+                    ],
+                    "provisioningSessionId": "{{provisioning_session_id}}"
+                }
+            headers:
+              - name: Content-Type
+                value: application/json
+            settings:
+              renderRequestBody: true
+              encodeUrl: true
+              followRedirects: global
+              cookies:
+                send: true
+                store: true
+              rebuildPath: true
+cookieJar:
+  name: Default Jar
+  meta:
+    id: jar_d737f80e7881c9a87b14be46e35acf9fc1bf54a5
+    created: 1771855690760
+    modified: 1771855690760
+environments:
+  name: Base Environment
+  meta:
+    id: env_d737f80e7881c9a87b14be46e35acf9fc1bf54a5
+    created: 1771855690758
+    modified: 1771855690758
+    isPrivate: false
