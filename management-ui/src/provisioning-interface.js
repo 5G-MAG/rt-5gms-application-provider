@@ -320,7 +320,7 @@ async function addSessionToTable(sessionId) {
   ];
   if (hasMetricsReportingConfiguration) {
     metricsButtons.push(
-      `<button onclick="showMetricsReporting('${sessionId}')" class="btn btn-secondary table-button">List Metrics</button>`
+      `<button onclick="showMetricsReporting('${sessionId}')" class="btn btn-secondary table-button">Show</button>`
     );
   }
   cell7.innerHTML = metricsButtons.join('');

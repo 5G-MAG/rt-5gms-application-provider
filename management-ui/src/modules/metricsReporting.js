@@ -453,7 +453,7 @@ export async function createMetricsJson(sessionId) {
           <div class="modal-content" style="max-width:520px; display:flex; flex-direction:column; max-height:80vh; padding:0;">
             <div class="modal-header" style="padding:16px; border-bottom:1px solid #e5e7eb; background:#fff; display:flex; justify-content:space-between; align-items:center;">
               <div style="display:flex; flex-direction:column; gap:2px;">
-                <h3 style="margin:0; font-weight:600;">List Metrics</h3>
+                <h3 style="margin:0; font-weight:600;">Metrics Reporting Configurations</h3>
                 <div style="font-size:12px; color:#6b7280; font-family:monospace;">Provisioning Session ID: ${sessionId}</div>
               </div>
               <button type="button" data-close style="background:none; border:none; font-size:20px; cursor:pointer;">&times;</button>
