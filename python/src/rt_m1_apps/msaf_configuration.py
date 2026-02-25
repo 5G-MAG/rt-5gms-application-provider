@@ -18,7 +18,7 @@
 # ==========================
 #
 # This is a command line tool which takes a configuration from
-# /etc/rt-5gms/streams.json and applies it to the running AF.
+# /etc/rt-5gms/initial-config.json and applies it to the running AF.
 #
 # Communication with the AF should be preconfigured using m1-session configure.
 #
@@ -27,10 +27,10 @@
 5G-MAG Reference Tools: AF configuration sync tool
 ==================================================
 
-This command line app takes the configuration in /etc/rt-5gms/streams.json and
+This command line app takes the configuration in /etc/rt-5gms/initial-config.json and
 applies it to a running 5GMS AF using the M1 interface. It also stores M8 JSON
 data in the HTTP document roots for any hostnames defined as domainNameAlias 
-entries in the streams.json.
+entries in the initial-config.json.
 
 This shares some configuration with the m1-session tool and
 `m1-session configure` should be used to configure the M1 communication address
@@ -38,7 +38,7 @@ and port.
 
 This tool is designed to be run immediately after the AF is started in order to configure the Provisioning Sessions in the AF. As such it will normally only be invoked by t
 
-The streams to configure are found in the /etc/rt-5gms/streams.json file.
+The streams to configure are found in the /etc/rt-5gms/initial-config.json file.
 
 **af-sync.conf file**
 
@@ -62,10 +62,10 @@ placed at `{docroot}/{domain_name}/m8.json`.
 The *default_docroot* is for the directory path to the root directory for the
 fallback AS listening point. This will normally be `/usr/share/nginx/html`.
 
-**streams.json format**
+**initial-config.json format**
 
 This file defines the streams to configure and is located at
-`/etc/rt-5gms/streams.json`.
+`/etc/rt-5gms/initial-config.json`.
 
 ```json
 {
@@ -250,7 +250,7 @@ import sys
 from rt_m1_client import M1Session, M1Error, JSONFileDataStore, Configuration, app_configuration
 from rt_media_configuration import MediaConfiguration, StreamsJSONImporter
 
-g_streams_config = os.path.join(os.path.sep, 'etc', 'rt-5gms', 'streams.json')
+g_streams_config = os.path.join(os.path.sep, 'etc', 'rt-5gms', 'initial-config.json')
 # Old configuration file now moved to /etc/rt-5gms/media.conf or ~/.rt-5gms/media.conf
 #g_sync_config = os.path.join(os.path.sep, 'etc', 'rt-5gms', 'af-sync.conf')
 
