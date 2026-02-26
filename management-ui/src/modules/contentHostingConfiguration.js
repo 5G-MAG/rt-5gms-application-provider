@@ -201,19 +201,19 @@ export async function openContentHostingConfigurationForm(sessionId, isEdit = fa
   const baseUrlInput = document.getElementById(`base-url-${sessionId}`);
 
   // http & https 
-  const httpBtn  = document.getElementById(`btn-baseurl-http-${sessionId}`);
+  const httpBtn = document.getElementById(`btn-baseurl-http-${sessionId}`);
   const httpsBtn = document.getElementById(`btn-baseurl-https-${sessionId}`);
 
   function setBaseUrlPrefix(prefix) {
-    baseUrlInput.value = prefix;            
-    clearFieldError(baseUrlInput);          
+    baseUrlInput.value = prefix;
+    clearFieldError(baseUrlInput);
     baseUrlInput.focus();
     const len = baseUrlInput.value.length;
     if (baseUrlInput.setSelectionRange) baseUrlInput.setSelectionRange(len, len);
     baseUrlInput.dispatchEvent(new Event('input', { bubbles: true }));
   }
 
-  httpBtn.addEventListener('click',  () => setBaseUrlPrefix('http://'));
+  httpBtn.addEventListener('click', () => setBaseUrlPrefix('http://'));
   httpsBtn.addEventListener('click', () => setBaseUrlPrefix('https://'));
 
 
@@ -447,14 +447,34 @@ export async function openContentHostingConfigurationForm(sessionId, isEdit = fa
 
     if (Array.isArray(chc.distributionConfigurations) && chc.distributionConfigurations.length) {
       distContainer.querySelectorAll('.dist-entry').forEach(e => e.remove());
-      chc.distributionConfigurations.forEach(dc => {
-        const ep = dc.entryPoint || dc;
-        addDistributionEntry({
-          relativePath: ep.relativePath || '',
-          contentType: ep.contentType || '',
-          profiles: Array.isArray(ep.profiles) ? ep.profiles : []
+
+      // Check if any distribution has an actual entryPoint
+      const hasEntryPoints = chc.distributionConfigurations.some(dc => dc.entryPoint && (dc.entryPoint.relativePath || dc.entryPoint.contentType));
+
+      if (hasEntryPoints) {
+        chc.distributionConfigurations.forEach(dc => {
+          const ep = dc.entryPoint || {};
+          addDistributionEntry({
+            relativePath: ep.relativePath || '',
+            contentType: ep.contentType || '',
+            profiles: Array.isArray(ep.profiles) ? ep.profiles : []
+          });
         });
-      });
+      } else if (Array.isArray(chc.appDistributions) && chc.appDistributions.length) {
+        chc.appDistributions.forEach(ad => {
+          if (Array.isArray(ad.entryPoints)) {
+            ad.entryPoints.forEach(ep => {
+              addDistributionEntry({
+                relativePath: ep.relativePath || '',
+                contentType: ep.contentType || '',
+                profiles: Array.isArray(ep.profiles) ? ep.profiles : []
+              });
+            });
+          }
+        });
+      } else {
+        chc.distributionConfigurations.forEach(() => addDistributionEntry());
+      }
     }
     updateTopError();
   }
@@ -573,7 +593,7 @@ export async function openContentHostingConfigurationForm(sessionId, isEdit = fa
           setFieldError(ctypeSelect, 'Please enter a valid MIME type, e.g. application/xyz.'); hasError = true;
         }
 
-      
+
         if (REQUIRE_PROFILES) {
           const known = Array.from(profilesSelect.selectedOptions).map(o => o.value);
           let custom = [];
@@ -623,7 +643,7 @@ export async function openContentHostingConfigurationForm(sessionId, isEdit = fa
 
       const entryPoint = { relativePath: path, contentType };
       if (profilesCombined.length) {
-        entryPoint.profiles = profilesCombined; 
+        entryPoint.profiles = profilesCombined;
       }
 
       return { entryPoint };
@@ -709,7 +729,7 @@ export async function deleteContentHostingConfiguration(sessionId) {
   try{
     const res = await fetch(`/provisioning_session/${sessionId}/contenthostingconfiguration/`,{
       method: 'DELETE'
-      }
+    }
     );
     if (res.ok){
       notifySuccess('Content Hosting Configuration deleted.');

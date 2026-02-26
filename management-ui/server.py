@@ -24,7 +24,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from utils import lib_to_sys_path
 from fastapi.encoders import jsonable_encoder
 import traceback
-
+from urllib.parse import urlsplit
 load_dotenv()
 lib_to_sys_path()
 
@@ -36,6 +36,7 @@ from rt_m1_client.exceptions import M1Error
 from rt_m1_client import app_configuration
 
 from rt_media_configuration import MediaConfiguration, MediaEntry, MediaDistribution, MediaEntryPoint, MediaAppDistribution, MediaMetricsReportingConfiguration, MediaServerCertificate, MediaGeoFencing, MediaConsumptionReportingConfiguration, MediaDynamicPolicy, MediaSession
+from rt_media_configuration.media_configuration import DEFAULT_CONFIG as MEDIA_DEFAULT_CONFIG
 
 config = Configuration()
 
@@ -47,6 +48,20 @@ _m1_session = None
 _media_configuration = None
 _media_session = None
 media_create_lock = asyncio.Lock()
+
+
+from rt_m8_output.five_g_mag_json import resolve_m5_authority
+
+def _build_m8_url_from_configuration() -> str:
+    m5_authority = resolve_m5_authority()
+    parsed = urlsplit(m5_authority if "://" in m5_authority else f"//{m5_authority}")
+    host = parsed.hostname or "127.0.0.1"
+    return f"http://{host}/m8.json"
+
+
+@app.get("/m8_url")
+async def m8_url():
+    return {"url": _build_m8_url_from_configuration()}
 
 app.add_middleware(
     CORSMiddleware,
@@ -334,6 +349,25 @@ async def get_content_hosting_configuration(
                 "domainNameAlias": getattr(dist, "domain_name_alias", None),
                 "entryPoint": entry_point_dict if entry_point_dict else None
             })
+
+        # Include app_distributions (vodMedia entry points) if present
+        app_distributions_list = []
+        for ad in getattr(media_entry, "app_distributions", None) or []:
+            ad_entry = {"name": getattr(ad, "name", None)}
+            eps = []
+            for ep in getattr(ad, "entry_points", None) or []:
+                ep_dict = {
+                    "relativePath": getattr(ep, "relative_path", None),
+                    "contentType": getattr(ep, "content_type", None),
+                }
+                profiles_val = getattr(ep, "profiles", None)
+                if profiles_val is not None:
+                    ep_dict["profiles"] = profiles_val
+                eps.append(ep_dict)
+            if eps:
+                ad_entry["entryPoints"] = eps
+            app_distributions_list.append(ad_entry)
+
         result = {
             "name": getattr(media_entry, "name", None),
             "ingestConfiguration": {
@@ -343,6 +377,8 @@ async def get_content_hosting_configuration(
             },
             "distributionConfigurations": distribution_configurations
         }
+        if app_distributions_list:
+            result["appDistributions"] = app_distributions_list
         return JSONResponse(content=result, status_code=200)
     except HTTPException:
         raise

@@ -230,8 +230,22 @@ async function deleteSelectedSessions() {
 }
 
 
-function openM8() {
-  const publicUrl = `${window.location.protocol}//${window.location.hostname}/m8.json`;
+async function openM8() {
+  let publicUrl = `${window.location.protocol}//${window.location.hostname}/m8.json`;
+  try {
+    const response = await fetch(`${operatingUrl}m8_url`, { cache: 'no-store' });
+    if (response.ok) {
+      const data = await response.json();
+      const configuredUrl = String(data?.url || '').trim();
+      console.log(configuredUrl)
+      if (configuredUrl) {
+        publicUrl = configuredUrl;
+
+      }
+    }
+  } catch (error) {
+    console.warn('Failed to load configured m8 URL, using browser host fallback:', error);
+  }
   const w = window.open(publicUrl, '_blank', 'noopener');
   if (!w) {
     notifyInfo('Popup blocked. Please allow pop-ups to open m8.json.');
