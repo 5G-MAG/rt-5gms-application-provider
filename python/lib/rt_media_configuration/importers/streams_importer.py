@@ -1,6 +1,6 @@
 #!/usr/bin/python3
 #==============================================================================
-# 5G-MAG Reference Tools: Streams.json MediaConfiguration importer
+# 5G-MAG Reference Tools: initial-config.json MediaConfiguration importer
 #==============================================================================
 #
 # File: rt_media_configuration/importers/streams_importer.py
@@ -30,7 +30,7 @@ from ..media_server_certificate import MediaServerCertificate
 class StreamsJSONImporter(MediaConfigurationImporter):
     '''StreamsJSONImporter class
 =========================
-Reads in a `streams.json` JSON file and uses the contents to replace the model
+Reads in a `initial-config.json` JSON file and uses the contents to replace the model
 in the MediaConfiguration.
     '''
 
@@ -38,7 +38,7 @@ in the MediaConfiguration.
         '''Constructor
         '''
         super().__init__()
-        self.__streamsfile = streamsfile or "/etc/rt-5gms/streams.json"
+        self.__streamsfile = streamsfile or "/etc/rt-5gms/initial-config.json"
         self.__streams = None
         self.__log = logging.getLogger(__name__ + '.' + self.__class__.__name__)
 
