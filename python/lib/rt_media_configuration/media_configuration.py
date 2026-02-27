@@ -57,7 +57,7 @@ from .importers import M1SessionImporter
 DEFAULT_CONFIG = '''[media-configuration]
 m5_authority = localhost:7777
 format = FiveGMagJsonFormatter
-root_dir = /usr/share/nginx/html
+root_dir = /usr/share/nginx/html/m8
 m8outputs = %(format)s(root_dir=%(root_dir)s)
 '''
 

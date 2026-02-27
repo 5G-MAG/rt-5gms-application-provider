@@ -9,34 +9,30 @@ https://drive.google.com/file/d/1cinCiA778IErENZ3JN52VFW-1ffHpx7Z/view
 
 import os
 import json
-from pathlib import Path
 import requests
 import asyncio
 import httpx
-from datetime import datetime, timezone
 from dotenv import load_dotenv
 from typing import Optional, Dict
-from fastapi import Body,FastAPI, Query, Depends, HTTPException, Response, Request, APIRouter
+from fastapi import FastAPI, Query, Depends, HTTPException, Response, Request
 from fastapi.responses import JSONResponse, FileResponse, PlainTextResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from fastapi.middleware.cors import CORSMiddleware
 from utils import lib_to_sys_path
-from fastapi.encoders import jsonable_encoder
 import traceback
-from urllib.parse import urlsplit
 load_dotenv()
 lib_to_sys_path()
 
-from rt_m1_client.types import ResourceId, ApplicationId, ConsumptionReportingConfiguration, PolicyTemplate, MetricsReportingConfiguration, ContentHostingConfiguration
+from rt_m1_client.types import ResourceId, ApplicationId, ConsumptionReportingConfiguration, MetricsReportingConfiguration
 from rt_m1_client.configuration import Configuration
 from rt_m1_client.session import M1Session
 from rt_m1_client.data_store import JSONFileDataStore
 from rt_m1_client.exceptions import M1Error
 from rt_m1_client import app_configuration
 
-from rt_media_configuration import MediaConfiguration, MediaEntry, MediaDistribution, MediaEntryPoint, MediaAppDistribution, MediaMetricsReportingConfiguration, MediaServerCertificate, MediaGeoFencing, MediaConsumptionReportingConfiguration, MediaDynamicPolicy, MediaSession
-from rt_media_configuration.media_configuration import DEFAULT_CONFIG as MEDIA_DEFAULT_CONFIG
+from rt_media_configuration import MediaConfiguration, MediaEntry, MediaDistribution, MediaEntryPoint, MediaMetricsReportingConfiguration, MediaServerCertificate, MediaGeoFencing, MediaConsumptionReportingConfiguration, MediaDynamicPolicy, MediaSession
+from rt_media_configuration.media_configuration import DEFAULT_CONFIG
 
 config = Configuration()
 
@@ -48,20 +44,30 @@ _m1_session = None
 _media_configuration = None
 _media_session = None
 media_create_lock = asyncio.Lock()
+_media_config = None
+
+def _load_media_config_from_configuration():
+    if os.getuid() == 0:
+        media_config_path = "/etc/rt-5gms/media.conf"
+    else:
+        media_config_path = os.path.expanduser("~/.rt-5gms/media.conf")
+    app_configuration.addSection('media-configuration', DEFAULT_CONFIG, media_config_path)
+    return {
+        key: app_configuration.get(key, section = "media-configuration")
+        for key in app_configuration.getKeys(section = "media-configuration")
+    }
 
 
-from rt_m8_output.five_g_mag_json import resolve_m5_authority
+@app.on_event("startup")
+async def load_media_config():
+    global _media_config
+    _media_config = _load_media_config_from_configuration()
+    app.mount("/m8_dir", StaticFiles(directory = _media_config.get("root_dir", ""), check_dir=False), name="m8_dir")
 
-def _build_m8_url_from_configuration() -> str:
-    m5_authority = resolve_m5_authority()
-    parsed = urlsplit(m5_authority if "://" in m5_authority else f"//{m5_authority}")
-    host = parsed.hostname or "127.0.0.1"
-    return f"http://{host}/m8.json"
+@app.get("/show_config")
+async def get_m8():
+    return _media_config
 
-
-@app.get("/m8_url")
-async def m8_url():
-    return {"url": _build_m8_url_from_configuration()}
 
 app.add_middleware(
     CORSMiddleware,
@@ -350,7 +356,6 @@ async def get_content_hosting_configuration(
                 "entryPoint": entry_point_dict if entry_point_dict else None
             })
 
-        # Include app_distributions (vodMedia entry points) if present
         app_distributions_list = []
         for ad in getattr(media_entry, "app_distributions", None) or []:
             ad_entry = {"name": getattr(ad, "name", None)}

@@ -33,7 +33,6 @@ rt_m1_client.M1Session object to synchronise that configuration with the
 '''
 
 import aiofiles
-import configparser
 import json
 import os
 import os.path
@@ -42,20 +41,6 @@ from rt_m1_client import Configuration, app_configuration
 from rt_media_configuration import MediaConfiguration
 from .m8_output import M8Output
 
-def resolve_m5_authority() -> str:
-    m5_authority = os.environ.get("M5_AUTHORITY", "").strip()
-    if not m5_authority:
-        if os.getuid() != 0:
-            conf_path = os.path.expanduser("~/.rt-5gms/media.conf")
-        else:
-            conf_path = "/etc/rt-5gms/media.conf"
-        if os.path.isfile(conf_path):
-            cp = configparser.ConfigParser()
-            cp.read(conf_path)
-            m5_authority = cp.get("media-configuration", "m5_authority", fallback="").strip()
-    if not m5_authority:
-        m5_authority = "localhost:7777"
-    return m5_authority
 
 class FiveGMagJsonFormatter(M8Output):
     '''FiveGMagJsonFormatter Class
@@ -70,13 +55,10 @@ Output formatter to represent a MediaConfiguration as a 5G-MAG m8.json file
     async def writeOutput(self, media_config: MediaConfiguration):
         '''Write out the 5G-MAG m8.json file
         '''
-        m5_authority_cfg = resolve_m5_authority()
-        m5_host = m5_authority_cfg.split(":")[0]
-        out_dir = os.path.join(self.root_dir, m5_host)
-        if not os.path.isdir(out_dir):
-            os.makedirs(out_dir, mode=0o755)
-        async with aiofiles.open(os.path.join(out_dir, self.__json_filename), mode='w') as json_out:
-            m8_config = {'m5BaseUrl': f'http://{m5_authority_cfg}/3gpp-m5/v2/', 'serviceList': []}
+        if not os.path.isdir(self.root_dir):
+            os.makedirs(self.root_dir, mode=0o755)
+        async with aiofiles.open(os.path.join(self.root_dir, self.__json_filename), mode='w') as json_out:
+            m8_config = {'m5BaseUrl': f'http://{self.__config.get("m5_authority", section="media-configuration", default="localhost")}/3gpp-m5/v2/', 'serviceList': []}
             for session in await media_config.mediaSessions():
                 me = session.media_entry
                 if me is None or session.provisioning_session_id is None:
@@ -115,7 +97,6 @@ Output formatter to represent a MediaConfiguration as a 5G-MAG m8.json file
                             entry['entryPoints'] = entryPoints
                         m8_config['serviceList'] += [entry]
             await json_out.write(json.dumps(m8_config))
-
 
     @staticmethod
     def __join_url(a: str, b: str):
