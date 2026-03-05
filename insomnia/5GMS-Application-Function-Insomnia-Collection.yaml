@@ -83,13 +83,11 @@ collection:
                 value: application/json
             scripts:
               afterResponse: >-
-                var insomnia.response.text() = insomnia.response.json();
-
-                var provisioningSessionId =
-                insomnia.response.text().provisioningSessionId;
-
-                insomnia.environment.set("provisioning_session_id",
-                provisioningSessionId);
+                var response = insomnia.response.json();
+                
+                var provisioningSessionId = response.provisioningSessionId;
+                
+                insomnia.environment.set("provisioning_session_id", provisioningSessionId);
             settings:
               renderRequestBody: true
               encodeUrl: true
