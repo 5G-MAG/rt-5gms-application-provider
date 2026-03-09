@@ -9,33 +9,30 @@ https://drive.google.com/file/d/1cinCiA778IErENZ3JN52VFW-1ffHpx7Z/view
 
 import os
 import json
-from pathlib import Path
 import requests
 import asyncio
 import httpx
-from datetime import datetime, timezone
 from dotenv import load_dotenv
 from typing import Optional, Dict
-from fastapi import Body,FastAPI, Query, Depends, HTTPException, Response, Request, APIRouter
+from fastapi import FastAPI, Query, Depends, HTTPException, Response, Request
 from fastapi.responses import JSONResponse, FileResponse, PlainTextResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from fastapi.middleware.cors import CORSMiddleware
 from utils import lib_to_sys_path
-from fastapi.encoders import jsonable_encoder
 import traceback
-
 load_dotenv()
 lib_to_sys_path()
 
-from rt_m1_client.types import ResourceId, ApplicationId, ConsumptionReportingConfiguration, PolicyTemplate, MetricsReportingConfiguration, ContentHostingConfiguration
+from rt_m1_client.types import ResourceId, ApplicationId, ConsumptionReportingConfiguration, MetricsReportingConfiguration
 from rt_m1_client.configuration import Configuration
 from rt_m1_client.session import M1Session
 from rt_m1_client.data_store import JSONFileDataStore
 from rt_m1_client.exceptions import M1Error
 from rt_m1_client import app_configuration
 
-from rt_media_configuration import MediaConfiguration, MediaEntry, MediaDistribution, MediaEntryPoint, MediaAppDistribution, MediaMetricsReportingConfiguration, MediaServerCertificate, MediaGeoFencing, MediaConsumptionReportingConfiguration, MediaDynamicPolicy, MediaSession
+from rt_media_configuration import MediaConfiguration, MediaEntry, MediaDistribution, MediaEntryPoint, MediaMetricsReportingConfiguration, MediaServerCertificate, MediaGeoFencing, MediaConsumptionReportingConfiguration, MediaDynamicPolicy, MediaSession
+from rt_media_configuration.media_configuration import DEFAULT_CONFIG
 
 config = Configuration()
 
@@ -47,6 +44,30 @@ _m1_session = None
 _media_configuration = None
 _media_session = None
 media_create_lock = asyncio.Lock()
+_media_config = None
+
+def _load_media_config_from_configuration():
+    if os.getuid() == 0:
+        media_config_path = "/etc/rt-5gms/media.conf"
+    else:
+        media_config_path = os.path.expanduser("~/.rt-5gms/media.conf")
+    app_configuration.addSection('media-configuration', DEFAULT_CONFIG, media_config_path)
+    return {
+        key: app_configuration.get(key, section = "media-configuration")
+        for key in app_configuration.getKeys(section = "media-configuration")
+    }
+
+
+@app.on_event("startup")
+async def load_media_config():
+    global _media_config
+    _media_config = _load_media_config_from_configuration()
+    app.mount("/m8_dir", StaticFiles(directory = _media_config.get("root_dir", ""), check_dir=False), name="m8_dir")
+
+@app.get("/show_config")
+async def get_m8():
+    return _media_config
+
 
 app.add_middleware(
     CORSMiddleware,
@@ -334,6 +355,24 @@ async def get_content_hosting_configuration(
                 "domainNameAlias": getattr(dist, "domain_name_alias", None),
                 "entryPoint": entry_point_dict if entry_point_dict else None
             })
+
+        app_distributions_list = []
+        for ad in getattr(media_entry, "app_distributions", None) or []:
+            ad_entry = {"name": getattr(ad, "name", None)}
+            eps = []
+            for ep in getattr(ad, "entry_points", None) or []:
+                ep_dict = {
+                    "relativePath": getattr(ep, "relative_path", None),
+                    "contentType": getattr(ep, "content_type", None),
+                }
+                profiles_val = getattr(ep, "profiles", None)
+                if profiles_val is not None:
+                    ep_dict["profiles"] = profiles_val
+                eps.append(ep_dict)
+            if eps:
+                ad_entry["entryPoints"] = eps
+            app_distributions_list.append(ad_entry)
+
         result = {
             "name": getattr(media_entry, "name", None),
             "ingestConfiguration": {
@@ -343,6 +382,8 @@ async def get_content_hosting_configuration(
             },
             "distributionConfigurations": distribution_configurations
         }
+        if app_distributions_list:
+            result["appDistributions"] = app_distributions_list
         return JSONResponse(content=result, status_code=200)
     except HTTPException:
         raise

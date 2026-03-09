@@ -10,8 +10,8 @@ https://drive.google.com/file/d/1cinCiA778IErENZ3JN52VFW-1ffHpx7Z/view
 import { openContentHostingConfigurationForm, downloadContentHostingConfiguration, deleteContentHostingConfiguration} from "./modules/contentHostingConfiguration.js";
 import { createNewCertificate, showCertificateDetails } from "./modules/serverCertificates.js";
 import { showProtocols } from "./modules/protocols.js";
-import { setConsumptionReporting, showConsumptionReporting, deleteConsumptionReporting } from "./modules/consumptionReporting.js";
-import { createMetricsJson, showMetricsReporting, confirmMetricsDeletion, deleteMetricsConfiguration } from "./modules/metricsReporting.js";
+import { setConsumptionReporting, deleteConsumptionReporting } from "./modules/consumptionReporting.js";
+import { createMetricsJson, showMetricsReporting } from "./modules/metricsReporting.js";
 import { openPolicyTemplateForm, listAllPolicyTemplate } from "./modules/policyTemplate.js";
 import { openDetails } from "./modules/details.js";
 import { notifyInfo, notifySuccess, notifyError, confirmPrompt } from "./modules/notify.js";
@@ -31,13 +31,10 @@ window.showProtocols = showProtocols;
 window.showCertificateDetails = showCertificateDetails;
 
 window.setConsumptionReporting = setConsumptionReporting;
-window.showConsumptionReporting = showConsumptionReporting;
 window.deleteConsumptionReporting = deleteConsumptionReporting;
 
 window.createMetricsJson = createMetricsJson;
 window.showMetricsReporting = showMetricsReporting;
-window.confirmMetricsDeletion = confirmMetricsDeletion;
-window.deleteMetricsConfiguration = deleteMetricsConfiguration;
 
 window.openPolicyTemplateForm = openPolicyTemplateForm;
 window.listAllPolicyTemplate = listAllPolicyTemplate;
@@ -233,12 +230,8 @@ async function deleteSelectedSessions() {
 }
 
 
-function openM8() {
-  const publicUrl = `${window.location.protocol}//${window.location.hostname}/m8.json`;
-  const w = window.open(publicUrl, '_blank', 'noopener');
-  if (!w) {
-    notifyInfo('Popup blocked. Please allow pop-ups to open m8.json.');
-  }
+async function openM8() {
+    window.open(`${operatingUrl}m8_dir/m8.json`)
 }
 
 async function addSessionToTable(sessionId) {
@@ -296,12 +289,12 @@ async function addSessionToTable(sessionId) {
 
   cell4.innerHTML = `<button onclick="showProtocols('${sessionId}')" class="btn btn-secondary table-button">Show</button>`;
 
+  const consumptionPrimaryLabel = hasConsumptionReportingConfiguration ? 'Edit' : 'Create';
   const consumptionButtons = [
-    `<button onclick="setConsumptionReporting('${sessionId}')" class="btn btn-primary table-button">Set</button>`
+    `<button onclick="setConsumptionReporting('${sessionId}')" class="btn btn-primary table-button">${consumptionPrimaryLabel}</button>`
   ];
   if (hasConsumptionReportingConfiguration) {
     consumptionButtons.push(
-      `<button onclick="showConsumptionReporting('${sessionId}')" class="btn btn-secondary table-button">Show</button>`,
       `<button onclick="deleteConsumptionReporting('${sessionId}')" class="btn btn-danger table-button">Delete</button>`
     );
   }
@@ -323,8 +316,7 @@ async function addSessionToTable(sessionId) {
   ];
   if (hasMetricsReportingConfiguration) {
     metricsButtons.push(
-      `<button onclick="showMetricsReporting('${sessionId}')" class="btn btn-secondary table-button">Show</button>`,
-      `<button onclick="deleteMetricsConfiguration('${sessionId}')" class="btn btn-danger table-button">Delete</button>`
+      `<button onclick="showMetricsReporting('${sessionId}')" class="btn btn-secondary table-button">Show</button>`
     );
   }
   cell7.innerHTML = metricsButtons.join('');

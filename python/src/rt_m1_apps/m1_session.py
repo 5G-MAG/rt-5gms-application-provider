@@ -182,19 +182,6 @@ from rt_m1_client.data_store import JSONFileDataStore
 from rt_m1_client.types import ContentHostingConfiguration, ConsumptionReportingConfiguration, PolicyTemplate, BitRate, SponsoringStatus, MetricsReportingConfiguration, Snssai
 from rt_m1_client.configuration import Configuration
 
-from rt_media_configuration.media_configuration import DEFAULT_CONFIG as MEDIA_DEFAULT_CONFIG
-MEDIA_SECTION = 'media-configuration'
-
-def _media_config_path() -> str:
-    if os.getuid() != 0:
-        return os.path.expanduser(os.path.join('~', '.rt-5gms', 'media.conf'))
-    return os.path.join(os.path.sep, 'etc', 'rt-5gms', 'media.conf')
-
-def _resolve_configure_set_key(cfg: Configuration, key: str) -> str:
-    if key == 'm5_authority' or key in cfg.getKeys():
-        return key
-    raise argparse.ArgumentTypeError('Not a valid configuration option')
-
 async def cmd_configure_show(args: argparse.Namespace, config: Configuration) -> int:
     '''Perform ``configure show`` operation
 
@@ -203,7 +190,6 @@ async def cmd_configure_show(args: argparse.Namespace, config: Configuration) ->
     default_marker = {True: ' (default)', False: ''}
     print('Configuration settings:')
     print('\n'.join([f'{key} = {config.get(key, raw=True)}{default_marker[config.isDefault(key)]}' for key in config.getKeys()]))
-    print(f'm5_authority = {config.get("m5_authority", raw=True, section=MEDIA_SECTION)}{default_marker[config.isDefault("m5_authority", section=MEDIA_SECTION)]}')
     return 0
 
 async def cmd_configure_reset(args: argparse.Namespace, config: Configuration) -> int:
@@ -228,8 +214,7 @@ async def cmd_configure_set(args: argparse.Namespace, config: Configuration) -> 
 
     Set a configuration value and save the new configuration.
     '''
-    section = MEDIA_SECTION if args.key == 'm5_authority' else None
-    config.set(args.key, args.value, section=section)
+    config.set(args.key, args.value)
     return 0
 
 def __formatX509Name(x509name: OpenSSL.crypto.X509Name) -> str:
@@ -1025,7 +1010,6 @@ async def parse_args() -> Tuple[argparse.Namespace,Configuration]:
     :rtype: Tuple[argparse.Namespace,Configuration]
     '''
     cfg = Configuration()
-    cfg.addSection(MEDIA_SECTION, MEDIA_DEFAULT_CONFIG, _media_config_path())
 
     parser = argparse.ArgumentParser(prog='m1-session', description='M1 Session Tool')
     parser.add_argument('-D', '--debug', action='store_true', help='Enable debugging mode')
@@ -1044,7 +1028,7 @@ async def parse_args() -> Tuple[argparse.Namespace,Configuration]:
     # m1-session-cli configure set <KEY> <VALUE>
     parser_configure_set = configure_subparsers.add_parser('set', help='Set local configuration value')
     parser_configure_set.set_defaults(command=cmd_configure_set)
-    parser_configure_set.add_argument('key', metavar='KEY', type=lambda s: _resolve_configure_set_key(cfg, s))
+    parser_configure_set.add_argument('key', metavar='KEY', type=cfg.isKey)
     parser_configure_set.add_argument('value', metavar='VALUE')
     # m1-session-cli configure reset <KEY>
     parser_configure_reset = configure_subparsers.add_parser('reset', help='Reset configuration value to its default')
