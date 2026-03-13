@@ -186,35 +186,35 @@ This class models a 3GPP TS 26.512 ProvisioningSession. The ProvisioningSession 
                     if 'ingestURL' not in obj or 'distributionConfigurations' not in obj or len(obj['distributionConfigurations']) == 0:
                         raise TypeError('MediaSession: Cannot have JSON "name" field without "ingestURL" field and a "distributionConfigurations" containing at least one entry')
                     dcs = [MediaDistribution.fromJSONObject(dc) for dc in obj['distributionConfigurations']]
-                    kwargs = {}
+                    entry_kwargs = {}
                     if 'appDistributions' in obj:
-                        kwargs['app_distributions'] = [MediaAppDistribution.fromJSONObject(ad) for ad in obj['appDistributions']]
+                        entry_kwargs['app_distributions'] = [MediaAppDistribution.fromJSONObject(ad) for ad in obj['appDistributions']]
                     if 'pull' in obj:
-                        kwargs['is_pull'] = obj['pull']
-                    media_entry = MediaEntry(v, obj['ingestURL'], dcs, **kwargs)
+                        entry_kwargs['is_pull'] = obj['pull']
+                    media_entry = MediaEntry(v, obj['ingestURL'], dcs, **entry_kwargs)
                     kwargs['media_entry'] = media_entry
             elif k == 'ingestURL':
                 if media_entry is None:
                     if 'name' not in obj or 'distributionConfigurations' not in obj or len(obj['distributionConfigurations']) == 0:
                         raise TypeError('MediaSession: Cannot have JSON "ingestURL" field without a "name" field and a "distributionConfigurations" containing at least one entry')
                     dcs = [MediaDistribution.fromJSONObject(dc) for dc in obj['distributionConfigurations']]
-                    kwargs = {}
+                    entry_kwargs = {}
                     if 'appDistributions' in obj:
-                        kwargs['app_distributions'] = [MediaAppDistribution.fromJSONObject(ad) for ad in obj['appDistributions']]
+                        entry_kwargs['app_distributions'] = [MediaAppDistribution.fromJSONObject(ad) for ad in obj['appDistributions']]
                     if 'pull' in obj:
-                        kwargs['is_pull'] = obj['pull']
-                    media_entry = MediaEntry(obj['name'], v, dcs, **kwargs)
+                        entry_kwargs['is_pull'] = obj['pull']
+                    media_entry = MediaEntry(obj['name'], v, dcs, **entry_kwargs)
                     kwargs['media_entry'] = media_entry
             elif k == 'distributionConfigurations':
                 if media_entry is None:
                     if 'ingestURL' not in obj or 'name' not in obj or len(v) == 0:
                         raise TypeError('MediaSession: Cannot have JSON "distributionConfigurations" field which is empty or without "name" and "ingestURL" fields')
-                    kwargs = {}
+                    entry_kwargs = {}
                     if 'appDistributions' in obj:
-                        kwargs['app_distributions'] = [MediaAppDistribution.fromJSONObject(ad) for ad in obj['appDistributions']]
+                        entry_kwargs['app_distributions'] = [MediaAppDistribution.fromJSONObject(ad) for ad in obj['appDistributions']]
                     if 'pull' in obj:
-                        kwargs['is_pull'] = obj['pull']
-                    media_entry = MediaEntry(obj['name'], obj['ingestURL'], [MediaDistribution.fromJSONObject(dc) for dc in v], **kwargs)
+                        entry_kwargs['is_pull'] = obj['pull']
+                    media_entry = MediaEntry(obj['name'], obj['ingestURL'], [MediaDistribution.fromJSONObject(dc) for dc in v], **entry_kwargs)
                     kwargs['media_entry'] = media_entry
             elif k == 'appDistributions':
                 if media_entry is None:
@@ -241,10 +241,11 @@ This class models a 3GPP TS 26.512 ProvisioningSession. The ProvisioningSession 
                 kwargs['dynamic_policies'] = {}
                 for extId, policy in v.items():
                     mdp = MediaDynamicPolicy.fromJSONObject(policy)
-                    mdp.id = extId
+                    if mdp.id is None:
+                        mdp.id = extId
                     if mdp.policy_template_id is None:
                         mdp.policy_template_id = extId
-                    kwargs['dynamic_policies'][extId] = mdp
+                    kwargs['dynamic_policies'][mdp.id] = mdp
             elif k == 'aspId':
                 kwargs['asp_id'] = v
             else:
