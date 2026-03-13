@@ -39,6 +39,16 @@ https://drive.google.com/file/d/1cinCiA778IErENZ3JN52VFW-1ffHpx7Z/view
         Application Function connected
       </div>
     </div>
+    <div class="header-actions">
+      <button onclick="exportPSConfiguration()" class="btn btn-success">
+        <span class="glyphicon glyphicon-cloud-download" aria-hidden="true"></span>
+        Export Provisioning Session Configurations
+      </button>
+       <button onclick="importPSConfiguration()" class="btn btn-danger">
+        <span class="glyphicon glyphicon-cloud-upload" aria-hidden="true"></span>
+        Import Provisioning Session Configurations
+      </button>
+    </div>
   </div>
 
 </header>
@@ -78,12 +88,7 @@ https://drive.google.com/file/d/1cinCiA778IErENZ3JN52VFW-1ffHpx7Z/view
     </div>
   </main>
 
-  <div class="text-center my-4">
-    <button id="infoBtn" class="btn btn-info">i</button>
-    
-    <button onclick="exportPSConfiguration()" class="btn btn-success">Export PS Configuration</button>
-    <button onclick="importPSConfiguration()" class="btn btn-danger">Import PS Configuration</button>
-  </div>
+  <button id="infoBtn" class="btn btn-info">i</button>
 
   <div id="infoModal" class="modal">
     <div class="modal-content">

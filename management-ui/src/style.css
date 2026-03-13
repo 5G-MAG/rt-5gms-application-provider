@@ -5,7 +5,7 @@
 }
 
 :root {
-  --hdr-h: 64px;
+  --hdr-h: 140px;
   --btn-h: 56px;
 
 }
@@ -80,6 +80,54 @@ h4#AFStatus {
   display: flex;
   justify-content: center;
   margin: 6px 0 14px;
+}
+
+.header-actions {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  margin: -2px auto 8px;
+  flex-wrap: wrap;
+  width: fit-content;
+  padding: 6px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, .09);
+  border: 1px solid rgba(255, 255, 255, .20);
+}
+
+.header-actions .btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  border-radius: 10px;
+  padding: 9px 14px;
+  font-size: 14px;
+  font-weight: 600;
+  border: 1px solid rgba(255, 255, 255, .30);
+  box-shadow: 0 3px 10px rgba(0, 0, 0, .16);
+  transition: transform .18s ease, box-shadow .22s ease, filter .2s ease;
+}
+
+.header-actions .btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 14px rgba(0, 0, 0, .22);
+}
+
+.header-actions .btn-warning,
+.header-actions .btn-warning:hover,
+.header-actions .btn-warning:focus {
+  color: #fff;
+}
+
+.header-actions .glyphicon {
+  font-size: 12px;
+  width: 20px;
+  height: 20px;
+  border-radius: 6px;
+  display: inline-grid;
+  place-items: center;
+  background: rgba(255, 255, 255, .20);
+  border: 1px solid rgba(255, 255, 255, .28);
 }
 
 .af-badge {
@@ -170,11 +218,12 @@ button.btn-success:hover {
 
 button.btn-warning {
   background: #f0ad4e;
-  color: #000;
+  color: #fff;
 }
 
 button.btn-warning:hover {
   background: #ec971f;
+  color: #fff;
 }
 
 button:disabled {
@@ -190,6 +239,17 @@ button:disabled {
 @media (max-width: 900px) {
   .table-responsive {
     overflow-x: auto;
+  }
+
+  .header-actions {
+    width: min(96vw, 360px);
+    gap: 8px;
+  }
+
+  .header-actions .btn {
+    width: 100%;
+    max-width: 320px;
+    justify-content: center;
   }
 }
 

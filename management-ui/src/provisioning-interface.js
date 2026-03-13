@@ -456,7 +456,7 @@ function exportPSConfiguration() {
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = 'provisioning_session_configuration.json';
+      a.download = 'provisioning_session_configurations.json';
       document.body.appendChild(a);
       a.click();
       a.remove();
