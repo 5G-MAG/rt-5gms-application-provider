@@ -1,23 +1,23 @@
 type: environment.insomnia.rest/5.0
 schema_version: "5.1"
-name: 5GMS Application Function Environment
+name: 5GMS Application Function Environment Imported
 meta:
-  id: wrk_6f318775a1f647cab9322eb6aaea4017
-  created: 1772747680419
-  modified: 1772747680419
+  id: wrk_1931fd2aeaa44d659b6476afa1d69b2d
+  created: 1773394025421
+  modified: 1773394039687
   description: ""
 environments:
   name: 5G-MAG
   meta:
-    id: env_ec7227f845e4432fbe4e35ad5090500e
+    id: env_0dbae53273594995afa1e7e857fc6314
     created: 1771856165563
-    modified: 1773010684269
+    modified: 1773395218076
     isPrivate: false
   data:
     provisioning_session_id: 6477d92a-03a4-41ef-9b80-db09e44c2897
-    m1_url: http://127.0.0.23:7777
-    m5_url: http://127.0.0.23:7778
-    maf_url: http://127.0.0.25:7777
+    m1_url: http://localhost:5555
+    m5_url: http://localhost:7778
+    maf_url: http://localhost:6464
     policy_template_id: ""
     update_policy_template_url: ""
     na_session_id: ""
