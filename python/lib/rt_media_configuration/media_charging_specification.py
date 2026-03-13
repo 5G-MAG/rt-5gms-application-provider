@@ -116,6 +116,8 @@ MediaDynamicPolicy.
                 kwargs['sponsor_id'] = v
             elif k == "sponsorEnabled":
                 kwargs['enabled'] = v
+            elif k == "sponStatus":
+                kwargs['enabled'] = (str(v) == 'SPONSOR_ENABLED')
             elif k == "gpsi" and len(v) > 0:
                 kwargs['gpsis'] = [Gpsi.fromJSONObject(gpsi) for gpsi in v]
             else:
