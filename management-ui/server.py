@@ -180,20 +180,6 @@ async def m1_error_handler(request: Request, exc: M1Error):
     return PlainTextResponse(status_code=exc.args[1], content=exc.args[0])
 
 
-@app.post("/create_session")
-async def new_provisioning_session(app_id: Optional[str] = None, asp_id: Optional[str] = None):
-    session = await get_M1Session()
-    app_id = app_id or config.get('external_app_id')
-    asp_id = asp_id or config.get('asp_id')
-
-    provisioning_session_id: Optional[ResourceId] = await session.createDownlinkPullProvisioningSession(
-        ApplicationId(app_id),
-        ApplicationId(asp_id) if asp_id else None)
-    
-    if provisioning_session_id is None:
-        raise HTTPException(status_code=400, detail="Failed to create a new provisioning session")
-    
-    return {"provisioning_session_id": provisioning_session_id}
 
 async def create_media_session_dependency():
     global _media_session 
@@ -934,3 +920,44 @@ async def list_metrics_ids(provisioning_session_id: str):
     if not metrics_ids:
         raise HTTPException(status_code=404, detail="No MetricsReportingConfiguration found")
     return metrics_ids
+
+
+@app.get("/export_ps_configuration")
+async def export_ps_configuration():
+    media_configuration = await get_media_configuration()
+    return Response(
+        content=media_configuration.serialise(pretty=True),
+        media_type="application/json"
+    )
+
+@app.post("/import_ps_configuration")
+async def import_ps_configuration(request: Request):
+    try:
+        body = await request.json()
+        streams = body.get("streams", {})
+        app_id = body.get("appId")
+        asp_id = body.get("aspId")
+
+        media_configuration = await get_media_configuration()
+        m1 = await get_M1Session()
+
+        for psid in list(await m1.provisioningSessionIds()):
+            await m1.provisioningSessionDestroy(psid)
+
+        await media_configuration.reset()
+
+        for _ , session_data in streams.items():
+            if app_id and "appId" not in session_data:
+                session_data["appId"] = app_id
+            media_session = MediaSession.fromJSONObject(session_data)
+            if asp_id and media_session.asp_id is None:
+                media_session.asp_id = asp_id
+            await media_configuration.addMediaSession(media_session)
+
+        await media_configuration.synchronise()
+        await media_configuration.restoreModel()
+        return {"message": "Provisioning session configuration imported successfully"}
+
+    except Exception as e:
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=str(e))

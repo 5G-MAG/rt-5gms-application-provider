@@ -7,7 +7,7 @@ program. If this file is missing then the license can be retrieved from
 https://drive.google.com/file/d/1cinCiA778IErENZ3JN52VFW-1ffHpx7Z/view
 */
 
-import { openContentHostingConfigurationForm, downloadContentHostingConfiguration, deleteContentHostingConfiguration} from "./modules/contentHostingConfiguration.js";
+import { openContentHostingConfigurationForm, downloadContentHostingConfiguration, deleteContentHostingConfiguration } from "./modules/contentHostingConfiguration.js";
 import { createNewCertificate, showCertificateDetails } from "./modules/serverCertificates.js";
 import { showProtocols } from "./modules/protocols.js";
 import { setConsumptionReporting, deleteConsumptionReporting } from "./modules/consumptionReporting.js";
@@ -53,6 +53,8 @@ window.loadAllSessions = loadAllSessions;
 window.openDetails = openDetails;
 window.getProvisioningSessionDetails = getProvisioningSessionDetails;
 
+window.exportPSConfiguration = exportPSConfiguration;
+window.importPSConfiguration = importPSConfiguration;
 window.openDetailsForSelected = function () {
   const ids = [...document.querySelectorAll('#m1_table tbody .session-checkbox:checked')]
     .map(cb => cb.getAttribute('data-session-id'));
@@ -231,7 +233,7 @@ async function deleteSelectedSessions() {
 
 
 async function openM8() {
-    window.open(`${operatingUrl}m8_dir/m8.json`)
+  window.open(`${operatingUrl}m8_dir/m8.json`)
 }
 
 async function addSessionToTable(sessionId) {
@@ -437,3 +439,73 @@ window.onload = function () {
   checkAFstatus();
   setInterval(checkAFstatus, 5000);
 };
+
+function exportPSConfiguration() {
+  console.log("Exporting PS Configuration...");
+  fetch(`${operatingUrl}export_ps_configuration`, {
+    method: 'GET',
+    headers: { 'Content-Type': 'application/json' }
+  })
+    .then(response => {
+      if (!response.ok) {
+        throw new Error('Failed to export configuration!');
+      }
+      return response.blob();
+    })
+    .then(blob => {
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'provisioning_session_configuration.json';
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      window.URL.revokeObjectURL(url);
+    })
+    .catch(error => {
+      console.error('Error exporting configuration:', error);
+      notifyError('Unexpected error while exporting configuration.');
+    });
+}
+
+async function importPSConfiguration() {
+  const ok = await confirmPrompt({
+    message: 'Importing will replace all existing sessions. Continue?',
+    confirmText: 'Import',
+    cancelText: 'Cancel',
+    tone: 'danger'
+  });
+  if (!ok) return;
+
+  const fileInput = document.createElement('input');
+  fileInput.type = 'file';
+  fileInput.accept = 'application/json';
+  fileInput.onchange = async (event) => {
+    const file = event.target.files[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = async (e) => {
+        const content = e.target.result;
+        try {
+          const response = await fetch(`${operatingUrl}import_ps_configuration`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: content
+          });
+          if (response.ok) {
+            notifySuccess('Provisioning session configuration imported successfully.');
+            document.dispatchEvent(new Event('sessions:reload'));
+          } else {
+            const errorData = await response.json();
+            notifyError(`Failed to import configuration: ${errorData.detail}`);
+          }
+        } catch (error) {
+          console.error('Error importing configuration:', error);
+          notifyError('Unexpected error while importing configuration.');
+        }
+      };
+      reader.readAsText(file);
+    }
+  };
+  fileInput.click();
+}
