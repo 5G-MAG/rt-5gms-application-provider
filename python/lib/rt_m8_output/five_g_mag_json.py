@@ -36,7 +36,7 @@ import aiofiles
 import json
 import os
 import os.path
-
+from typing import Optional
 from rt_m1_client import Configuration, app_configuration
 from rt_media_configuration import MediaConfiguration
 from .m8_output import M8Output
@@ -47,10 +47,17 @@ class FiveGMagJsonFormatter(M8Output):
 ===========================
 Output formatter to represent a MediaConfiguration as a 5G-MAG m8.json file
 '''
-    def __init__(self, root_dir: str, m8_json_filename: str = 'm8.json', config: Configuration = app_configuration):
+    def __init__(self, root_dir: Optional[str] = None, m8_json_filename: Optional[str] = None, config: Configuration = app_configuration, m5_authority: Optional[str] = None):
+        self.__config = config
+        if root_dir is None:
+            root_dir = self.__config.get('root_dir', section='media-configuration', default='.')
+        if m8_json_filename is None:
+            m8_json_filename = self.__config.get('m8_json_filename', section='media-configuration', default='m8.json')
+        if m5_authority is None:
+            m5_authority = self.__config.get("m5_authority", section="media-configuration", default="localhost")
         super().__init__(root_dir)
         self.__json_filename = m8_json_filename
-        self.__config = config
+        self.__m5_authority = m5_authority
 
     async def writeOutput(self, media_config: MediaConfiguration):
         '''Write out the 5G-MAG m8.json file
@@ -58,7 +65,7 @@ Output formatter to represent a MediaConfiguration as a 5G-MAG m8.json file
         if not os.path.isdir(self.root_dir):
             os.makedirs(self.root_dir, mode=0o755)
         async with aiofiles.open(os.path.join(self.root_dir, self.__json_filename), mode='w') as json_out:
-            m8_config = {'m5BaseUrl': f'http://{self.__config.get("m5_authority", section="media-configuration", default="localhost")}/3gpp-m5/v2/', 'serviceList': []}
+            m8_config = {'m5BaseUrl': f'http://{self.__m5_authority}/3gpp-m5/v2/', 'serviceList': []}
             for session in await media_config.mediaSessions():
                 me = session.media_entry
                 if me is None or session.provisioning_session_id is None:
