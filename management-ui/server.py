@@ -62,12 +62,24 @@ def _load_media_config_from_configuration():
 async def load_media_config():
     global _media_config
     _media_config = _load_media_config_from_configuration()
-    app.mount("/m8_dir", StaticFiles(directory = _media_config.get("root_dir", ""), check_dir=False), name="m8_dir")
+
+def _global_m8_file_path() -> str:
+    root_dir = _media_config.get("root_dir", "") if _media_config else ""
+    filename = _media_config.get("m8_json_filename", "m8.json") if _media_config else "m8.json"
+    return os.path.join(root_dir, filename)
 
 @app.get("/show_config")
 async def get_m8():
     return _media_config
 
+@app.get("/m8.json")
+async def m8_file_get():
+    if _media_config is None:
+        raise HTTPException(status_code=500, detail="Media configuration not loaded")
+    m8_file = _global_m8_file_path()
+    if not os.path.isfile(m8_file):
+        raise HTTPException(status_code=404, detail=f"Configured M8 JSON not found: {m8_file}")
+    return FileResponse(m8_file)
 
 app.add_middleware(
     CORSMiddleware,
