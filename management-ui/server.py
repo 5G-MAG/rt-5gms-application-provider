@@ -116,6 +116,7 @@ async def connection_checker():
 @app.get("/fetch_all_sessions")
 async def get_all_sessions():
     media_configuration = await get_media_configuration()
+    await media_configuration.synchronise()
     psIDs = await media_configuration.provisioningSessionIds()
     return {"session_ids": psIDs}
 
