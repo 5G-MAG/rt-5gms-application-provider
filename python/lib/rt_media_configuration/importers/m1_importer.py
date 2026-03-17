@@ -83,7 +83,7 @@ MediaConfiguration model.
         '''Import the model into ``model``.
         '''
         await model.reset()
-        provisioning_ids = await self.__session.provisioningSessionIds()
+        provisioning_ids = await self.__session.getProvisioningSessionIds()
         for psid in provisioning_ids:
             ps = await self.__session.provisioningSessionGet(psid)
             if ps is not None:

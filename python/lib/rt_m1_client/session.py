@@ -48,6 +48,7 @@ from .types import (ApplicationId, ContentHostingConfiguration, ContentProtocols
 from .client import (M1Client, ProvisioningSessionResponse, ContentHostingConfigurationResponse, ServerCertificateResponse,
                      ServerCertificateSigningRequestResponse, ContentProtocolsResponse, ConsumptionReportingConfigurationResponse, MetricsReportingConfigurationResponse,
                      PolicyTemplateResponse)
+from .configuration import Configuration
 from .data_store import DataStore
 from .certificates import CertificateSigner, DefaultCertificateSigner
 
@@ -73,6 +74,7 @@ class M1Session:
         self.__data_store_dir = persistent_data_store
         self.__cert_signer = certificate_signer
         self.__m1_client = None
+        self.__maf_client = None
         self.__provisioning_sessions = {}
         self.__ca_key = None
         self.__ca = None
@@ -241,6 +243,19 @@ class M1Session:
                     break
         return ret
 
+    async def getProvisioningSessionIds(self) -> Iterable[str]:
+        '''Get all provisioning session ids from the AF and sync local known ids.
+
+        :return: an iterable for the provisioning session ids.
+        '''
+        await self.__connectMaf()
+        session_ids = await self.__maf_client.enumerateProvisioningSessions()
+        if session_ids is None:
+            return []
+        if len(session_ids) > 0:
+            await self.provisioningSessionAddIds(session_ids)
+        return session_ids
+    
     # Certificates management
 
     async def certificateIds(self, provisioning_session_id: ResourceId) -> Optional[List[ResourceId]]:
@@ -1207,6 +1222,21 @@ class M1Session:
         '''
         if self.__m1_client is None:
             self.__m1_client = M1Client(self.__m1_host)
+
+    async def __connectMaf(self) -> None:
+        '''Connect to a maf-endpoint M1Client.
+
+        :meta private:
+        '''
+        if self.__maf_client is not None:
+            return
+        try:
+            cfg = Configuration()
+            maf_host = cfg.get('maf_address', '127.0.0.25')
+            maf_port = int(cfg.get('maf_port', '7777'))
+        except Exception:
+            pass
+        self.__maf_client = M1Client((maf_host, maf_port))
 
     def _dump_state(self) -> None:
         '''Dump the current provisioning session cache to the log

@@ -186,6 +186,14 @@ configuration with the 5GMS AF.
                 return v
         return None
 
+    async def provisioningSessionIds(self) -> List[str]:
+            _provisioningSessionIds = [
+                s.provisioning_session_id
+                for s in self.__model["sessions"].values()
+                if s.provisioning_session_id is not None
+            ]
+            return _provisioningSessionIds
+
     async def synchronise(self):
         '''Synchronise MediaConfiguration
 
@@ -212,7 +220,7 @@ configuration with the 5GMS AF.
             self.__log.debug(str(d))
             await d.apply_delta(self.__m1_session)
 
-        self.__model = af_mc.__model
+        await af_imp.import_to(self)
         await self.updateM8Files()
 
     async def deltas(self, other: "MediaConfiguration") -> List[DeltaOperation]:
@@ -220,7 +228,6 @@ configuration with the 5GMS AF.
         '''
         ret = []
         # Check each session I hold to see if it exists in the other configuration or not
-        to_del = []
         have = []
         to_add = list(other.__model['sessions'].values())
  
@@ -247,10 +254,8 @@ configuration with the 5GMS AF.
                         have += [(session, o_session)]
                         to_add.remove(o_session)
                         break
-                else:
-                    to_del += [session]
-        ret += [await MediaSessionDeltaOperation(self, add=session) for session in to_add]
-        ret += [await MediaSessionDeltaOperation(self, remove=session) for session in to_del]
+        sessions_to_create = [s for s in to_add if s.provisioning_session_id is None]
+        ret += [await MediaSessionDeltaOperation(self, add=session) for session in sessions_to_create]
         # check sub-structures of sessions we have for changes
         for session,o_session in have:
             if session.certificates is None and o_session.certificates is not None:

@@ -155,6 +155,16 @@ class M1Client:
         self.__default_response(result)
         return None
 
+    async def enumerateProvisioningSessions(self) -> Optional[List[ResourceId]]:
+        result = await self.__do_request('GET',
+                                         '/provisioning-sessions','',
+                                             'application/json', maf=True)
+        if result['status_code'] == 200:
+            payload = json.loads(result['body'])
+            return payload
+        self.__default_response(result)
+        return None
+
     async def getProvisioningSessionById(self,
                                          provisioning_session_id: ResourceId
                                          ) -> Optional[ProvisioningSessionResponse]:
@@ -863,7 +873,9 @@ class M1Client:
     # Private methods
 
     async def __do_request(self, method: str, url_suffix: str, body: Union[str,bytes],
-                           content_type: str, headers: Optional[dict] = None) -> Dict[str,Any]:
+                           content_type: str, headers: Optional[dict] = None,
+                           maf: bool = False
+                           ) -> Dict[str,Any]:
         '''Send a request to the 5GMS Application Function
 
         :meta private:
@@ -882,7 +894,10 @@ class M1Client:
         req_headers = {'Content-Type': content_type}
         if headers is not None:
             req_headers.update(headers)
-        url = f'http://{self.__host_address[0]}:{self.__host_address[1]}/3gpp-m1/v2{url_suffix}'
+        if maf:
+            url = f'http://{self.__host_address[0]}:{self.__host_address[1]}/5gmag-rt-management/v1{url_suffix}'
+        else:
+            url = f'http://{self.__host_address[0]}:{self.__host_address[1]}/3gpp-m1/v2{url_suffix}'
         if self.__connection is None:
             self.__connection = httpx.AsyncClient(http1=True, http2=False,
                                                   headers={'User-Agent': '5GMS-AF/testing'})
