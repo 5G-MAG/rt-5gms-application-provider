@@ -50,11 +50,11 @@ Output formatter to represent a MediaConfiguration as a 5G-MAG m8.json file
     def __init__(self, root_dir: Optional[str] = None, m8_json_filename: Optional[str] = None, config: Configuration = app_configuration, m5_authority: Optional[str] = None):
         self.__config = config
         if root_dir is None:
-            root_dir = self.__config.get('root_dir', section='media-configuration', default='.')
+            root_dir = self.__config.get('root_dir', section='media-configuration', default='/usr/share/nginx/html/m8')
         if m8_json_filename is None:
             m8_json_filename = self.__config.get('m8_json_filename', section='media-configuration', default='m8.json')
         if m5_authority is None:
-            m5_authority = self.__config.get("m5_authority", section="media-configuration", default="localhost")
+            m5_authority = self.__config.get("m5_authority", section="media-configuration", default="localhost:7777")
         super().__init__(root_dir)
         self.__json_filename = m8_json_filename
         self.__m5_authority = m5_authority

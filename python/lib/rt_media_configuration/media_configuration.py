@@ -366,11 +366,23 @@ configuration with the 5GMS AF.
         :return: self
         '''
         m8_outputs: List[str] = self.__config.get('m8outputs', section='media-configuration', default='').split(';')
+        has_default_fivegmag_formatter = False
         for outstr in m8_outputs:
             outstr = outstr.strip()
             if outstr == '':
                 continue
+
+            check = ''.join(outstr.split())
+            match = self.__fnstr_re.match(check)
+            if match is not None:
+                name, args, kwargs = match.group('name', 'args', 'kwargs')
+                if name == 'FiveGMagJsonFormatter' and args is None and kwargs is None:
+                    has_default_fivegmag_formatter = True
             m8_out = await self.__make_m8_output(outstr)
+            await m8_out.addToMediaConfiguration(self)
+
+        if not has_default_fivegmag_formatter:
+            m8_out = await self.__make_m8_output('FiveGMagJsonFormatter()')
             await m8_out.addToMediaConfiguration(self)
         return self
 
