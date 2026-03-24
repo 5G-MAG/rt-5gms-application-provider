@@ -103,12 +103,14 @@ This file defines the streams to configure and is located at
                "scheme":"scheme1",
                "reportingInterval":5,
                "samplePercentage":33,
-               "samplingPeriod":1
+               "samplingPeriod":1,
+               "metrics": ["metric1", "metric2"]
             },
             {
                "reportingInterval":10,
                "samplePercentage":66,
-               "samplingPeriod":2
+               "samplingPeriod":2,
+               "metrics": ["metric3"]
             },
             {
                "scheme":"scheme3",
@@ -356,7 +358,7 @@ async def metrics_configuration_match(m1: Optional[MetricsReportingConfiguration
     if m1 is None or m2 is None:
         return False
 
-    metrics_configuration_parameters = ['scheme', 'reportingInterval', 'samplePercentage', 'samplingPeriod']
+    metrics_configuration_parameters = ['scheme', 'reportingInterval', 'samplePercentage', 'samplingPeriod', 'metrics']
 
     for parameters in metrics_configuration_parameters:
         values_first = getattr(m1, parameters, None)

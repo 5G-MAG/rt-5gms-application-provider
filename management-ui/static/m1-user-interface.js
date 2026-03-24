@@ -687,11 +687,15 @@ async function createMetricsJson(sessionId) {
           <input id="samplingPeriod" class="swal2-input" type="number" placeholder="Sampling Period (in seconds)" required>
           <div>
           <br><p>Select Metrics to report:</p>
-            <input type="checkbox" id="metric1" value="urn:3GPP:ns:PSS:DASH:QM10#HTTPList"><label for="metric1">HTTP List</label><br>
             <input type="checkbox" id="metric2" value="urn:3GPP:ns:PSS:DASH:QM10#BufferLevel"><label for="metric2">Buffer Level</label><br>
             <input type="checkbox" id="metric3" value="urn:3GPP:ns:PSS:DASH:QM10#RepSwitchList"><label for="metric3">Representation Switch List</label><br>
             <input type="checkbox" id="metric4" value="urn:3GPP:ns:PSS:DASH:QM10#MPDInformation"><label for="metric4">MPD Information</label><br>
-            <input type="checkbox" id="metric5" value="urn:3gpp:metadata:2020:VR:metrics#RenderedViewports"><label for="metric5">Rendered Viewports</label>
+            <input type="checkbox" id="metric5" value="urn:3gpp:metadata:2020:VR:metrics#RenderedViewports"><label for="metric5">Rendered Viewports</label><br>
+            <input type="checkbox" id="metric6" value="urn:3GPP:ns:PSS:DASH:QM10#InitialPlayoutDelay"><label for="metric6">Initial Playout Delay</label><br>
+            <input type="checkbox" id="metric7" value="urn:3GPP:ns:PSS:DASH:QM10#PlayoutDelayForMediaStartup"><label for="metric7">Playout Delay for Media Startup</label><br>
+            <input type="checkbox" id="metric8" value="urn:3GPP:ns:PSS:DASH:QM10#DeviceInformation"><label for="metric8">Device Information</label><br>
+            <input type="checkbox" id="metric9" value="urn:3GPP:ns:PSS:DASH:QM10#AvgThroughput"><label for="metric9">Average Throughput</label><br>
+            <input type="checkbox" id="metric10" value="urn:3GPP:ns:PSS:DASH:QM10#PlayList"><label for="metric10">Playlist</label>
           </div>
       `,
       customClass:{
@@ -714,7 +718,7 @@ async function createMetricsJson(sessionId) {
           }
 
           const metrics = [];
-          ['metric1', 'metric2', 'metric3', 'metric4', 'metric5'].forEach(metricId => {
+      ['metric2', 'metric3', 'metric4', 'metric5', 'metric6', 'metric7', 'metric8', 'metric9', 'metric10'].forEach(metricId => {
               if (document.getElementById(metricId).checked) {
                   metrics.push(document.getElementById(metricId).value);
               }

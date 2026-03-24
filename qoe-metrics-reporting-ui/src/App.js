@@ -7,7 +7,6 @@ class App {
         this._populateQoeReportTable();
         this._populateMpdInformationTable();
         this._createBufferLevelChart();
-        this._createHttpListChart();
         this._createRepresentationSwitchChart();
     }
 
@@ -147,68 +146,6 @@ class App {
         new Chart(ctx, config);
     }
 
-    _createHttpListChart() {
-        const rawData = this.json.elements[0].elements[0].elements.filter((element) => {
-            return element.name === 'QoeMetric' && element.elements[0].name === 'HttpList';
-        })[0].elements[0].elements;
-        const datasets = {}
-
-        rawData.forEach((dataPoint) => {
-            if (!datasets[dataPoint.attributes.type]) {
-                datasets[dataPoint.attributes.type] = {
-                    label: dataPoint.attributes.type,
-                    data: []
-                }
-            }
-            const traces = dataPoint.elements.filter((element) => {
-                return element.name === 'Trace'
-            });
-            let bytes = 0;
-            let duration = 0;
-            traces.forEach((trace) => {
-                bytes += parseInt(trace.attributes.b);
-                duration += parseInt(trace.attributes.d);
-            })
-            datasets[dataPoint.attributes.type].data.push([duration, bytes]);
-        })
-        const ctx = document.getElementById('http-list-chart');
-        const data = {
-            datasets: Object.keys(datasets).map((key) => {
-                return datasets[key]
-            })
-        }
-        const config = {
-            type: 'scatter',
-            data: data,
-            options: {
-                responsive: true,
-                plugins: {
-                    legend: {
-                        position: 'top',
-                    },
-                    title: {
-                        display: true,
-                        text: 'HTTP Requests: Duration and bytes per type'
-                    }
-                },
-                scales: {
-                    y: {
-                        title: {
-                            display: true,
-                            text: 'Transferred Bytes'
-                        }
-                    },
-                    x: {
-                        title: {
-                            display: true,
-                            text: 'Request Duration in ms'
-                        }
-                    }
-                }
-            },
-        };
-        new Chart(ctx, config);
-    }
 
     _createRepresentationSwitchChart() {
         const rawData = this.json.elements[0].elements[0].elements.filter((element) => {
