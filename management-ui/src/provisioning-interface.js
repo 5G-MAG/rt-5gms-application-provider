@@ -233,7 +233,13 @@ async function deleteSelectedSessions() {
 
 
 async function openM8() {
-  window.open(`${operatingUrl}m8_dir/m8.json`)
+  try {
+    const url = `${operatingUrl}m8.json`;
+    window.open(url);
+  } catch (e) {
+    console.error(e);
+    notifyError('Could not open M8 JSON.');
+  }
 }
 
 async function addSessionToTable(sessionId) {

@@ -56,9 +56,9 @@ from .importers import M1SessionImporter
 #: :private:
 DEFAULT_CONFIG = '''[media-configuration]
 m5_authority = localhost:7777
-format = FiveGMagJsonFormatter
 root_dir = /usr/share/nginx/html/m8
-m8outputs = %(format)s(root_dir=%(root_dir)s)
+m8_json_filename = m8.json
+m8outputs = FiveGMagJsonFormatter()
 '''
 
 class MediaConfiguration:
@@ -365,9 +365,24 @@ configuration with the 5GMS AF.
         :meta private:
         :return: self
         '''
-        m8_outputs: List[str] = self.__config.get('m8outputs', section='media-configuration', default='').split(',')
+        m8_outputs: List[str] = self.__config.get('m8outputs', section='media-configuration', default='').split(';')
+        has_default_fivegmag_formatter = False
         for outstr in m8_outputs:
+            outstr = outstr.strip()
+            if outstr == '':
+                continue
+
+            check = ''.join(outstr.split())
+            match = self.__fnstr_re.match(check)
+            if match is not None:
+                name, args, kwargs = match.group('name', 'args', 'kwargs')
+                if name == 'FiveGMagJsonFormatter' and args is None and kwargs is None:
+                    has_default_fivegmag_formatter = True
             m8_out = await self.__make_m8_output(outstr)
+            await m8_out.addToMediaConfiguration(self)
+
+        if not has_default_fivegmag_formatter:
+            m8_out = await self.__make_m8_output('FiveGMagJsonFormatter()')
             await m8_out.addToMediaConfiguration(self)
         return self
 
@@ -386,6 +401,7 @@ configuration with the 5GMS AF.
 
     async def __make_m8_output(self, outstr: str) -> "M8Output":
         from rt_m8_output import M8Output
+        outstr = ''.join(outstr.split())
         match = self.__fnstr_re.match(outstr)
         if match is None:
             raise ValueError(f'Badly formatted M8Output name: {outstr}')
