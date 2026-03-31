@@ -946,30 +946,61 @@ async def export_ps_configuration():
 async def import_ps_configuration(request: Request):
     try:
         body = await request.json()
-        streams = body.get("streams", {})
+
+        if not isinstance(body, dict) or "streams" not in body:
+            raise HTTPException(
+                status_code=422,
+                detail='Import JSON must be an object with a "streams" key',
+            )
+
+        streams = body["streams"]
+
+        if not isinstance(streams, dict):
+            raise HTTPException(
+                status_code=422,
+                detail='"streams" must be an object',
+            )
+
+        for key, value in streams.items():
+            if not isinstance(value, dict):
+                raise HTTPException(
+                    status_code=422,
+                    detail=f'Stream "{key}" must be a JSON object, got {type(value).__name__}',
+                )
+
         app_id = body.get("appId")
         asp_id = body.get("aspId")
 
-        media_configuration = await get_media_configuration()
-        m1 = await get_M1Session()
-
-        for psid in list(await m1.provisioningSessionIds()):
-            await m1.provisioningSessionDestroy(psid)
-
-        await media_configuration.reset()
-
-        for _ , session_data in streams.items():
+        validated_sessions = []
+        for key, session_data in streams.items():
             if app_id and "appId" not in session_data:
                 session_data["appId"] = app_id
-            media_session = MediaSession.fromJSONObject(session_data)
+            try:
+                media_session = MediaSession.fromJSONObject(session_data)
+            except Exception as e:
+                raise HTTPException(
+                    status_code=422,
+                    detail=f"Validation failed for session '{key}': {e}",
+                )
             if asp_id and media_session.asp_id is None:
                 media_session.asp_id = asp_id
+            validated_sessions.append(media_session)
+
+        media_configuration = await get_media_configuration()
+        
+        await media_configuration.reset()
+
+        if asp_id:
+            media_configuration.asp_id = asp_id
+
+        for media_session in validated_sessions:
             await media_configuration.addMediaSession(media_session)
 
         await media_configuration.synchronise()
-        await media_configuration.restoreModel()
         return {"message": "Provisioning session configuration imported successfully"}
 
+    except HTTPException:
+        raise
     except Exception as e:
         traceback.print_exc()
         raise HTTPException(status_code=500, detail=str(e))

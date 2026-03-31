@@ -225,7 +225,8 @@ This class models a 3GPP TS 26.512 ProvisioningSession. The ProvisioningSession 
                     media_entry = MediaEntry(obj['name'], obj['ingestURL'], dcs, app_distributions=app_distribs)
                     kwargs['media_entry'] = media_entry
             elif k == 'certificates':
-                kwargs['certificates'] = {cert.identity(): cert for cert in [MediaServerCertificate.fromJSONObject(c) for c in v]}
+                cert_items = v.values() if isinstance(v, dict) else v
+                kwargs['certificates'] = {cert.identity(): cert for cert in [MediaServerCertificate.fromJSONObject(c) for c in cert_items]}
             elif k == 'consumptionReporting':
                 if reporting is None:
                     reporting = MediaReportingConfiguration()
