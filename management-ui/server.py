@@ -33,6 +33,13 @@ from rt_m1_client import app_configuration
 
 from rt_media_configuration import MediaConfiguration, MediaEntry, MediaDistribution, MediaEntryPoint, MediaMetricsReportingConfiguration, MediaServerCertificate, MediaGeoFencing, MediaConsumptionReportingConfiguration, MediaDynamicPolicy, MediaSession
 from rt_media_configuration.media_configuration import DEFAULT_CONFIG
+from rt_media_configuration.maf_session_discovery import (
+    maf_config_exists,
+    is_maf_auto_discover_enabled,
+    discover_sessions_via_maf,
+    maf_capabilities,
+    set_maf_auto_discover,
+)
 
 config = Configuration()
 
@@ -115,6 +122,10 @@ async def connection_checker():
 
 @app.get("/fetch_all_sessions")
 async def get_all_sessions():
+    if maf_config_exists() and is_maf_auto_discover_enabled():
+        await discover_sessions_via_maf(await get_M1Session(), await get_media_configuration())
+    media_configuration = await get_media_configuration()
+    await media_configuration.restoreModel()
     session = await get_M1Session()
     session_ids = await session.provisioningSessionIds() 
     return {"session_ids": list(session_ids)}
@@ -142,6 +153,7 @@ def _build_session_ui_info(session: MediaSession) -> Dict[str, bool]:
 @app.get("/provisioning_sessions/build_Informations_for_UI")
 async def build_Informations_for_UI_all():
     media_configuration = await get_media_configuration()
+    await media_configuration.restoreModel()
     informations = {}
     for session in await media_configuration.mediaSessions():
         session_id = session.provisioning_session_id or session.id
@@ -153,6 +165,7 @@ async def build_Informations_for_UI_all():
 @app.get("/provisioning_session/{sessionId}/build_Informations_for_UI")
 async def build_Informations_for_UI(sessionId: str):
     media_configuration = await get_media_configuration()
+    await media_configuration.restoreModel()
     session = await media_configuration.mediaSessionByProvisioningSessionId(sessionId)
     if session is None:
         raise HTTPException(status_code=404, detail="Provisioning session not found")
@@ -160,6 +173,30 @@ async def build_Informations_for_UI(sessionId: str):
 # Auxiliary function to pass proper configuration as dependency injection parameter
 def get_config():
     return Configuration()
+
+@app.get("/admin/capabilities")
+async def admin_capabilities():
+    return maf_capabilities()
+
+@app.post("/admin/maf_auto_discover")
+async def admin_set_maf_auto_discover(payload: Dict[str, bool]):
+    if not maf_config_exists():
+        raise HTTPException(status_code=404, detail="maf-client.conf not found")
+    enabled = bool(payload.get("enabled", False))
+    try:
+        set_maf_auto_discover(enabled)
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=f"Failed to update maf-client.conf: {exc}")
+    return {"status": "ok", "maf_auto_discover": enabled}
+
+@app.post("/admin/discover_sessions")
+async def admin_discover_sessions():
+    if not maf_config_exists():
+        raise HTTPException(status_code=404, detail="maf-client.conf not found")
+    try:
+        return await discover_sessions_via_maf(await get_M1Session(), await get_media_configuration())
+    except Exception as exc:
+        raise HTTPException(status_code=502, detail=f"Failed to discover sessions via MAF: {exc}")
 
 async def get_M1Session():
     global _m1_session
