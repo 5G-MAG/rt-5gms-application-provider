@@ -186,13 +186,6 @@ configuration with the 5GMS AF.
                 return v
         return None
 
-    async def provisioningSessionIds(self) -> List[str]:
-            _provisioningSessionIds = [
-                s.provisioning_session_id
-                for s in self.__model["sessions"].values()
-                if s.provisioning_session_id is not None
-            ]
-            return _provisioningSessionIds
 
     async def synchronise(self):
         '''Synchronise MediaConfiguration
@@ -220,7 +213,7 @@ configuration with the 5GMS AF.
             self.__log.debug(str(d))
             await d.apply_delta(self.__m1_session)
 
-        await af_imp.import_to(self)
+        self.__model = af_mc.__model
         await self.updateM8Files()
 
     async def deltas(self, other: "MediaConfiguration") -> List[DeltaOperation]:

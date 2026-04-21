@@ -47,8 +47,6 @@ class Configuration:
     data_store = %(state_dir)s/m1-client
     m1_address = 127.0.0.23
     m1_port = 7777
-    maf_address = 127.0.0.25
-    maf_port = 7777
     asp_id =
     external_app_id = please-change-this
     certificate_signing_class = rt_m1_client.certificates.DefaultCertificateSigner

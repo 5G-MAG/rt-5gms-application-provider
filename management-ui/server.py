@@ -115,18 +115,19 @@ async def connection_checker():
 
 @app.get("/fetch_all_sessions")
 async def get_all_sessions():
-    media_configuration = await get_media_configuration()
-    await media_configuration.synchronise()
-    psIDs = await media_configuration.provisioningSessionIds()
-    return {"session_ids": psIDs}
+    session = await get_M1Session()
+    session_ids = await session.provisioningSessionIds() 
+    return {"session_ids": list(session_ids)}
 
 
 @app.post("/resync")
 async def resync():
     media_configuration = await get_media_configuration()
     await media_configuration.synchronise()
-    psIDs = await media_configuration.provisioningSessionIds()
-    return {"status": "ok", "session_ids": psIDs}
+
+    session = await get_M1Session()
+    af_ids = list(await session.provisioningSessionIds() or [])
+    return {"status": "ok", "session_ids": af_ids}
 
 def _build_session_ui_info(session: MediaSession) -> Dict[str, bool]:
     reporting = session.reporting_configurations
@@ -441,9 +442,8 @@ async def get_session_details(session, ps_id):
 
 @app.get("/details")
 async def get_provisioning_session_details():
-    media_configuration = await get_media_configuration()
     session = await get_M1Session()
-    ps_ids = await media_configuration.provisioningSessionIds()
+    ps_ids = await session.provisioningSessionIds()
     async def safe(ps_id):
         try:
             return await get_session_details(session, ps_id)
