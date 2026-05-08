@@ -221,6 +221,7 @@ configuration with the 5GMS AF.
         '''
         ret = []
         # Check each session I hold to see if it exists in the other configuration or not
+        to_del = []
         have = []
         to_add = list(other.__model['sessions'].values())
  
@@ -247,8 +248,10 @@ configuration with the 5GMS AF.
                         have += [(session, o_session)]
                         to_add.remove(o_session)
                         break
-        sessions_to_create = [s for s in to_add if s.provisioning_session_id is None]
-        ret += [await MediaSessionDeltaOperation(self, add=session) for session in sessions_to_create]
+                else:
+                    to_del += [session]
+        ret += [await MediaSessionDeltaOperation(self, add=session) for session in to_add]
+        ret += [await MediaSessionDeltaOperation(self, remove=session) for session in to_del]
         # check sub-structures of sessions we have for changes
         for session,o_session in have:
             if session.certificates is None and o_session.certificates is not None:
