@@ -101,7 +101,7 @@ async function loadAdminCapabilities() {
             notifyError(saveData.detail || 'Failed to update auto-load switch.');
             return;
           }
-          notifySuccess(`Auto Load AF Sessions ${enabled ? 'enabled' : 'disabled'}.`);
+          notifySuccess(`Sync AF-Sessions ${enabled ? 'enabled' : 'disabled'}.`);
           if (enabled) {
             document.dispatchEvent(new Event('sessions:reload'));
           }
