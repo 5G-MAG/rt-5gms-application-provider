@@ -137,6 +137,8 @@ This class models the QoS parameters, charging rules and application rules for d
                 kwargs["charging"] = MediaChargingSpecification.fromJSONObject(v)
             elif k == "policyTemplateId":
                 kwargs['policy_template_id'] = v
+            elif k == "externalReference":
+                kwargs['local_id'] = v
             else:
                 raise TypeError(f'MediaDynamicPolicy: JSON field "{k}" not understood')
         return MediaDynamicPolicy(**kwargs)
