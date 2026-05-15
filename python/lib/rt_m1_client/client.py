@@ -155,6 +155,7 @@ class M1Client:
         self.__default_response(result)
         return None
 
+
     async def getProvisioningSessionById(self,
                                          provisioning_session_id: ResourceId
                                          ) -> Optional[ProvisioningSessionResponse]:
@@ -863,7 +864,8 @@ class M1Client:
     # Private methods
 
     async def __do_request(self, method: str, url_suffix: str, body: Union[str,bytes],
-                           content_type: str, headers: Optional[dict] = None) -> Dict[str,Any]:
+                           content_type: str, headers: Optional[dict] = None,
+                           ) -> Dict[str,Any]:
         '''Send a request to the 5GMS Application Function
 
         :meta private:

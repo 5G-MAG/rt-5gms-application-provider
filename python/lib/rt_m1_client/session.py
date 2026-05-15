@@ -241,6 +241,7 @@ class M1Session:
                     break
         return ret
 
+    
     # Certificates management
 
     async def certificateIds(self, provisioning_session_id: ResourceId) -> Optional[List[ResourceId]]:
@@ -1207,6 +1208,7 @@ class M1Session:
         '''
         if self.__m1_client is None:
             self.__m1_client = M1Client(self.__m1_host)
+
 
     def _dump_state(self) -> None:
         '''Dump the current provisioning session cache to the log

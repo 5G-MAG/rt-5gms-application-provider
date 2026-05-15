@@ -64,8 +64,58 @@ window.openDetailsForSelected = function () {
 
 
 document.addEventListener('DOMContentLoaded', async () => {
+  await loadAdminCapabilities();
   await loadAllSessions();
 });
+
+function setMafAutoDiscoverVisible(visible) {
+  const wrap = document.getElementById('maf-auto-discover-wrap');
+  if (!wrap) return;
+  wrap.style.display = visible ? '' : 'none';
+}
+
+async function loadAdminCapabilities() {
+  try {
+    const response = await fetch(`${operatingUrl}admin/capabilities`, { cache: 'no-store' });
+    if (!response.ok) {
+      setMafAutoDiscoverVisible(false);
+      return;
+    }
+    const data = await response.json();
+    const available = data.maf_discovery_available === true;
+    setMafAutoDiscoverVisible(available);
+    const toggle = document.getElementById('maf-auto-discover-toggle');
+    if (toggle) {
+      toggle.checked = data.maf_auto_discover === true;
+      toggle.onchange = async () => {
+        const enabled = toggle.checked === true;
+        try {
+          const saveResp = await fetch(`${operatingUrl}admin/maf_auto_discover`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ enabled })
+          });
+          const saveData = await saveResp.json().catch(() => ({}));
+          if (!saveResp.ok) {
+            toggle.checked = !enabled;
+            notifyError(saveData.detail || 'Failed to update auto-load switch.');
+            return;
+          }
+          notifySuccess(`Sync AF-Sessions ${enabled ? 'enabled' : 'disabled'}.`);
+          if (enabled) {
+            document.dispatchEvent(new Event('sessions:reload'));
+          }
+        } catch (error) {
+          toggle.checked = !enabled;
+          notifyError('Failed to update auto-load switch.');
+        }
+      };
+    }
+  } catch (error) {
+    console.warn('Failed to load admin capabilities:', error);
+    setMafAutoDiscoverVisible(false);
+  }
+}
 
 function setAFStatus(connected) {
   const el = document.getElementById('af-status');

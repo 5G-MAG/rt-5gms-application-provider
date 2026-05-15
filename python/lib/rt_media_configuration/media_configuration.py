@@ -186,6 +186,7 @@ configuration with the 5GMS AF.
                 return v
         return None
 
+
     async def synchronise(self):
         '''Synchronise MediaConfiguration
 
