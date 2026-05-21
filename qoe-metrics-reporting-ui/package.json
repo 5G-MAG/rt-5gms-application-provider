@@ -8,9 +8,12 @@
     "startCommand": "npm start"
   },
   "scripts": {
-    "start": "sirv --dev --no-clear --port 3000"
+    "start": "node server.js"
   },
   "devDependencies": {
     "sirv-cli": "^2.0.2"
+  },
+  "dependencies": {
+    "express": "^5.2.1"
   }
 }
