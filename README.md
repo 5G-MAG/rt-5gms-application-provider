@@ -41,10 +41,10 @@ requests payload. The source files and the documentation are located in the `pos
 
 The installation instructions for the Postman Collection can be found [here](postman/README.md).
 
-## QoE Metrics Reporting UI
+## Consumption and QoE Metrics Reporting UI
 
 A web-based Graphical User Interface that parses a QoE Metrics Report provided in XML
 format and outputs its content in graphical and tabular form. The source files and the documentation are located in
-the `qoe-metrics-reporting-ui` folder of this repository.
+the `consumption-qoe-metrics-reporting-ui` folder of this repository.
 
-The installation instructions for the Management UI can be found [here](qoe-metrics-reporting-ui/README.md).
+The installation instructions for the Management UI can be found [here](consumption-qoe-metrics-reporting-ui/README.md).
