@@ -1559,3 +1559,40 @@ body {
 #playlist-chart {
     max-height: 220px;
 }
+
+/* ── Tab navigation ──────────────────────────────────────────────────────── */
+.qoe-tabs {
+    border-bottom: none;
+    margin-bottom: 0;
+    gap: 4px;
+}
+
+.qoe-tabs .nav-link {
+    background: rgba(255,255,255,0.15);
+    border: 1px solid rgba(255,255,255,0.25);
+    border-bottom: none;
+    border-radius: 8px 8px 0 0;
+    color: #fff;
+    font-family: 'Poppins', sans-serif;
+    font-weight: 600;
+    font-size: 13px;
+    padding: 8px 20px;
+    transition: background 0.15s;
+}
+
+.qoe-tabs .nav-link:hover {
+    background: rgba(255,255,255,0.25);
+    color: #fff;
+}
+
+.qoe-tabs .nav-link.active {
+    background: #fff;
+    color: #2596be;
+    border-color: #fff;
+}
+
+.qoe-tab-content {
+    background: transparent;
+    padding-top: 14px;
+}
+

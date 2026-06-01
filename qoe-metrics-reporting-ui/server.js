@@ -50,6 +50,13 @@ function extractClientId(filename) {
     return match ? match[1] : base;
 }
 
+// Consumption JSON files: <clientId>_<timestamp>.json (single underscore separator)
+function extractClientIdFromJson(filename) {
+    const base = filename.replace(/\.json$/, '');
+    const idx = base.indexOf('_');
+    return idx === -1 ? base : base.substring(0, idx);
+}
+
 // ── Routes ───────────────────────────────────────────────────────────────────
 
 app.get('/api/config', (req, res) => {
@@ -129,6 +136,49 @@ app.get('/api/sessions/:sessionId/reports/:filename', (req, res) => {
             return res.status(500).json({ error: 'Could not read file', detail: err.message });
         }
         res.type('application/xml').send(data);
+    });
+});
+
+// GET /api/sessions/:sessionId/consumption — list JSON consumption report filenames
+app.get('/api/sessions/:sessionId/consumption', (req, res) => {
+    const reportsDir = safeResolve(AF_REPORTS_BASE, req.params.sessionId, 'consumption_reports');
+    if (!reportsDir) return res.status(400).json({ error: 'Invalid session ID' });
+
+    const clientFilter = req.query.clientId || null;
+
+    fs.readdir(reportsDir, (err, files) => {
+        if (err) {
+            if (err.code === 'ENOENT') return res.json([]);
+            return res.status(500).json({ error: 'Cannot read consumption_reports', detail: err.message });
+        }
+        let jsonFiles = files.filter(f => f.endsWith('.json'));
+        if (clientFilter) {
+            jsonFiles = jsonFiles.filter(f => extractClientIdFromJson(f) === clientFilter);
+        }
+        jsonFiles.sort((a, b) => extractTimestamp(a).localeCompare(extractTimestamp(b)));
+        res.json(jsonFiles);
+    });
+});
+
+// GET /api/sessions/:sessionId/consumption/file?name=<filename> — serve one consumption report
+// Using query param instead of path param to avoid URL encoding issues with colons in timestamps
+app.get('/api/sessions/:sessionId/consumption/file', (req, res) => {
+    const { sessionId } = req.params;
+    const filename = req.query.name;
+
+    if (!filename || !filename.endsWith('.json') || filename.includes('/') || filename.includes('..')) {
+        return res.status(400).json({ error: 'Invalid filename' });
+    }
+
+    const filePath = safeResolve(AF_REPORTS_BASE, sessionId, 'consumption_reports', filename);
+    if (!filePath) return res.status(400).json({ error: 'Path traversal attempt detected' });
+
+    fs.readFile(filePath, 'utf8', (err, data) => {
+        if (err) {
+            if (err.code === 'ENOENT') return res.status(404).json({ error: 'File not found' });
+            return res.status(500).json({ error: 'Could not read file', detail: err.message });
+        }
+        res.type('application/json').send(data);
     });
 });
 

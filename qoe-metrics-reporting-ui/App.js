@@ -28,6 +28,13 @@ class App {
         this._playoutDelayChart = null;
         this._playlistChart = null;
 
+        // Consumption report charts
+        this._consumptionTotalChart = null;
+        this._consumptionMap = null;
+
+        // Track loaded consumption files separately
+        this._loadedConsumptionFiles = {};
+
         // Set of active sessionIds
         this._activeSessions = new Set();
         // { sessionId: Set<clientId> }
@@ -282,15 +289,45 @@ class App {
             });
         });
 
+        // Detect if selection changed BEFORE updating _activeClients
+        const prevKeys = JSON.stringify(Object.fromEntries(
+            Object.entries(this._activeClients).map(([s, cs]) => [s, [...cs].sort()])
+        ));
+        const newKeys = JSON.stringify(Object.fromEntries(
+            Object.entries(newActive).map(([s, cs]) => [s, [...cs].sort()])
+        ));
+        const selectionChanged = prevKeys !== newKeys;
+
         this._activeClients = newActive;
 
-        // Ensure loaded-file tracking exists
+        // Ensure QoE loaded-file tracking exists
         Object.keys(newActive).forEach(s => {
             if (!this._loadedFiles[s]) this._loadedFiles[s] = {};
             newActive[s].forEach(c => {
                 if (!this._loadedFiles[s][c]) this._loadedFiles[s][c] = new Set();
             });
         });
+
+        // If selection changed: clear consumption UI and reset consumption tracking
+        // If same selection: do nothing — poll will only pick up new files
+        if (selectionChanged) {
+            this._clearConsumptionUI();
+            this._loadedConsumptionFiles = {};
+            Object.keys(newActive).forEach(s => {
+                this._loadedConsumptionFiles[s] = {};
+                newActive[s].forEach(c => {
+                    this._loadedConsumptionFiles[s][c] = new Set();
+                });
+            });
+        } else {
+            // Same selection — just ensure tracking exists without clearing
+            Object.keys(newActive).forEach(s => {
+                if (!this._loadedConsumptionFiles[s]) this._loadedConsumptionFiles[s] = {};
+                newActive[s].forEach(c => {
+                    if (!this._loadedConsumptionFiles[s][c]) this._loadedConsumptionFiles[s][c] = new Set();
+                });
+            });
+        }
 
         // Update stat card
         const totalClients = Object.values(newActive).reduce((sum, set) => sum + set.size, 0);
@@ -304,15 +341,63 @@ class App {
 
     // ── Polling ───────────────────────────────────────────────────────────────
 
+    _clearConsumptionUI() {
+        // Clear summary table
+        const tbody = document.querySelector('#consumption-summary-table tbody');
+        if (tbody) tbody.innerHTML = '';
+        this._consumptionCounts = {};
+
+        // Destroy and null consumption charts so they rebuild fresh
+        if (this._consumptionTimelineChart) {
+            this._consumptionTimelineChart.destroy();
+            }
+        if (this._consumptionTotalChart) {
+            this._consumptionTotalChart.destroy();
+            this._consumptionTotalChart = null;
+        }
+        if (this._consumptionMap) {
+            this._consumptionMap.remove();
+            this._consumptionMap = null;
+            const mapDiv = document.getElementById('consumption-map');
+            if (mapDiv) mapDiv.innerHTML = '<div id="consumption-map-placeholder" style="height:100%;display:flex;align-items:center;justify-content:center;color:#aaa;font-size:13px;font-family:Poppins,sans-serif;">No location data available yet.</div>';
+        }
+    }
+
+    async _pollConsumption(sessionId, clientId) {
+        try {
+            const url = `/api/sessions/${encodeURIComponent(sessionId)}/consumption?clientId=${encodeURIComponent(clientId)}&_=${Date.now()}`;
+            const resp = await fetch(url);
+            if (!resp.ok) return;
+            const filenames = await resp.json();
+            if (!this._loadedConsumptionFiles[sessionId]) this._loadedConsumptionFiles[sessionId] = {};
+            if (!this._loadedConsumptionFiles[sessionId][clientId]) {
+                this._loadedConsumptionFiles[sessionId][clientId] = new Set();
+            }
+            const loaded = this._loadedConsumptionFiles[sessionId][clientId];
+            const newFiles = filenames.filter(f => !loaded.has(f));
+            for (const filename of newFiles) {
+                try {
+                    await this._loadAndProcessConsumption(filename, sessionId, clientId);
+                    loaded.add(filename);
+                } catch (err) {
+                    console.error(`Failed to process consumption ${filename}:`, err);
+                }
+            }
+        } catch (err) {
+            console.error(`Consumption poll error for ${sessionId}/${clientId}:`, err);
+        }
+    }
+
     _stopPolling() {
         if (this._pollTimer !== null) { clearInterval(this._pollTimer); this._pollTimer = null; }
     }
 
     async _poll() {
         for (const sessionId of Object.keys(this._activeClients)) {
-            for (const clientId of this._activeClients[sessionId]) {
+                for (const clientId of this._activeClients[sessionId]) {
+                        // QoE metrics
                 try {
-                    const url = `/api/sessions/${encodeURIComponent(sessionId)}/reports?clientId=${encodeURIComponent(clientId)}`;
+                    const url = `/api/sessions/${encodeURIComponent(sessionId)}/reports?clientId=${encodeURIComponent(clientId)}&_=${Date.now()}`;
                     const filenames = await (await fetch(url)).json();
                     const loaded = this._loadedFiles[sessionId][clientId];
                     const newFiles = filenames.filter(f => !loaded.has(f));
@@ -327,6 +412,9 @@ class App {
                 } catch (err) {
                     console.error(`Poll error for ${sessionId}/${clientId}:`, err);
                 }
+
+                // Consumption reports
+                await this._pollConsumption(sessionId, clientId);
             }
         }
     }
@@ -351,6 +439,201 @@ class App {
         this._appendPlayoutDelayData(qoeReport, sessionId, clientId);
         this._appendPlaylistData(qoeReport, sessionId, clientId);
         this._updateStatCards(qoeReport);
+    }
+
+    // ── Consumption Reports ───────────────────────────────────────────────────
+
+    async _loadAndProcessConsumption(filename, sessionId, clientId) {
+        const url = `/api/sessions/${encodeURIComponent(sessionId)}/consumption/file?name=${encodeURIComponent(filename)}`;
+        const res = await fetch(url);
+        if (!res.ok) throw new Error(`HTTP ${res.status} for ${filename}`);
+        const data = await res.json();
+        const units = data.consumptionReportingUnits || [];
+        units.forEach(unit => {
+            this._appendConsumptionTableRow(unit, sessionId, clientId);
+            this._accumulateConsumptionCount(unit, sessionId, clientId);
+            this._appendConsumptionLocations(unit, sessionId, clientId);
+        });
+        // Rebuild chart once after all units in this file are processed
+        this._rebuildConsumptionTotalChart();
+    }
+
+    _appendConsumptionTableRow(unit, sessionId, clientId) {
+        const tbody = document.querySelector('#consumption-summary-table tbody');
+        if (!tbody) return;
+
+        // Aggregate by sessionId + clientId + mediaConsumed — one row per combination
+        const rowId = `csr-${sessionId}-${clientId}-${unit.mediaConsumed}`.replace(/[^a-z0-9\-]/gi, '_');
+        let row = document.getElementById(rowId);
+
+        const clientIp = unit.clientEndpointAddress ? unit.clientEndpointAddress.ipv4Addr || '—' : '—';
+        const serverIp = unit.serverEndpointAddress ? unit.serverEndpointAddress.ipv4Addr || '—' : '—';
+
+        if (!row) {
+            row = tbody.insertRow();
+            row.id = rowId;
+            // client, media, count, total duration, first seen, client IP, server IP
+            [clientId, unit.mediaConsumed || '—', '1',
+             unit.duration != null ? unit.duration : 0,
+             unit.startTime || '—', clientIp, serverIp
+            ].forEach(val => {
+                const cell = row.insertCell();
+                cell.innerHTML = val;
+            });
+        } else {
+            // Update count and total duration
+            row.cells[2].innerHTML = parseInt(row.cells[2].innerHTML) + 1;
+            row.cells[3].innerHTML = parseFloat(row.cells[3].innerHTML) + (unit.duration || 0);
+        }
+    }
+
+    _appendConsumptionLocations(unit, sessionId, clientId) {
+        const locations = unit.locations || [];
+        if (locations.length === 0) return;
+
+        // Initialise Leaflet map on first real location data
+        if (!this._consumptionMap) {
+            const placeholder = document.getElementById('consumption-map-placeholder');
+            if (placeholder) placeholder.remove();
+
+            this._consumptionMap = L.map('consumption-map').setView([0, 0], 2);
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+                maxZoom: 19
+            }).addTo(this._consumptionMap);
+        }
+
+        const colour = this._colourForKey(`${sessionId}::${clientId}`);
+        const markerIcon = L.divIcon({
+            className: '',
+            html: `<div style="width:12px;height:12px;border-radius:50%;background:${colour};border:2px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,0.4);"></div>`,
+            iconSize: [12, 12],
+            iconAnchor: [6, 6]
+        });
+
+        locations.forEach(loc => {
+            // TypedLocation can carry different location types.
+            // We handle the most common GPS / geoArea case.
+            const coords = this._extractGpsCoords(loc);
+            if (!coords) return;
+
+            const marker = L.marker([coords.lat, coords.lon], { icon: markerIcon });
+            const popupLines = [
+                `<strong>Client:</strong> ${clientId.substring(0, 18)}…`,
+                `<strong>Session:</strong> ${sessionId.substring(0, 18)}…`,
+                `<strong>Media:</strong> ${unit.mediaConsumed || '—'}`,
+                `<strong>Start:</strong> ${unit.startTime || '—'}`,
+                `<strong>Duration:</strong> ${unit.duration != null ? unit.duration + ' s' : '—'}`,
+                `<strong>Type:</strong> ${loc.locationType || 'GPS'}`
+            ];
+            if (loc.civicAddress) {
+                popupLines.push(`<strong>Address:</strong> ${JSON.stringify(loc.civicAddress)}`);
+            }
+            marker.bindPopup(popupLines.join('<br>'));
+            marker.addTo(this._consumptionMap);
+        });
+    }
+
+    /**
+     * Extract {lat, lon} from a TypedLocation entry.
+     * Handles the common cases defined in TS 29.571:
+     *   - locationType: "POINT" / "POLYGON" / "ELLIPSOID_ARC" → point.lat/lon
+     *   - geoArea with point
+     *   - civicAddress (no GPS coords — skip)
+     *   - direct lat/lon properties (some implementations)
+     */
+    _extractGpsCoords(loc) {
+        if (!loc) return null;
+
+        // Direct lat/lon (non-standard but common in implementations)
+        if (loc.lat != null && loc.lon != null) return { lat: loc.lat, lon: loc.lon };
+        if (loc.latitude != null && loc.longitude != null) return { lat: loc.latitude, lon: loc.longitude };
+
+        // geoArea.point (TS 29.572 GeographicArea)
+        if (loc.geoArea && loc.geoArea.point) {
+            const p = loc.geoArea.point;
+            if (p.lat != null && p.lon != null) return { lat: p.lat, lon: p.lon };
+        }
+
+        // point directly on loc
+        if (loc.point) {
+            const p = loc.point;
+            if (p.lat != null && p.lon != null) return { lat: p.lat, lon: p.lon };
+        }
+
+        // Some implementations embed coordinates under locationType POINT
+        if (loc.locationType === 'POINT' && loc.lat != null) {
+            return { lat: loc.lat, lon: loc.lon };
+        }
+
+        return null;
+    }
+
+
+
+    _accumulateConsumptionCount(unit, sessionId, clientId) {
+        if (!unit.mediaConsumed) return;
+        if (!this._consumptionCounts) this._consumptionCounts = {};
+        const key = `${sessionId}::${clientId}`;
+        if (!this._consumptionCounts[key]) this._consumptionCounts[key] = {};
+        this._consumptionCounts[key][unit.mediaConsumed] =
+            (this._consumptionCounts[key][unit.mediaConsumed] || 0) + 1;
+    }
+
+    _rebuildConsumptionTotalChart() {
+        if (!this._consumptionCounts) return;
+
+        // Collect all media types across all clients
+        const allMedia = [...new Set(
+            Object.values(this._consumptionCounts).flatMap(c => Object.keys(c))
+        )].sort();
+
+        if (!this._consumptionTotalChart) {
+            this._consumptionTotalChart = new Chart(
+                document.getElementById('consumption-total-chart'), {
+                type: 'bar',
+                data: { labels: allMedia, datasets: [] },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    animation: false,
+                    plugins: { legend: { position: 'top' } },
+                    datasets: { bar: { barPercentage: 0.5, categoryPercentage: 0.6 } },
+                    scales: {
+                        y: { title: { display: true, text: 'Number of reports' }, beginAtZero: true },
+                        x: { title: { display: true, text: 'Media type' } }
+                    }
+                }
+            });
+        }
+
+        const chart = this._consumptionTotalChart;
+        chart.data.labels = allMedia;
+
+        // Rebuild datasets from scratch each time
+        Object.entries(this._consumptionCounts).forEach(([key, counts]) => {
+            const [sessionId, clientId] = key.split('::');
+            const dsLabel = `${this._shortId(sessionId)}/${this._shortId(clientId)}`;
+            let ds = chart.data.datasets.find(d => d._key === key);
+            if (!ds) {
+                const colour = this._colourForKey(key);
+                ds = {
+                    label: dsLabel,
+                    _key: key,
+                    _sessionId: sessionId,
+                    _clientId: clientId,
+                    _metricLabel: dsLabel,
+                    backgroundColor: colour + 'cc',
+                    borderColor: colour,
+                    data: []
+                };
+                chart.data.datasets.push(ds);
+            }
+            // Set data directly — never increment
+            ds.data = allMedia.map(m => counts[m] || 0);
+        });
+
+        chart.update();
     }
 
     // ── Tables ────────────────────────────────────────────────────────────────
@@ -762,7 +1045,8 @@ class App {
 
     _removeClientData(sessionId, clientId) {
         [this._bufferLevelChart, this._representationSwitchChart, this._avgThroughputChart,
-         this._playoutDelayChart, this._playlistChart]
+         this._playoutDelayChart, this._playlistChart,
+         this._consumptionTotalChart]
             .forEach(chart => {
                 if (!chart) return;
                 chart.data.datasets = chart.data.datasets.filter(
@@ -774,13 +1058,15 @@ class App {
 
     _removeSessionData(sessionId) {
         [this._bufferLevelChart, this._representationSwitchChart, this._avgThroughputChart,
-         this._playoutDelayChart, this._playlistChart]
+         this._playoutDelayChart, this._playlistChart,
+         this._consumptionTotalChart]
             .forEach(chart => {
                 if (!chart) return;
                 chart.data.datasets = chart.data.datasets.filter(ds => ds._sessionId !== sessionId);
                 chart.update();
             });
         delete this._loadedFiles[sessionId];
+        delete this._loadedConsumptionFiles[sessionId];
         delete this._activeClients[sessionId];
     }
 
@@ -793,14 +1079,27 @@ class App {
         this._colourIndex = {};
         this._nextColourIdx = 0;
         [this._bufferLevelChart, this._representationSwitchChart, this._avgThroughputChart,
-         this._playoutDelayChart, this._playlistChart]
+         this._playoutDelayChart, this._playlistChart,
+         this._consumptionTotalChart]
             .forEach(c => { if (c) c.destroy(); });
         this._bufferLevelChart = null;
         this._representationSwitchChart = null;
         this._avgThroughputChart = null;
         this._playoutDelayChart = null;
         this._playlistChart = null;
-        ['reception-report-table', 'qoe-report-table', 'mpd-information-table', 'device-information-table'].forEach(id => {
+        this._consumptionTotalChart = null;
+        if (this._consumptionMap) {
+            this._consumptionMap.remove();
+            this._consumptionMap = null;
+            // Restore placeholder
+            const mapDiv = document.getElementById('consumption-map');
+            if (mapDiv) {
+                mapDiv.innerHTML = '<div id="consumption-map-placeholder" style="height:100%;display:flex;align-items:center;justify-content:center;color:#aaa;font-size:13px;font-family:Poppins,sans-serif;">No location data available yet. Locations will appear here when reports include GPS coordinates.</div>';
+            }
+        }
+        this._loadedConsumptionFiles = {};
+        ['reception-report-table', 'qoe-report-table', 'mpd-information-table', 'device-information-table',
+         'consumption-summary-table'].forEach(id => {
             const tbody = document.querySelector(`#${id} tbody`);
             if (tbody) tbody.innerHTML = '';
         });
