@@ -1546,3 +1546,16 @@ body {
         font-size: 16px;
     }
 }
+
+/* Constrain height of large time-series charts */
+#buffer-level-chart,
+#representation-switch-chart,
+#avg-throughput-chart {
+    max-height: 260px;
+}
+
+/* Smaller charts stay at natural height */
+#playout-delay-chart,
+#playlist-chart {
+    max-height: 220px;
+}

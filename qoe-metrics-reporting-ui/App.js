@@ -18,6 +18,8 @@ class App {
 
     constructor() {
         this.POLL_INTERVAL_MS = 5000;
+
+        // { sessionId: { clientId: Set<filename> } }
         this._loadedFiles = {};
 
         this._bufferLevelChart = null;
@@ -25,10 +27,12 @@ class App {
         this._avgThroughputChart = null;
         this._playoutDelayChart = null;
         this._playlistChart = null;
-        this._httpListChart = null;
 
-        this._activeSession = null;
-        this._activeClients = new Set();
+        // Set of active sessionIds
+        this._activeSessions = new Set();
+        // { sessionId: Set<clientId> }
+        this._activeClients = {};
+
         this._pollTimer = null;
 
         this._palette = [
@@ -36,16 +40,21 @@ class App {
             '#59a14f', '#edc948', '#b07aa1', '#ff9da7',
             '#9c755f', '#bab0ac'
         ];
-        this._clientColourIndex = {};
+        // colour keyed by "sessionId::clientId"
+        this._colourIndex = {};
         this._nextColourIdx = 0;
 
-        // Track report index per client for playout delay x-axis
         this._reportCount = {};
     }
 
     // ── Startup ───────────────────────────────────────────────────────────────
 
     async init() {
+        // Make legend labels use bold for metric name (which is now first in label)
+        Chart.defaults.plugins.legend.labels.font = {
+            size: 12,
+            weight: 'bold'
+        };
         this._injectControls();
         this._bindControls();
         await this._loadConfig();
@@ -58,14 +67,11 @@ class App {
         if (!root) { console.error('App.js: #metrics-controls-root not found.'); return; }
         root.innerHTML = `
             <div class="qoe-card" style="margin-bottom:14px;">
-                <div class="qoe-card-title" style="display:flex;align-items:center;gap:6px;">
-                    Configuration
-                </div>
+                <div class="qoe-card-title">Configuration</div>
                 <div style="margin-bottom:12px;">
                     <div class="ctrl-label">AF reports base path</div>
                     <div style="display:flex;gap:8px;">
-                        <input id="base-path-input" type="text" class="ctrl-input"
-                               style="flex:1;"
+                        <input id="base-path-input" type="text" class="ctrl-input" style="flex:1;"
                                placeholder="/home/fivegmag/5GMS/.../af-reports" />
                         <button id="base-path-apply" class="ctrl-btn">Apply</button>
                     </div>
@@ -73,15 +79,20 @@ class App {
                 </div>
                 <div style="display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:12px;">
                     <div>
-                        <div class="ctrl-label">Provisioning session</div>
-                        <select id="session-select" class="ctrl-input" style="width:100%;">
-                            <option value="">— apply a base path first —</option>
-                        </select>
+                        <div class="ctrl-label">Provisioning sessions</div>
+                        <div id="session-checkboxes" style="font-size:12px;color:#666;">
+                            Apply a base path first.
+                        </div>
+                        <div style="margin-top:8px;">
+                            <button id="load-sessions-btn" class="ctrl-btn" style="width:100%;">
+                                Load selected sessions
+                            </button>
+                        </div>
                     </div>
                     <div>
                         <div class="ctrl-label">Client IDs</div>
                         <div id="client-checkboxes" style="font-size:12px;color:#666;">
-                            Select a session above to see available clients.
+                            Select sessions first.
                         </div>
                         <div style="margin-top:8px;">
                             <button id="load-clients-btn" class="ctrl-btn" style="width:100%;">
@@ -95,7 +106,7 @@ class App {
 
     _bindControls() {
         document.getElementById('base-path-apply').addEventListener('click', () => this._applyBasePath());
-        document.getElementById('session-select').addEventListener('change', (e) => this._onSessionChange(e.target.value));
+        document.getElementById('load-sessions-btn').addEventListener('click', () => this._onLoadSessions());
         document.getElementById('load-clients-btn').addEventListener('click', () => this._onLoadClients());
     }
 
@@ -153,61 +164,93 @@ class App {
                 return;
             }
             const sessions = await res.json();
-            const select = document.getElementById('session-select');
-            select.innerHTML = '<option value="">— select a session —</option>';
             if (sessions.length === 0) {
                 this._setStatus('Path is valid but no session folders were found.', true);
                 return;
             }
-            sessions.forEach(s => {
-                const opt = document.createElement('option');
-                opt.value = s;
-                opt.textContent = s;
-                select.appendChild(opt);
-            });
+            this._renderSessionCheckboxes(sessions);
             this._setStatus(`Found ${sessions.length} session(s).`, false);
         } catch (err) {
             this._setStatus('Failed to fetch sessions: ' + err.message, true);
         }
     }
 
-    async _onSessionChange(sessionId) {
-        this._stopPolling();
-        this._activeSession = sessionId || null;
-        this._activeClients = new Set();
-        const label = document.getElementById('session-label');
-        if (label) label.textContent = sessionId || '';
-        const container = document.getElementById('client-checkboxes');
+    _renderSessionCheckboxes(sessions) {
+        const container = document.getElementById('session-checkboxes');
         container.innerHTML = '';
-        if (!sessionId) return;
-        container.textContent = 'Loading clients...';
-        try {
-            const res = await fetch(`/api/sessions/${encodeURIComponent(sessionId)}/clients`);
-            if (!res.ok) {
-                const err = await res.json();
-                container.textContent = 'Error: ' + (err.detail || err.error);
-                return;
+        sessions.forEach(sessionId => {
+            const colour = this._colourForKey(sessionId);
+            const label = document.createElement('label');
+            label.style.cssText = 'display:flex;align-items:center;gap:6px;margin:4px 0;cursor:pointer;font-family:monospace;font-size:0.8em;';
+            const swatch = document.createElement('span');
+            swatch.style.cssText = `display:inline-block;width:10px;height:10px;border-radius:2px;background:${colour};flex-shrink:0;`;
+            const cb = document.createElement('input');
+            cb.type = 'checkbox';
+            cb.value = sessionId;
+            label.appendChild(cb);
+            label.appendChild(swatch);
+            label.appendChild(document.createTextNode(sessionId));
+            container.appendChild(label);
+        });
+    }
+
+    // ── Load sessions → fetch clients for each ────────────────────────────────
+
+    async _onLoadSessions() {
+        const checked = [...document.querySelectorAll('#session-checkboxes input[type=checkbox]:checked')]
+            .map(cb => cb.value);
+        if (checked.length === 0) return;
+
+        // Remove sessions that were deselected
+        const toRemove = [...this._activeSessions].filter(s => !checked.includes(s));
+        toRemove.forEach(s => this._removeSessionData(s));
+        this._activeSessions = new Set(checked);
+
+        // Update session label in topbar
+        const label = document.getElementById('session-label');
+        if (label) label.textContent = checked.length === 1 ? checked[0] : `${checked.length} sessions`;
+
+        // Fetch client IDs for all selected sessions and render combined list
+        const clientContainer = document.getElementById('client-checkboxes');
+        clientContainer.textContent = 'Loading clients...';
+        clientContainer.innerHTML = '';
+
+        for (const sessionId of checked) {
+            try {
+                const res = await fetch(`/api/sessions/${encodeURIComponent(sessionId)}/clients`);
+                if (!res.ok) continue;
+                const clients = await res.json();
+                this._renderClientCheckboxesForSession(sessionId, clients, clientContainer);
+            } catch (err) {
+                console.error(`Could not load clients for ${sessionId}:`, err);
             }
-            const clients = await res.json();
-            this._renderClientCheckboxes(clients);
-        } catch (err) {
-            container.textContent = 'Failed to load clients: ' + err.message;
+        }
+
+        if (!clientContainer.children.length) {
+            clientContainer.textContent = 'No clients found in selected sessions.';
         }
     }
 
-    _renderClientCheckboxes(clients) {
-        const container = document.getElementById('client-checkboxes');
-        container.innerHTML = '';
-        if (clients.length === 0) { container.textContent = 'No clients found in this session.'; return; }
+    _renderClientCheckboxesForSession(sessionId, clients, container) {
+        if (clients.length === 0) return;
+
+        // Session header
+        const header = document.createElement('div');
+        header.style.cssText = 'font-size:10px;font-weight:600;color:#888;margin:8px 0 2px;font-family:monospace;letter-spacing:0.03em;';
+        header.textContent = sessionId;
+        container.appendChild(header);
+
         clients.forEach(clientId => {
-            const colour = this._colourForClient(clientId);
+            const key = `${sessionId}::${clientId}`;
+            const colour = this._colourForKey(key);
             const label = document.createElement('label');
-            label.style.cssText = 'display:flex;align-items:center;gap:6px;margin:4px 0;cursor:pointer;font-family:monospace;font-size:0.85em;';
+            label.style.cssText = 'display:flex;align-items:center;gap:6px;margin:3px 0;cursor:pointer;font-family:monospace;font-size:0.82em;';
             const swatch = document.createElement('span');
-            swatch.style.cssText = `display:inline-block;width:12px;height:12px;border-radius:50%;background:${colour};flex-shrink:0;`;
+            swatch.style.cssText = `display:inline-block;width:10px;height:10px;border-radius:50%;background:${colour};flex-shrink:0;`;
             const cb = document.createElement('input');
             cb.type = 'checkbox';
-            cb.value = clientId;
+            cb.dataset.sessionId = sessionId;
+            cb.dataset.clientId = clientId;
             label.appendChild(cb);
             label.appendChild(swatch);
             label.appendChild(document.createTextNode(clientId));
@@ -215,57 +258,83 @@ class App {
         });
     }
 
-    // ── Load / polling trigger ────────────────────────────────────────────────
+    // ── Load clients ──────────────────────────────────────────────────────────
 
     _onLoadClients() {
-        const checked = [...document.querySelectorAll('#client-checkboxes input[type=checkbox]:checked')]
-            .map(cb => cb.value);
-        if (checked.length === 0 || !this._activeSession) return;
-        const toRemove = [...this._activeClients].filter(c => !checked.includes(c));
-        toRemove.forEach(c => this._removeClientData(c));
-        this._activeClients = new Set(checked);
-        if (!this._loadedFiles[this._activeSession]) this._loadedFiles[this._activeSession] = {};
-        checked.forEach(c => {
-            if (!this._loadedFiles[this._activeSession][c]) this._loadedFiles[this._activeSession][c] = new Set();
-            if (!this._reportCount[c]) this._reportCount[c] = 0;
+        const checked = [...document.querySelectorAll('#client-checkboxes input[type=checkbox]:checked')];
+        if (checked.length === 0) return;
+
+        // Build new active set { sessionId -> Set<clientId> }
+        const newActive = {};
+        checked.forEach(cb => {
+            const s = cb.dataset.sessionId;
+            const c = cb.dataset.clientId;
+            if (!newActive[s]) newActive[s] = new Set();
+            newActive[s].add(c);
         });
-        this._stopPolling();
+
+        // Remove clients that were deselected
+        Object.keys(this._activeClients).forEach(s => {
+            this._activeClients[s].forEach(c => {
+                if (!newActive[s] || !newActive[s].has(c)) {
+                    this._removeClientData(s, c);
+                }
+            });
+        });
+
+        this._activeClients = newActive;
+
+        // Ensure loaded-file tracking exists
+        Object.keys(newActive).forEach(s => {
+            if (!this._loadedFiles[s]) this._loadedFiles[s] = {};
+            newActive[s].forEach(c => {
+                if (!this._loadedFiles[s][c]) this._loadedFiles[s][c] = new Set();
+            });
+        });
+
+        // Update stat card
+        const totalClients = Object.values(newActive).reduce((sum, set) => sum + set.size, 0);
         const clientsEl = document.getElementById('stat-clients');
-        if (clientsEl) clientsEl.textContent = checked.length;
+        if (clientsEl) clientsEl.textContent = totalClients;
+
+        this._stopPolling();
         this._poll();
         this._pollTimer = setInterval(() => this._poll(), this.POLL_INTERVAL_MS);
     }
+
+    // ── Polling ───────────────────────────────────────────────────────────────
 
     _stopPolling() {
         if (this._pollTimer !== null) { clearInterval(this._pollTimer); this._pollTimer = null; }
     }
 
     async _poll() {
-        if (!this._activeSession || this._activeClients.size === 0) return;
-        for (const clientId of this._activeClients) {
-            try {
-                const url = `/api/sessions/${encodeURIComponent(this._activeSession)}/reports?clientId=${encodeURIComponent(clientId)}`;
-                const filenames = await (await fetch(url)).json();
-                const loaded = this._loadedFiles[this._activeSession][clientId];
-                const newFiles = filenames.filter(f => !loaded.has(f));
-                for (const filename of newFiles) {
-                    try {
-                        await this._loadAndProcessFile(filename, clientId);
-                        loaded.add(filename);
-                    } catch (err) {
-                        console.error(`Failed to process ${filename}:`, err);
+        for (const sessionId of Object.keys(this._activeClients)) {
+            for (const clientId of this._activeClients[sessionId]) {
+                try {
+                    const url = `/api/sessions/${encodeURIComponent(sessionId)}/reports?clientId=${encodeURIComponent(clientId)}`;
+                    const filenames = await (await fetch(url)).json();
+                    const loaded = this._loadedFiles[sessionId][clientId];
+                    const newFiles = filenames.filter(f => !loaded.has(f));
+                    for (const filename of newFiles) {
+                        try {
+                            await this._loadAndProcessFile(filename, sessionId, clientId);
+                            loaded.add(filename);
+                        } catch (err) {
+                            console.error(`Failed to process ${filename}:`, err);
+                        }
                     }
+                } catch (err) {
+                    console.error(`Poll error for ${sessionId}/${clientId}:`, err);
                 }
-            } catch (err) {
-                console.error(`Poll error for client ${clientId}:`, err);
             }
         }
     }
 
     // ── Per-file processing ───────────────────────────────────────────────────
 
-    async _loadAndProcessFile(filename, clientId) {
-        const url = `/api/sessions/${encodeURIComponent(this._activeSession)}/reports/${encodeURIComponent(filename)}`;
+    async _loadAndProcessFile(filename, sessionId, clientId) {
+        const url = `/api/sessions/${encodeURIComponent(sessionId)}/reports/${encodeURIComponent(filename)}`;
         const res = await fetch(url);
         if (!res.ok) throw new Error(`HTTP ${res.status} for ${filename}`);
         const xml = await res.text();
@@ -276,12 +345,11 @@ class App {
         if (!qoeReport) { console.warn('No QoeReport found in', filename); return; }
 
         this._populateTablesOnce(receptionReport, qoeReport);
-        this._appendBufferLevelData(qoeReport, clientId);
-        this._appendRepresentationSwitchData(qoeReport, clientId);
-        this._appendAvgThroughputData(qoeReport, clientId, filename);
-        this._appendPlayoutDelayData(qoeReport, clientId, filename);
-        this._appendPlaylistData(qoeReport, clientId, filename);
-        this._appendHttpListData(qoeReport, clientId);
+        this._appendBufferLevelData(qoeReport, sessionId, clientId);
+        this._appendRepresentationSwitchData(qoeReport, sessionId, clientId);
+        this._appendAvgThroughputData(qoeReport, sessionId, clientId);
+        this._appendPlayoutDelayData(qoeReport, sessionId, clientId);
+        this._appendPlaylistData(qoeReport, sessionId, clientId);
         this._updateStatCards(qoeReport);
     }
 
@@ -320,20 +388,19 @@ class App {
                 });
             }
         }
-
         const deviceTbody = document.querySelector('#device-information-table tbody');
         if (deviceTbody && deviceTbody.rows.length === 0) {
-            // sup:supplementQoEMetric is a direct child of ReceptionReport
-            const suppMetric = receptionReport.elements.find(e =>
-                e.name === 'sup:supplementQoEMetric'
+            // sup:supplementQoEMetric is a child of QoeReport, not ReceptionReport
+            const suppMetric = (qoeReport.elements || []).find(e =>
+                this._localName(e.name) === 'supplementQoEMetric'
             );
             if (suppMetric) {
-                const deviceInfo = suppMetric.elements && suppMetric.elements.find(e =>
-                    e.name === 'sup:deviceinformation'
+                const deviceInfo = (suppMetric.elements || []).find(e =>
+                    this._localName(e.name) === 'deviceinformation'
                 );
                 if (deviceInfo) {
-                    const entry = deviceInfo.elements && deviceInfo.elements.find(e =>
-                        e.name === 'sup:Entry'
+                    const entry = (deviceInfo.elements || []).find(e =>
+                        this._localName(e.name) === 'Entry'
                     );
                     if (entry && entry.attributes) {
                         const attrs = entry.attributes;
@@ -352,19 +419,16 @@ class App {
     }
 
     _updateStatCards(qoeReport) {
-        // Reports loaded counter
         const reportsEl = document.getElementById('stat-reports');
         if (reportsEl) {
             let total = 0;
-            this._activeClients.forEach(c => {
-                if (this._loadedFiles[this._activeSession] && this._loadedFiles[this._activeSession][c]) {
-                    total += this._loadedFiles[this._activeSession][c].size;
-                }
+            Object.keys(this._loadedFiles).forEach(s => {
+                Object.keys(this._loadedFiles[s]).forEach(c => {
+                    total += this._loadedFiles[s][c].size;
+                });
             });
             reportsEl.textContent = total;
         }
-
-        // Avg throughput
         const tpEl = document.getElementById('stat-throughput');
         if (tpEl) {
             const metric = qoeReport.elements.find(e =>
@@ -379,17 +443,14 @@ class App {
                 tpEl.textContent = kbps + ' kbit/s';
             }
         }
-
-        // Avg buffer (last known buffer level — shown in ms to match chart)
         const bufEl = document.getElementById('stat-buffer');
         if (bufEl && this._bufferLevelChart) {
-            const datasets = this._bufferLevelChart.data.datasets;
-            if (datasets.length > 0) {
-                const allVals = datasets.flatMap(ds => ds.data.map(d => d.y)).filter(v => v != null && !isNaN(v));
-                if (allVals.length > 0) {
-                    const avg = Math.round(allVals.reduce((a, b) => a + b, 0) / allVals.length);
-                    bufEl.textContent = avg.toLocaleString() + ' ms';
-                }
+            const allVals = this._bufferLevelChart.data.datasets
+                .flatMap(ds => ds.data.map(d => d.y))
+                .filter(v => v != null && !isNaN(v));
+            if (allVals.length > 0) {
+                const avg = Math.round(allVals.reduce((a, b) => a + b, 0) / allVals.length);
+                bufEl.textContent = avg.toLocaleString() + ' ms';
             }
         }
     }
@@ -406,7 +467,7 @@ class App {
 
     // ── Buffer Level ──────────────────────────────────────────────────────────
 
-    _appendBufferLevelData(qoeReport, clientId) {
+    _appendBufferLevelData(qoeReport, sessionId, clientId) {
         const metric = qoeReport.elements.find(e =>
             e.name === 'QoeMetric' && e.elements && e.elements[0] &&
             e.elements[0].name === 'BufferLevel'
@@ -421,6 +482,7 @@ class App {
                 data: { datasets: [] },
                 options: {
                     responsive: true,
+                    maintainAspectRatio: false,
                     spanGaps: false,
                     plugins: { legend: { position: 'top' } },
                     scales: {
@@ -431,7 +493,7 @@ class App {
             });
         }
         const chart = this._bufferLevelChart;
-        const ds = this._getOrCreateDataset(chart, clientId, 'Buffer Level');
+        const ds = this._getOrCreateDataset(chart, sessionId, clientId, 'Buffer Level');
         rawData.forEach(dp => {
             ds.data.push({ x: new Date(dp.attributes.t).getTime(), y: parseFloat(dp.attributes.level) });
         });
@@ -441,7 +503,7 @@ class App {
 
     // ── Representation Switch ─────────────────────────────────────────────────
 
-    _appendRepresentationSwitchData(qoeReport, clientId) {
+    _appendRepresentationSwitchData(qoeReport, sessionId, clientId) {
         const metric = qoeReport.elements.find(e =>
             e.name === 'QoeMetric' && e.elements && e.elements[0] &&
             e.elements[0].name === 'RepSwitchList'
@@ -456,6 +518,7 @@ class App {
                 data: { datasets: [] },
                 options: {
                     responsive: true,
+                    maintainAspectRatio: false,
                     spanGaps: false,
                     plugins: { legend: { position: 'top' } },
                     scales: {
@@ -469,7 +532,7 @@ class App {
         rawData.forEach(dp => {
             const mpdInfo = this._getMpdInfoByRepresentationId(qoeReport, dp.attributes.to);
             if (!mpdInfo) return;
-            const ds = this._getOrCreateDataset(chart, clientId, mpdInfo.attributes.mimeType);
+            const ds = this._getOrCreateDataset(chart, sessionId, clientId, mpdInfo.attributes.mimeType);
             ds.data.push({ x: new Date(dp.attributes.t).getTime(), y: parseFloat(mpdInfo.attributes.bandwidth) });
         });
         chart.data.datasets.forEach(ds => ds.data.sort((a, b) => a.x - b.x));
@@ -478,7 +541,7 @@ class App {
 
     // ── Average Throughput ────────────────────────────────────────────────────
 
-    _appendAvgThroughputData(qoeReport, clientId, filename) {
+    _appendAvgThroughputData(qoeReport, sessionId, clientId) {
         const metric = qoeReport.elements.find(e =>
             e.name === 'QoeMetric' && e.elements && e.elements[0] &&
             e.elements[0].name === 'AvgThroughput'
@@ -496,6 +559,7 @@ class App {
                 data: { datasets: [] },
                 options: {
                     responsive: true,
+                    maintainAspectRatio: false,
                     spanGaps: false,
                     plugins: { legend: { position: 'top' } },
                     scales: {
@@ -506,7 +570,7 @@ class App {
             });
         }
         const chart = this._avgThroughputChart;
-        const ds = this._getOrCreateDataset(chart, clientId, 'Avg Throughput');
+        const ds = this._getOrCreateDataset(chart, sessionId, clientId, 'Avg Throughput');
         ds.data.push({ x: new Date(t).getTime(), y: throughputKbps });
         ds.data.sort((a, b) => a.x - b.x);
         chart.update();
@@ -514,7 +578,7 @@ class App {
 
     // ── Playout Delays ────────────────────────────────────────────────────────
 
-    _appendPlayoutDelayData(qoeReport, clientId, filename) {
+    _appendPlayoutDelayData(qoeReport, sessionId, clientId) {
         const ipd = qoeReport.elements.find(e =>
             e.name === 'QoeMetric' && e.elements && e.elements[0] &&
             e.elements[0].name === 'InitialPlayoutDelay'
@@ -525,8 +589,7 @@ class App {
         );
         if (!ipd && !pms) return;
 
-        // Use reportTime as label
-        const label = qoeReport.attributes.reportTime || filename;
+        const label = qoeReport.attributes.reportTime;
 
         if (!this._playoutDelayChart) {
             this._playoutDelayChart = new Chart(document.getElementById('playout-delay-chart'), {
@@ -535,9 +598,10 @@ class App {
                 options: {
                     responsive: true,
                     plugins: { legend: { position: 'top' } },
+                    datasets: { bar: { barPercentage: 0.5, categoryPercentage: 0.6 } },
                     scales: {
                         y: { title: { display: true, text: 'Delay in ms' } },
-                        x: { title: { display: true, text: 'Report Time' } }
+                        x: { title: { display: true, text: 'Report time' } }
                     }
                 }
             });
@@ -548,29 +612,31 @@ class App {
             chart.data.labels.sort();
         }
         const idx = chart.data.labels.indexOf(label);
-
-        if (ipd) {
-            const val = parseFloat(this._textContent(ipd.elements[0]) || 0);
-            const ds = this._getOrCreateDataset(chart, clientId, 'Initial playout delay');
+        const playoutMetrics = [
+            { metric: ipd, label: 'Initial playout delay' },
+            { metric: pms, label: 'Playout delay — media startup' }
+        ];
+        const alphas = ['dd', '77'];
+        playoutMetrics.forEach(({ metric, label }, i) => {
+            if (!metric) return;
+            const val = parseFloat(this._textContent(metric.elements[0]) || 0);
+            const ds = this._getOrCreateDataset(chart, sessionId, clientId, label);
+            const colour = this._colourForKey(`${sessionId}::${clientId}`);
+            ds.backgroundColor = colour + alphas[i];
+            ds.borderColor = colour;
             ds.data[idx] = val;
-        }
-        if (pms) {
-            const val = parseFloat(this._textContent(pms.elements[0]) || 0);
-            const ds = this._getOrCreateDataset(chart, clientId, 'Playout delay — media startup');
-            ds.data[idx] = val;
-        }
+        });
         chart.update();
     }
 
     // ── Play List ─────────────────────────────────────────────────────────────
 
-    _appendPlaylistData(qoeReport, clientId, filename) {
+    _appendPlaylistData(qoeReport, sessionId, clientId) {
         const metric = qoeReport.elements.find(e =>
             e.name === 'QoeMetric' && e.elements && e.elements[0] &&
             e.elements[0].name === 'PlayList'
         );
         if (!metric) return;
-
         const traces = metric.elements[0].elements || [];
 
         if (!this._playlistChart) {
@@ -580,15 +646,15 @@ class App {
                 options: {
                     responsive: true,
                     plugins: { legend: { position: 'top' } },
+                    datasets: { bar: { barPercentage: 0.5, categoryPercentage: 0.6 } },
                     scales: {
-                        y: { title: { display: true, text: 'Buffer level in ms' } },
+                        y: { title: { display: true, text: 'Duration in ms' } },
                         x: { title: { display: true, text: 'Segment start time' } }
                     }
                 }
             });
         }
         const chart = this._playlistChart;
-
         traces.forEach(trace => {
             (trace.elements || []).forEach(entry => {
                 if (entry.name !== 'TraceEntry') return;
@@ -599,57 +665,36 @@ class App {
                     chart.data.labels.push(label);
                     chart.data.labels.sort();
                 }
-                const ds = this._getOrCreateDataset(chart, clientId, repId);
+                const ds = this._getOrCreateDataset(chart, sessionId, clientId, repId);
+                const baseColour = this._colourForKey(`${sessionId}::${clientId}`);
+                // Same alpha pattern as playout delays — cycle per repId under same client
+                const repIds = [...new Set(
+                    chart.data.datasets
+                        .filter(d => d._sessionId === sessionId && d._clientId === clientId)
+                        .map(d => d._metricLabel)
+                )];
+                if (!repIds.includes(repId)) repIds.push(repId);
+                const alphas = ['dd', '77', 'aa', '44'];
+                const alpha = alphas[repIds.indexOf(repId) % alphas.length];
+                ds.backgroundColor = baseColour + alpha;
+                ds.borderColor = baseColour;
                 ds.data[chart.data.labels.indexOf(label)] = duration;
             });
         });
         chart.update();
     }
 
-    // ── HTTP List ─────────────────────────────────────────────────────────────
+    // ── Namespace helpers ────────────────────────────────────────────────────
 
-    _appendHttpListData(qoeReport, clientId) {
-        const metric = qoeReport.elements.find(e =>
-            e.name === 'QoeMetric' && e.elements && e.elements[0] &&
-            e.elements[0].name === 'HttpList'
-        );
-        if (!metric) return;
-
-        if (!this._httpListChart) {
-            this._httpListChart = new Chart(document.getElementById('http-list-chart'), {
-                type: 'scatter',
-                data: { datasets: [] },
-                options: {
-                    responsive: true,
-                    plugins: {
-                        legend: { position: 'top' },
-                        title: { display: true, text: 'HTTP Requests: Duration and bytes per type' }
-                    },
-                    scales: {
-                        y: { title: { display: true, text: 'Transferred Bytes' } },
-                        x: { title: { display: true, text: 'Request Duration in ms' } }
-                    }
-                }
-            });
-        }
-        const chart = this._httpListChart;
-        metric.elements[0].elements.forEach(dp => {
-            const ds = this._getOrCreateDataset(chart, clientId, dp.attributes.type || 'unknown');
-            const traces = (dp.elements || []).filter(e => e.name === 'Trace');
-            let bytes = 0, duration = 0;
-            traces.forEach(t => {
-                bytes += parseInt(t.attributes.b || 0);
-                duration += parseInt(t.attributes.d || 0);
-            });
-            ds.data.push([duration, bytes]);
-        });
-        chart.update();
+    /** Strip namespace prefix — 'sup:Entry' → 'Entry', 'Entry' → 'Entry' */
+    _localName(name) {
+        if (!name) return '';
+        const idx = name.indexOf(':');
+        return idx === -1 ? name : name.substring(idx + 1);
     }
 
-    // ── Text content helper ──────────────────────────────────────────────────
+    // ── Text content helper ───────────────────────────────────────────────────
 
-    /** Robustly extract text from an xml-js element that may have a direct
-     *  .text property or wrap its text in a child text node. */
     _textContent(el) {
         if (!el) return '';
         if (el.text != null) return String(el.text);
@@ -677,25 +722,34 @@ class App {
 
     // ── Chart helpers ─────────────────────────────────────────────────────────
 
-    _colourForClient(clientId) {
-        if (!(clientId in this._clientColourIndex)) {
-            this._clientColourIndex[clientId] = this._nextColourIdx % this._palette.length;
+    _colourForKey(key) {
+        if (!(key in this._colourIndex)) {
+            this._colourIndex[key] = this._nextColourIdx % this._palette.length;
             this._nextColourIdx++;
         }
-        return this._palette[this._clientColourIndex[clientId]];
+        return this._palette[this._colourIndex[key]];
     }
 
-    _shortId(clientId) { return clientId.substring(0, 8); }
+    _shortId(id) { return id.substring(0, 8); }
 
-    _getOrCreateDataset(chart, clientId, labelSuffix) {
-        const fullLabel = `${this._shortId(clientId)} — ${labelSuffix}`;
-        let ds = chart.data.datasets.find(d => d._clientId === clientId && d.label === fullLabel);
+    /**
+     * Dataset label format: "<shortSession>/<shortClient> — <metric>"
+     * The _sessionId and _clientId tags allow targeted removal.
+     */
+    _getOrCreateDataset(chart, sessionId, clientId, labelSuffix) {
+        const fullLabel = `${labelSuffix}  (${this._shortId(sessionId)}/${this._shortId(clientId)})`;
+        let ds = chart.data.datasets.find(d =>
+            d._sessionId === sessionId && d._clientId === clientId && d.label === fullLabel
+        );
         if (!ds) {
+            const colour = this._colourForKey(`${sessionId}::${clientId}`);
             ds = {
                 label: fullLabel,
+                _sessionId: sessionId,
                 _clientId: clientId,
-                borderColor: this._colourForClient(clientId),
-                backgroundColor: this._colourForClient(clientId) + '88',
+                _metricLabel: labelSuffix,
+                borderColor: colour,
+                backgroundColor: colour + '88',
                 data: []
             };
             chart.data.datasets.push(ds);
@@ -703,33 +757,49 @@ class App {
         return ds;
     }
 
-    _removeClientData(clientId) {
+
+
+
+    _removeClientData(sessionId, clientId) {
         [this._bufferLevelChart, this._representationSwitchChart, this._avgThroughputChart,
-         this._playoutDelayChart, this._playlistChart, this._httpListChart]
+         this._playoutDelayChart, this._playlistChart]
             .forEach(chart => {
                 if (!chart) return;
-                chart.data.datasets = chart.data.datasets.filter(ds => ds._clientId !== clientId);
+                chart.data.datasets = chart.data.datasets.filter(
+                    ds => !(ds._sessionId === sessionId && ds._clientId === clientId)
+                );
                 chart.update();
             });
+    }
+
+    _removeSessionData(sessionId) {
+        [this._bufferLevelChart, this._representationSwitchChart, this._avgThroughputChart,
+         this._playoutDelayChart, this._playlistChart]
+            .forEach(chart => {
+                if (!chart) return;
+                chart.data.datasets = chart.data.datasets.filter(ds => ds._sessionId !== sessionId);
+                chart.update();
+            });
+        delete this._loadedFiles[sessionId];
+        delete this._activeClients[sessionId];
     }
 
     _resetAll() {
         this._stopPolling();
         this._loadedFiles = {};
         this._reportCount = {};
-        this._activeSession = null;
-        this._activeClients = new Set();
-        this._clientColourIndex = {};
+        this._activeSessions = new Set();
+        this._activeClients = {};
+        this._colourIndex = {};
         this._nextColourIdx = 0;
         [this._bufferLevelChart, this._representationSwitchChart, this._avgThroughputChart,
-         this._playoutDelayChart, this._playlistChart, this._httpListChart]
+         this._playoutDelayChart, this._playlistChart]
             .forEach(c => { if (c) c.destroy(); });
         this._bufferLevelChart = null;
         this._representationSwitchChart = null;
         this._avgThroughputChart = null;
         this._playoutDelayChart = null;
         this._playlistChart = null;
-        this._httpListChart = null;
         ['reception-report-table', 'qoe-report-table', 'mpd-information-table', 'device-information-table'].forEach(id => {
             const tbody = document.querySelector(`#${id} tbody`);
             if (tbody) tbody.innerHTML = '';
