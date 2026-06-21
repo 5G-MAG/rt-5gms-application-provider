@@ -4,7 +4,7 @@ Author: Vuk Stojkovic, Erik Gaida
 Copyright: (C) Fraunhofer FOKUS
 For full license terms please see the LICENSE file distributed with this
 program. If this file is missing then the license can be retrieved from
-https://drive.google.com/file/d/1cinCiA778IErENZ3JN52VFW-1ffHpx7Z/view
+https://hub.5g-mag.com/Getting-Started/OFFICIAL_5G-MAG_Public_License_v1.0.pdf
 */
 
 import { openContentHostingConfigurationForm, downloadContentHostingConfiguration, deleteContentHostingConfiguration } from "./modules/contentHostingConfiguration.js";
@@ -71,7 +71,8 @@ document.addEventListener('DOMContentLoaded', async () => {
 function setMafAutoDiscoverVisible(visible) {
   const wrap = document.getElementById('maf-auto-discover-wrap');
   if (!wrap) return;
-  wrap.style.display = visible ? '' : 'none';
+  wrap.style.pointerEvents = visible ? '' : 'none';
+  wrap.classList.toggle('maf-sync-unavailable', !visible);
 }
 
 async function loadAdminCapabilities() {
@@ -159,7 +160,7 @@ function showConnectionLostAlert() {
 
 
 function getAllSessionCheckboxes() {
-  return Array.from(document.querySelectorAll('#m1_table tbody .session-checkbox'));
+  return Array.from(document.querySelectorAll('#sessions-list .session-checkbox'));
 }
 
 function updateToggleButton() {
@@ -292,105 +293,154 @@ async function openM8() {
   }
 }
 
+function sessionStatusDot(present) {
+  return `<span class="session-status-dot ${present ? 'status-on' : 'status-off'}" title="${present ? 'Configured' : 'Not configured'}"></span>`;
+}
+
+function sessionRowDetail(text) {
+  return text ? `<span class="session-row-detail">${text}</span>` : '';
+}
+
+function chcDetailText(d) {
+  if (!d) return '';
+  const parts = [];
+  if (d.ingestMethod) parts.push(d.ingestMethod);
+  if (d.contentType) parts.push(`<span class="detail-mono">${d.contentType}</span>`);
+  return parts.join(' &middot; ');
+}
+
+function consumptionDetailText(d) {
+  if (!d) return '';
+  const tags = [];
+  if (d.locationReporting) tags.push('location');
+  if (d.accessReporting) tags.push('access');
+  const pct = d.samplePercentage != null ? `${d.samplePercentage}% sample` : '';
+  const iv = d.interval != null ? `every ${d.interval}s` : '';
+  return [iv, pct, tags.join(', ')].filter(Boolean).join(' &middot; ');
+}
+
+function metricsDetailText(d) {
+  if (!d) return '';
+  const iv = d.interval != null ? `every ${d.interval}s` : '';
+  const pct = d.samplePercentage != null ? `${d.samplePercentage}% sample` : '';
+  const sp = d.samplingPeriod != null ? `${d.samplingPeriod}s period` : '';
+  return [iv, pct, sp].filter(Boolean).join(' &middot; ');
+}
+
 async function addSessionToTable(sessionId) {
-  const m1Table = document.getElementById('m1_table');
-  const tbody = document.querySelector('#m1_table tbody');
-  let row = tbody.insertRow(-1);
-  row.setAttribute('data-session-id', sessionId);
+  const list = document.getElementById('sessions-list');
 
-  let cell1 = row.insertCell(0); // Provisioning Session ID
-  let cell2 = row.insertCell(1); // Content Hosting Configuration
-  let cell3 = row.insertCell(2); // Certification (Create, Show)
-  let cell4 = row.insertCell(3); // Show Protocols
-  let cell5 = row.insertCell(4); // Consumption Reporting (Set, Show, Delete)
-  let cell6 = row.insertCell(5); // Dynamic Policies
-  let cell7 = row.insertCell(6); // Metrics Reporting Configuration
-  let cell8 = row.insertCell(7); // Session Details
-  let cell9 = row.insertCell(8); // checkBox
-
-  cell1.classList.add('psid-col');
-
-  cell1.innerHTML = `
-      <div class="psid-cell">
-        <div class="psid-name">${sessionId}</div>
-      </div>
-    `;
   const info = sessionUiInfo[sessionId] || {};
+  const name = info.name || null;
   const hasContentHostingConfiguration = info.hasContentHostingConfiguration === true;
   const hasServerCertificates = info.hasServerCertificates === true;
   const hasConsumptionReportingConfiguration = info.hasConsumptionReportingConfiguration === true;
   const hasPolicyTemplates = info.hasPolicyTemplates === true;
   const hasMetricsReportingConfiguration = info.hasMetricsReportingConfiguration === true;
-  if (hasContentHostingConfiguration) {
+  const certCount = info.certificateCount || 0;
+  const policyCount = info.policyTemplateCount || 0;
 
-    cell2.innerHTML = `
-      <button onclick="openContentHostingConfigurationForm('${sessionId}', true)" class="btn btn-secondary table-button">Show/Edit</button>
-      <button type="button" class="btn btn-secondary table-button" onclick="downloadContentHostingConfiguration('${sessionId}')">Download</button>
-      <button type="button" class="btn btn-danger table-button" onclick="deleteContentHostingConfiguration('${sessionId}')">Delete</button>
-    `;
-  } else {
+  const chcButtons = hasContentHostingConfiguration
+    ? `<button onclick="openContentHostingConfigurationForm('${sessionId}', true)" class="btn btn-secondary table-button">Show/Edit</button>
+       <button onclick="downloadContentHostingConfiguration('${sessionId}')" class="btn btn-secondary table-button">Download</button>
+       <button onclick="deleteContentHostingConfiguration('${sessionId}')" class="btn btn-danger table-button">Delete</button>`
+    : `<button onclick="openContentHostingConfigurationForm('${sessionId}', false)" class="btn btn-primary table-button">Create</button>`;
 
-    cell2.innerHTML = `
-      <button onclick="openContentHostingConfigurationForm('${sessionId}', false)" class="btn btn-primary table-button">Create</button>
-    `;
-  }
+  const certButtons = hasServerCertificates
+    ? `<button onclick="createNewCertificate('${sessionId}')" class="btn btn-primary table-button">Create</button>
+       <button onclick="showCertificateDetails('${sessionId}')" class="btn btn-secondary table-button">Show</button>`
+    : `<button onclick="createNewCertificate('${sessionId}')" class="btn btn-primary table-button">Create</button>`;
 
-  if (hasServerCertificates) {
-    cell3.innerHTML = `
-      <button onclick="createNewCertificate('${sessionId}')" class="btn btn-primary table-button">Create</button>
-      <button onclick="showCertificateDetails('${sessionId}')" class="btn btn-secondary table-button">Show</button>
-      `;
-  } else {
-    cell3.innerHTML = `
-      <button onclick="createNewCertificate('${sessionId}')" class="btn btn-primary table-button">Create</button>`;
-  }
+  const consumptionLabel = hasConsumptionReportingConfiguration ? 'Edit' : 'Create';
+  const consumptionButtons = hasConsumptionReportingConfiguration
+    ? `<button onclick="setConsumptionReporting('${sessionId}')" class="btn btn-primary table-button">${consumptionLabel}</button>
+       <button onclick="deleteConsumptionReporting('${sessionId}')" class="btn btn-danger table-button">Delete</button>`
+    : `<button onclick="setConsumptionReporting('${sessionId}')" class="btn btn-primary table-button">Create</button>`;
 
-  cell4.innerHTML = `<button onclick="showProtocols('${sessionId}')" class="btn btn-secondary table-button">Show</button>`;
+  const policyButtons = hasPolicyTemplates
+    ? `<button onclick="openPolicyTemplateForm('${sessionId}')" class="btn btn-primary table-button">Create</button>
+       <button onclick="listAllPolicyTemplate('${sessionId}')" class="btn btn-secondary table-button">List</button>`
+    : `<button onclick="openPolicyTemplateForm('${sessionId}')" class="btn btn-primary table-button">Create</button>`;
 
-  const consumptionPrimaryLabel = hasConsumptionReportingConfiguration ? 'Edit' : 'Create';
-  const consumptionButtons = [
-    `<button onclick="setConsumptionReporting('${sessionId}')" class="btn btn-primary table-button">${consumptionPrimaryLabel}</button>`
-  ];
-  if (hasConsumptionReportingConfiguration) {
-    consumptionButtons.push(
-      `<button onclick="deleteConsumptionReporting('${sessionId}')" class="btn btn-danger table-button">Delete</button>`
-    );
-  }
-  cell5.innerHTML = consumptionButtons.join('');
+  const metricsButtons = hasMetricsReportingConfiguration
+    ? `<button onclick="createMetricsJson('${sessionId}')" class="btn btn-primary table-button">Create</button>
+       <button onclick="showMetricsReporting('${sessionId}')" class="btn btn-secondary table-button">Show</button>`
+    : `<button onclick="createMetricsJson('${sessionId}')" class="btn btn-primary table-button">Create</button>`;
 
-  const policyButtons = [
-    `<button onclick="openPolicyTemplateForm('${sessionId}')" class="btn btn-primary table-button">Create</button>`
-  ];
-  if (hasPolicyTemplates) {
-    policyButtons.push(
-      `<button onclick="listAllPolicyTemplate('${sessionId}')" class="btn btn-primary table-button">List Policy Template</button>`
-    );
-  }
-  cell6.innerHTML = policyButtons.join('');
-
-
-  const metricsButtons = [
-    `<button onclick="createMetricsJson('${sessionId}')" class="btn btn-primary table-button">Create</button>`
-  ];
-  if (hasMetricsReportingConfiguration) {
-    metricsButtons.push(
-      `<button onclick="showMetricsReporting('${sessionId}')" class="btn btn-secondary table-button">Show</button>`
-    );
-  }
-  cell7.innerHTML = metricsButtons.join('');
-
-  cell8.innerHTML = `<button onclick="openDetails(['${sessionId}'])" class="btn btn-secondary table-button">Details</button>`;
-
-
-  cell9.innerHTML = `
-    <input type="checkbox"
-        class="session-checkbox"
-        data-session-id="${sessionId}"
-        onchange="toggleSessionSelection(this)">
-    `;
-
-  const cb = cell9.querySelector('.session-checkbox');
-  cb.checked = selectedSessions.has(sessionId);
+  const card = document.createElement('div');
+  card.className = 'session-card';
+  card.setAttribute('data-session-id', sessionId);
+  card.innerHTML = `
+    <div class="session-card-header">
+      <div class="session-card-title">
+        ${name ? `<span class="session-name">${name}</span>` : ''}
+        <span class="session-id-text">${sessionId}</span>
+      </div>
+      <input type="checkbox" class="session-checkbox" data-session-id="${sessionId}"
+             onchange="toggleSessionSelection(this)" ${selectedSessions.has(sessionId) ? 'checked' : ''}>
+    </div>
+    <div class="session-card-body">
+      <div class="session-row">
+        ${sessionStatusDot(hasContentHostingConfiguration)}
+        <div class="session-row-label-group">
+          <span class="session-row-label">Content Hosting Configuration</span>
+          ${sessionRowDetail(chcDetailText(info.chcDetail))}
+        </div>
+        <div class="session-row-actions">${chcButtons}</div>
+      </div>
+      <div class="session-row">
+        ${sessionStatusDot(hasServerCertificates)}
+        <div class="session-row-label-group">
+          <span class="session-row-label">Server Certificates</span>
+          ${sessionRowDetail(certCount === 0 ? 'none' : `${certCount} certificate${certCount !== 1 ? 's' : ''}`)}
+        </div>
+        <div class="session-row-actions">${certButtons}</div>
+      </div>
+      <div class="session-row">
+        ${sessionStatusDot(!!info.chcDetail?.protocol)}
+        <div class="session-row-label-group">
+          <span class="session-row-label">Content Protocols</span>
+          ${sessionRowDetail(info.chcDetail?.protocol ? `<span class="detail-mono">${info.chcDetail.protocol}</span>` : '')}
+        </div>
+        <div class="session-row-actions">
+          <button onclick="showProtocols('${sessionId}')" class="btn btn-secondary table-button">Show</button>
+        </div>
+      </div>
+      <div class="session-row">
+        ${sessionStatusDot(hasConsumptionReportingConfiguration)}
+        <div class="session-row-label-group">
+          <span class="session-row-label">Consumption Reporting</span>
+          ${sessionRowDetail(consumptionDetailText(info.consumptionDetail))}
+        </div>
+        <div class="session-row-actions">${consumptionButtons}</div>
+      </div>
+      <div class="session-row">
+        ${sessionStatusDot(hasPolicyTemplates)}
+        <div class="session-row-label-group">
+          <span class="session-row-label">Policy Templates</span>
+          ${sessionRowDetail(policyCount === 0 ? 'none' : `${policyCount} template${policyCount !== 1 ? 's' : ''}`)}
+        </div>
+        <div class="session-row-actions">${policyButtons}</div>
+      </div>
+      <div class="session-row">
+        ${sessionStatusDot(hasMetricsReportingConfiguration)}
+        <div class="session-row-label-group">
+          <span class="session-row-label">Metrics Reporting</span>
+          ${sessionRowDetail(metricsDetailText(info.metricsDetail))}
+        </div>
+        <div class="session-row-actions">${metricsButtons}</div>
+      </div>
+      <div class="session-row session-row--details">
+        <div class="session-row-label-group" style="margin-left:18px">
+          <span class="session-row-label">Session Details</span>
+        </div>
+        <div class="session-row-actions">
+          <button onclick="openDetails(['${sessionId}'])" class="btn btn-secondary table-button">Details</button>
+        </div>
+      </div>
+    </div>
+  `;
+  list.appendChild(card);
   updateToggleButton();
 }
 
@@ -433,6 +483,8 @@ async function loadAllSessions() {
       localStorage.setItem(LS_KEY, JSON.stringify([...selectedSessions]));
     }
     sessionIds.forEach(sessionId => addSessionToTable(sessionId));
+    const countEl = document.getElementById('session-count');
+    if (countEl) countEl.textContent = sessionIds.length;
     updateToggleButton();
   } catch (error) {
     console.error('Error:', error);
@@ -480,10 +532,8 @@ function removeSessionFromTable(sessionId) {
 }
 
 function clearTable() {
-  const m1Table = document.getElementById('m1_table');
-  while (m1Table.rows.length > 1) {
-    m1Table.deleteRow(1);
-  }
+  const list = document.getElementById('sessions-list');
+  if (list) list.innerHTML = '';
 }
 
 document.addEventListener('sessions:reload', async () => {
