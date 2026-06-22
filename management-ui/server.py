@@ -51,10 +51,6 @@ QOE_REPORTS_BASE = os.environ.get(
     'AF_REPORTS_BASE',
     '/home/fivegmag/5GMS/rt-5gms-examples/5gms-docker-setup/recipe1_with_5GC/af-reports'
 )
-QOE_MONITOR_DIR = os.environ.get(
-    'QOE_MONITOR_DIR',
-    os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'consumption-qoe-metrics-reporting-ui'))
-)
 
 def _qoe_safe_resolve(root: str, *parts: str) -> Optional[str]:
     resolved = os.path.realpath(os.path.join(root, *parts))
@@ -128,11 +124,16 @@ app.add_middleware(
 
 # UI rendering
 app.mount("/src", StaticFiles(directory="src"), name="src")
-app.mount("/monitor", StaticFiles(directory=QOE_MONITOR_DIR, html=True), name="monitor")
 templates = Jinja2Templates(directory="src/templates")
+
 @app.get("/")
 def landing_page():
     return FileResponse("src/templates/index.html")
+
+@app.get("/monitor")
+@app.get("/monitor/")
+def monitor_page():
+    return FileResponse("src/templates/monitor.html")
 
 """
 Endpoint: Connection checker
