@@ -47,7 +47,7 @@ config = Configuration()
 OPTIONS_ENDPOINT = os.getenv("OPTIONS_ENDPOINT", "http://" + config.get('m1_address', 'localhost') + ":" + config.get('m1_port',7777) + "/3gpp-m1/v2/provisioning-sessions/")
 CORS_ORIGINS = os.getenv("CORS_ORIGINS", "http://0.0.0.0:8000,http://127.0.0.1:8000,http://localhost:8000").split(',')
 
-QOE_REPORTS_BASE = os.path.expanduser('~/rt-5gms-examples/5gms-docker-setup/recipe1_with_5GC/af-reports')
+QOE_REPORTS_BASE = os.environ.get('AF_REPORTS_BASE', '')
 
 def _qoe_safe_resolve(root: str, *parts: str) -> Optional[str]:
     resolved = os.path.realpath(os.path.join(root, *parts))
@@ -1130,11 +1130,11 @@ async def import_ps_configuration(request: Request):
 # QoE monitor API routes
 # ======================
 
-@app.get("/api/config")
+@app.get("/qoe/config")
 async def qoe_get_config():
     return {"basePath": QOE_REPORTS_BASE}
 
-@app.post("/api/config")
+@app.post("/qoe/config")
 async def qoe_post_config(request: Request):
     global QOE_REPORTS_BASE
     body = await request.json()
@@ -1144,15 +1144,19 @@ async def qoe_post_config(request: Request):
     QOE_REPORTS_BASE = base_path
     return {"basePath": QOE_REPORTS_BASE}
 
-@app.get("/api/sessions")
+@app.get("/qoe/sessions")
 async def qoe_sessions():
+    if not QOE_REPORTS_BASE:
+        raise HTTPException(status_code=503, detail="Reports path not configured. Enter the path to the af-reports directory in the Monitor UI and click Apply.")
+    if not os.path.isdir(QOE_REPORTS_BASE):
+        raise HTTPException(status_code=503, detail=f"Reports directory not found: {QOE_REPORTS_BASE}. Check the path in the Monitor UI.")
     try:
         entries = list(os.scandir(QOE_REPORTS_BASE))
         return sorted([e.name for e in entries if e.is_dir()])
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Cannot read base path: {e}")
 
-@app.get("/api/sessions/{session_id}/clients")
+@app.get("/qoe/sessions/{session_id}/clients")
 async def qoe_clients(session_id: str):
     reports_dir = _qoe_safe_resolve(QOE_REPORTS_BASE, session_id, 'metrics_reports')
     if not reports_dir:
@@ -1163,7 +1167,7 @@ async def qoe_clients(session_id: str):
         raise HTTPException(status_code=500, detail=f"Cannot read metrics_reports: {e}")
     return sorted(set(_qoe_extract_client_id(f) for f in files if f.endswith('.xml')))
 
-@app.get("/api/sessions/{session_id}/consumption/file")
+@app.get("/qoe/sessions/{session_id}/consumption/file")
 async def qoe_consumption_file(session_id: str, name: str = Query(...)):
     filename = name
     if not filename or not filename.endswith('.json') or '/' in filename or '..' in filename:
@@ -1175,7 +1179,7 @@ async def qoe_consumption_file(session_id: str, name: str = Query(...)):
         raise HTTPException(status_code=404, detail="File not found")
     return FileResponse(file_path, media_type="application/json")
 
-@app.get("/api/sessions/{session_id}/consumption")
+@app.get("/qoe/sessions/{session_id}/consumption")
 async def qoe_consumption(session_id: str, clientId: Optional[str] = Query(None)):
     reports_dir = _qoe_safe_resolve(QOE_REPORTS_BASE, session_id, 'consumption_reports')
     if not reports_dir:
@@ -1191,7 +1195,7 @@ async def qoe_consumption(session_id: str, clientId: Optional[str] = Query(None)
         json_files = [f for f in json_files if _qoe_extract_client_id_from_json(f) == clientId]
     return sorted(json_files, key=_qoe_extract_timestamp)
 
-@app.get("/api/sessions/{session_id}/reports/{filename}")
+@app.get("/qoe/sessions/{session_id}/reports/{filename}")
 async def qoe_report_file(session_id: str, filename: str):
     if not filename.endswith('.xml') or '/' in filename or '..' in filename:
         raise HTTPException(status_code=400, detail="Invalid filename")
@@ -1202,7 +1206,7 @@ async def qoe_report_file(session_id: str, filename: str):
         raise HTTPException(status_code=404, detail="File not found")
     return FileResponse(file_path, media_type="application/xml")
 
-@app.get("/api/sessions/{session_id}/reports")
+@app.get("/qoe/sessions/{session_id}/reports")
 async def qoe_reports(session_id: str, clientId: Optional[str] = Query(None)):
     reports_dir = _qoe_safe_resolve(QOE_REPORTS_BASE, session_id, 'metrics_reports')
     if not reports_dir:

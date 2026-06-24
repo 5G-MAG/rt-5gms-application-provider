@@ -85,7 +85,7 @@ class App {
                     <div class="ctrl-label">AF reports base path</div>
                     <div style="display:flex;gap:8px;">
                         <input id="base-path-input" type="text" class="ctrl-input" style="flex:1;"
-                               placeholder="/home/fivegmag/5GMS/.../af-reports" />
+                               placeholder="~/rt-5gms-examples/5gms-docker-setup/recipe1_with_5GC/af-reports" />
                         <button id="base-path-apply" class="ctrl-btn">Apply</button>
                     </div>
                     <div id="base-path-status" style="font-size:11px;margin-top:4px;min-height:1.2em;"></div>
@@ -135,10 +135,14 @@ class App {
 
     async _loadConfig() {
         try {
-            const res = await fetch('/api/config');
+            const res = await fetch('/qoe/config');
             const { basePath } = await res.json();
             document.getElementById('base-path-input').value = basePath;
-            this._setStatus('Current server path loaded. Click Apply to scan for sessions.', false);
+            if (basePath) {
+                this._setStatus('Path loaded. Click Apply to scan for sessions.', false);
+            } else {
+                this._setStatus('Enter the path to the af-reports directory and click Apply.', false);
+            }
         } catch (err) {
             console.error('Could not load config:', err);
         }
@@ -149,7 +153,7 @@ class App {
         if (!basePath) { this._setStatus('Please enter a path.', true); return; }
         this._setStatus('Scanning...', false);
         try {
-            const res = await fetch('/api/config', {
+            const res = await fetch('/qoe/config', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ basePath })
@@ -170,7 +174,7 @@ class App {
 
     async _refreshSessions() {
         try {
-            const res = await fetch('/api/sessions');
+            const res = await fetch('/qoe/sessions');
             if (!res.ok) {
                 const err = await res.json();
                 this._setStatus('Could not read path: ' + (err.detail || err.error), true);
@@ -230,7 +234,7 @@ class App {
 
         for (const sessionId of checked) {
             try {
-                const res = await fetch(`/api/sessions/${encodeURIComponent(sessionId)}/clients`);
+                const res = await fetch(`/qoe/sessions/${encodeURIComponent(sessionId)}/clients`);
                 if (!res.ok) continue;
                 const clients = await res.json();
                 this._renderClientCheckboxesForSession(sessionId, clients, clientContainer);
@@ -395,7 +399,7 @@ class App {
 
     async _pollConsumption(sessionId, clientId) {
         try {
-            const url = `/api/sessions/${encodeURIComponent(sessionId)}/consumption?clientId=${encodeURIComponent(clientId)}&_=${Date.now()}`;
+            const url = `/qoe/sessions/${encodeURIComponent(sessionId)}/consumption?clientId=${encodeURIComponent(clientId)}&_=${Date.now()}`;
             const resp = await fetch(url);
             if (!resp.ok) return;
             const filenames = await resp.json();
@@ -445,7 +449,7 @@ class App {
                 for (const clientId of this._activeClients[sessionId]) {
                         // QoE metrics
                 try {
-                    const url = `/api/sessions/${encodeURIComponent(sessionId)}/reports?clientId=${encodeURIComponent(clientId)}&_=${Date.now()}`;
+                    const url = `/qoe/sessions/${encodeURIComponent(sessionId)}/reports?clientId=${encodeURIComponent(clientId)}&_=${Date.now()}`;
                     const filenames = await (await fetch(url)).json();
                     const loaded = this._loadedFiles[sessionId][clientId];
                     const newFiles = filenames.filter(f => !loaded.has(f));
@@ -470,7 +474,7 @@ class App {
     // ── Per-file processing ───────────────────────────────────────────────────
 
     async _loadAndProcessFile(filename, sessionId, clientId) {
-        const url = `/api/sessions/${encodeURIComponent(sessionId)}/reports/${encodeURIComponent(filename)}`;
+        const url = `/qoe/sessions/${encodeURIComponent(sessionId)}/reports/${encodeURIComponent(filename)}`;
         const res = await fetch(url);
         if (!res.ok) throw new Error(`HTTP ${res.status} for ${filename}`);
         const xml = await res.text();
@@ -495,7 +499,7 @@ class App {
     // ── Consumption Reports ───────────────────────────────────────────────────
 
     async _loadAndProcessConsumption(filename, sessionId, clientId) {
-        const url = `/api/sessions/${encodeURIComponent(sessionId)}/consumption/file?name=${encodeURIComponent(filename)}`;
+        const url = `/qoe/sessions/${encodeURIComponent(sessionId)}/consumption/file?name=${encodeURIComponent(filename)}`;
         const res = await fetch(url);
         if (!res.ok) throw new Error(`HTTP ${res.status} for ${filename}`);
         const data = await res.json();
