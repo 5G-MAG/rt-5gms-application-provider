@@ -131,6 +131,47 @@ def landing_page():
 def monitor_page():
     return FileResponse("src/templates/monitor.html")
 
+@app.get("/cmcd-reports/")
+def cmcd_reports_page():
+    return FileResponse("src/templates/cmcd-reports.html")
+
+_CMCD_INFLUXDB_URL = os.environ.get('CMCD_INFLUXDB_URL', 'http://localhost:8086')
+_CMCD_INFLUXDB_DB  = os.environ.get('CMCD_INFLUXDB_DB', 'analytics')
+
+@app.get("/cmcd/metrics")
+async def cmcd_metrics(range: str = "5m"):
+    interval = "10s" if range in ("1m", "5m") else "30s" if range in ("15m", "30m") else "1m"
+    queries = {
+        # cmcd_data is always present; sid/cid are tags so count() must use a field
+        "total_messages":   f"SELECT count(cmcd_data) AS count FROM cmcd_metrics WHERE time > now() - {range}",
+        "mean_dl_latency":  f"SELECT mean(cmcd_key_dl) AS latency FROM cmcd_metrics WHERE time > now() - {range}",
+        "unique_sessions":  f"SELECT count(cmcd_data) AS count FROM cmcd_metrics WHERE time > now() - {range} GROUP BY cmcd_key_sid::tag",
+        "bl_by_sid":        f"SELECT cmcd_key_bl FROM cmcd_metrics WHERE time > now() - {range} GROUP BY cmcd_key_sid::tag",
+        "br_by_sid":        f"SELECT cmcd_key_br FROM cmcd_metrics WHERE time > now() - {range} GROUP BY cmcd_key_sid::tag",
+        "tb_by_sid":        f"SELECT cmcd_key_tb FROM cmcd_metrics WHERE time > now() - {range} GROUP BY cmcd_key_sid::tag",
+        "mtp_by_sid":       f"SELECT cmcd_key_mtp FROM cmcd_metrics WHERE time > now() - {range} GROUP BY cmcd_key_sid::tag",
+        "mean_bl":          f"SELECT mean(cmcd_key_bl) AS bl FROM cmcd_metrics WHERE time > now() - {range} GROUP BY time({interval}) fill(none)",
+        "sessions_table":   f"SELECT count(cmcd_data) AS messages, last(cmcd_key_st) AS stream_type, last(cmcd_key_v) AS version FROM cmcd_metrics WHERE time > now() - {range} GROUP BY cmcd_key_sid::tag, request_user_agent::tag",
+        "content_table":    f"SELECT count(cmcd_data) AS messages FROM cmcd_metrics WHERE time > now() - {range} GROUP BY cmcd_key_cid::tag, cmcd_key_sid::tag",
+        "buffer_drain":     f"SELECT mean(cmcd_key_br) AS br, mean(cmcd_key_mtp) AS mtp FROM cmcd_metrics WHERE time > now() - {range} GROUP BY cmcd_key_sid::tag",
+        "messages_by_mode": f"SELECT count(cmcd_data) AS count FROM cmcd_metrics WHERE time > now() - {range} GROUP BY cmcd_mode::tag",
+    }
+
+    async def _fetch(client, key, q):
+        try:
+            resp = await client.get(
+                f"{_CMCD_INFLUXDB_URL}/query",
+                params={"db": _CMCD_INFLUXDB_DB, "q": q}
+            )
+            return key, resp.json()
+        except Exception as e:
+            return key, {"error": str(e)}
+
+    async with httpx.AsyncClient(timeout=10.0) as client:
+        pairs = await asyncio.gather(*(_fetch(client, k, q) for k, q in queries.items()))
+
+    return JSONResponse(dict(pairs))
+
 """
 Endpoint: Connection checker
 HTTP Method: GET
