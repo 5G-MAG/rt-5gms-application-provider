@@ -47,10 +47,7 @@ config = Configuration()
 OPTIONS_ENDPOINT = os.getenv("OPTIONS_ENDPOINT", "http://" + config.get('m1_address', 'localhost') + ":" + config.get('m1_port',7777) + "/3gpp-m1/v2/provisioning-sessions/")
 CORS_ORIGINS = os.getenv("CORS_ORIGINS", "http://0.0.0.0:8000,http://127.0.0.1:8000,http://localhost:8000").split(',')
 
-QOE_REPORTS_BASE = os.environ.get(
-    'AF_REPORTS_BASE',
-    '/home/fivegmag/5GMS/rt-5gms-examples/5gms-docker-setup/recipe1_with_5GC/af-reports'
-)
+QOE_REPORTS_BASE = os.path.expanduser('~/rt-5gms-examples/5gms-docker-setup/recipe1_with_5GC/af-reports')
 
 def _qoe_safe_resolve(root: str, *parts: str) -> Optional[str]:
     resolved = os.path.realpath(os.path.join(root, *parts))
@@ -130,7 +127,6 @@ templates = Jinja2Templates(directory="src/templates")
 def landing_page():
     return FileResponse("src/templates/index.html")
 
-@app.get("/monitor")
 @app.get("/monitor/")
 def monitor_page():
     return FileResponse("src/templates/monitor.html")
