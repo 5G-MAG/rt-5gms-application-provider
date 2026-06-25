@@ -390,44 +390,6 @@ h4#AFStatus {
   }
 }
 
-#m1_table {
-  font-size: 12px;
-  font-family: 'Poppins', sans-serif;
-  border-collapse: collapse;
-  width: 100%;
-}
-
-#m1_table thead th {
-  position: sticky;
-  top: 0;
-  z-index: 5;
-  background: rgb(0, 160, 210);
-  color: #fff;
-  font-size: 11px;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-  padding: 8px 10px;
-  text-align: center;
-  white-space: nowrap;
-}
-
-#m1_table th,
-#m1_table td {
-  border: 1px solid #e2e8f0;
-  padding: 7px 10px;
-  text-align: center;
-  color: #212529;
-  vertical-align: middle;
-  word-break: normal;
-  overflow-wrap: normal;
-}
-
-
-
-#m1_table tbody tr:hover {
-  background: rgba(0, 160, 210, 0.06);
-}
 
 .table-button {
   display: inline-flex;

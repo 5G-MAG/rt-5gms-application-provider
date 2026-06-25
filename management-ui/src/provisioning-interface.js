@@ -47,16 +47,12 @@ window.openContentHostingConfigurationForm = openContentHostingConfigurationForm
 window.downloadContentHostingConfiguration = downloadContentHostingConfiguration;
 window.deleteContentHostingConfiguration = deleteContentHostingConfiguration
 
-window.clearTable = clearTable;
-window.loadAllSessions = loadAllSessions;
-
 window.openDetails = openDetails;
-window.getProvisioningSessionDetails = getProvisioningSessionDetails;
 
 window.exportPSConfiguration = exportPSConfiguration;
 window.importPSConfiguration = importPSConfiguration;
 window.openDetailsForSelected = function () {
-  const ids = [...document.querySelectorAll('#m1_table tbody .session-checkbox:checked')]
+  const ids = [...document.querySelectorAll('#sessions-list .session-checkbox:checked')]
     .map(cb => cb.getAttribute('data-session-id'));
   if (ids.length === 0) return notifyInfo("Please select at least one session.");
   openDetails(ids);
@@ -153,10 +149,6 @@ function checkAFstatus() {
     });
 }
 
-function showConnectionLostAlert() {
-  notifyError("Lost connection with Application Function! All session data has been purged.");
-}
-
 
 
 function getAllSessionCheckboxes() {
@@ -194,7 +186,6 @@ function updateToggleButton() {
 
 window.toggleSelectAll = function () {
   const boxes = getAllSessionCheckboxes();
-  console.log(boxes)
   const total = boxes.length;
   const checked = boxes.filter(cb => cb.checked).length;
 
@@ -214,11 +205,9 @@ window.toggleSelectAll = function () {
 };
 
 function toggleSessionSelection(checkbox) {
-  console.log("Bevor action", selectedSessions)
   const sessionId = checkbox.getAttribute('data-session-id');
   if (checkbox.checked) selectedSessions.add(sessionId);
   else selectedSessions.delete(sessionId);
-  console.log("after action", selectedSessions)
 
   localStorage.setItem(LS_KEY, JSON.stringify([...selectedSessions]));
   updateToggleButton();
@@ -517,14 +506,13 @@ function removeSessionFromTable(sessionId) {
   const esc = (window.CSS && CSS.escape)
     ? CSS.escape(sessionId)
     : sessionId.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-  let row = document.querySelector(`#m1_table tbody tr[data-session-id="${esc}"]`);
-  if (!row) {
-    row = Array.from(document.querySelectorAll('#m1_table tbody tr')).find(tr => {
-      const idEl = tr.querySelector('.psid-id');
-      return idEl && idEl.textContent.trim() === sessionId;
+  let card = document.querySelector(`#sessions-list .session-card[data-session-id="${esc}"]`);
+  if (!card) {
+    card = Array.from(document.querySelectorAll('#sessions-list .session-card')).find(el => {
+      return el.getAttribute('data-session-id') === sessionId;
     });
   }
-  if (row) row.remove();
+  if (card) card.remove();
 
   selectedSessions.delete(sessionId);
   delete sessionUiInfo[sessionId];
@@ -547,7 +535,6 @@ window.onload = function () {
 };
 
 function exportPSConfiguration() {
-  console.log("Exporting PS Configuration...");
   fetch(`${operatingUrl}export_ps_configuration`, {
     method: 'GET',
     headers: { 'Content-Type': 'application/json' }

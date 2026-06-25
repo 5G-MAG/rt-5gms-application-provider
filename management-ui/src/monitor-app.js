@@ -57,7 +57,6 @@ class App {
         this._colourIndex = {};
         this._nextColourIdx = 0;
 
-        this._reportCount = {};
     }
 
     // ── Startup ───────────────────────────────────────────────────────────────
@@ -1112,7 +1111,6 @@ class App {
         const badge = document.getElementById('live-badge');
         if (badge) badge.style.display = 'none';
         this._loadedFiles = {};
-        this._reportCount = {};
         this._activeSessions = new Set();
         this._activeClients = {};
         this._colourIndex = {};
