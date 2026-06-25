@@ -69,6 +69,17 @@ cd management-ui/
 http_proxy= https_proxy= uvicorn server:app --reload
 ```
 
+## Environment variables
+
+The following environment variables configure optional integrations:
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `CMCD_INFLUXDB_URL` | `http://localhost:8086` | URL of the InfluxDB instance used by the CMCD Reports page. Set this when running the CMCD analytics stack. |
+| `CMCD_INFLUXDB_DB` | `analytics` | InfluxDB database name for CMCD metrics. Must match the `INFLUXDB_DB` value set on the InfluxDB container. |
+
+When running via the Docker Compose CMCD overlay in `rt-5gms-examples`, `CMCD_INFLUXDB_URL` and `CMCD_INFLUXDB_DB` are set automatically. For standalone use, set them manually before starting the server.
+
 ## Testing
 
 All endpoints are covered with this test, which runs one provisioning cycle and activates all network procedures, checks the responses before deleting all resources.

@@ -47,7 +47,7 @@ config = Configuration()
 OPTIONS_ENDPOINT = os.getenv("OPTIONS_ENDPOINT", "http://" + config.get('m1_address', 'localhost') + ":" + config.get('m1_port',7777) + "/3gpp-m1/v2/provisioning-sessions/")
 CORS_ORIGINS = os.getenv("CORS_ORIGINS", "http://0.0.0.0:8000,http://127.0.0.1:8000,http://localhost:8000").split(',')
 
-QOE_REPORTS_BASE = os.environ.get('AF_REPORTS_BASE', '')
+QOE_REPORTS_BASE = ''
 
 def _qoe_safe_resolve(root: str, *parts: str) -> Optional[str]:
     resolved = os.path.realpath(os.path.join(root, *parts))
@@ -170,7 +170,10 @@ async def cmcd_metrics(range: str = "5m"):
     async with httpx.AsyncClient(timeout=10.0) as client:
         pairs = await asyncio.gather(*(_fetch(client, k, q) for k, q in queries.items()))
 
-    return JSONResponse(dict(pairs))
+    result = dict(pairs)
+    if all(isinstance(v, dict) and "error" in v for v in result.values()):
+        return JSONResponse(result, status_code=503)
+    return JSONResponse(result)
 
 """
 Endpoint: Connection checker

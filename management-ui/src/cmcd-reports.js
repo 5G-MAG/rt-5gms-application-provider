@@ -23,11 +23,23 @@ class CmcdReportsApp {
         this._pollTimer = setInterval(() => this._refresh(), this.POLL_INTERVAL_MS);
     }
 
+    _setDbError(error) {
+        const el = document.getElementById('cmcd-db-status');
+        if (!el) return;
+        el.classList.toggle('af-ok', !error);
+        el.classList.toggle('af-error', error);
+        el.innerHTML = `<span class="af-dot"></span>${error ? 'CMCD DB not connected' : 'CMCD DB connected'}`;
+    }
+
     async _refresh() {
         const range = document.getElementById('cmcd-range').value;
         try {
             const resp = await fetch(`/cmcd/metrics?range=${range}`);
-            if (!resp.ok) return;
+            if (!resp.ok) {
+                this._setDbError(true);
+                return;
+            }
+            this._setDbError(false);
             const data = await resp.json();
             this._renderStats(data);
             this._renderPieChart(data);
@@ -40,6 +52,7 @@ class CmcdReportsApp {
             this._renderSessionsTable(data.sessions_table);
             this._renderContentTable(data.content_table);
         } catch (e) {
+            this._setDbError(true);
             console.error('CMCD fetch error', e);
         }
     }
@@ -163,6 +176,7 @@ class CmcdReportsApp {
                     x: {
                         type: 'time',
                         time: {
+                            minUnit: 'second',
                             tooltipFormat: 'HH:mm:ss',
                             displayFormats: { second: 'HH:mm:ss', minute: 'HH:mm' },
                         },
