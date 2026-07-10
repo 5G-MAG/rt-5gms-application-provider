@@ -1,0 +1,229 @@
+<!--
+License: 5G-MAG Public License (v1.0)
+Authors: Vuk Stojkovic, Erik Gaida (Fraunhofer FOKUS), Jordi Joan Gimenez (5G-MAG)
+Copyright: (C) Fraunhofer FOKUS, 5G-MAG Association
+For full license terms please see the LICENSE file distributed with this
+program. If this file is missing then the license can be retrieved from
+https://hub.5g-mag.com/Getting-Started/OFFICIAL_5G-MAG_Public_License_v1.0.pdf
+-->
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>5G Media Streaming - QoE Metrics and Consumption Reports</title>
+    <link rel="shortcut icon" type="image/png" href="/src/static/images/favicon.png">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet"
+          integrity="sha384-T3c6CoIi6uLrA9TneNEoa7RxnatzjcDSCmG1MXxSR1GAsXEV/Dwwykc2MPK8M2HN" crossorigin="anonymous">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="">
+    <link rel="stylesheet" href="/src/style.css">
+    <link rel="stylesheet" href="/src/shared.css">
+</head>
+<body>
+
+<nav class="portal-switcher">
+  <a href="/" class="switcher-tab">Application Provider Portal</a>
+  <a href="/monitor/" class="switcher-tab active">QoE Metrics and Consumption Reports</a>
+  <a href="/cmcd-reports/" class="switcher-tab">CMCD Reports</a>
+</nav>
+
+<header class="app-header portal-main-header">
+    <div class="header-left">
+        <img src="/src/static/images/5gmag.png" class="header-logo" alt="5G-MAG Logo">
+    </div>
+    <div class="header-center">
+        <h1 class="header-title">5G Media Streaming - QoE Metrics and Consumption Reports</h1>
+    </div>
+    <div class="header-right">
+        <button class="refresh-btn" onclick="app.manualRefresh()">&#x21BB; Refresh</button>
+        <button class="refresh-btn toggle-btn active" id="auto-refresh-btn" onclick="app.toggleAutoRefresh()">&#x23F1; Auto</button>
+    </div>
+</header>
+
+<div class="qoe-topbar">
+    <div id="session-label" class="session-label"></div>
+    <div class="live-badge" id="live-badge" style="display:none;"><span class="live-dot"></span><span id="live-badge-text"></span></div>
+</div>
+
+<div class="qoe-body">
+
+    <div class="stat-grid" id="stat-grid">
+        <div class="stat-card"><div class="stat-label">Avg buffer level</div><div class="stat-val" id="stat-buffer">— ms</div></div>
+        <div class="stat-card"><div class="stat-label">Active clients</div><div class="stat-val" id="stat-clients">0</div></div>
+        <div class="stat-card"><div class="stat-label">Reports loaded</div><div class="stat-val" id="stat-reports">0</div></div>
+        <div class="stat-card"><div class="stat-label">Avg throughput (kbit/s)</div><div class="stat-val" id="stat-throughput">—</div></div>
+    </div>
+
+    <!-- Controls panel injected here by monitor-app.js -->
+    <div id="metrics-controls-root"></div>
+
+    <!-- Tab navigation -->
+    <ul class="nav nav-tabs qoe-tabs" id="mainTabs">
+        <li class="nav-item">
+            <button class="nav-link active" id="tab-qoe" data-bs-toggle="tab" data-bs-target="#panel-qoe">
+                QoE Metrics
+            </button>
+        </li>
+        <li class="nav-item">
+            <button class="nav-link" id="tab-consumption" data-bs-toggle="tab" data-bs-target="#panel-consumption">
+                Consumption Reports
+            </button>
+        </li>
+    </ul>
+
+    <div class="tab-content qoe-tab-content">
+
+        <!-- ── QoE Metrics tab ───────────────────────────────────────────── -->
+        <div class="tab-pane fade show active" id="panel-qoe">
+
+            <div class="row g-3 mt-0">
+                <div class="col-md-6">
+                    <div class="qoe-card">
+                        <div class="qoe-card-title">Reception report</div>
+                        <table class="qoe-table" id="reception-report-table">
+                            <thead><tr><th>Field</th><th>Value</th></tr></thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="qoe-card">
+                        <div class="qoe-card-title">QoE report</div>
+                        <table class="qoe-table" id="qoe-report-table">
+                            <thead><tr><th>Field</th><th>Value</th></tr></thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row g-3 mt-0">
+                <div class="col-md-6">
+                    <div class="qoe-card">
+                        <div class="qoe-card-title">Device information</div>
+                        <table class="qoe-table" id="device-information-table">
+                            <thead><tr><th>Field</th><th>Value</th></tr></thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="qoe-card">
+                        <div class="qoe-card-title">MPD information</div>
+                        <table class="qoe-table" id="mpd-information-table">
+                            <thead><tr><th>Rep ID</th><th>Bandwidth</th><th>Codecs</th><th>Mime type</th></tr></thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row g-3 mt-0">
+                <div class="col-12">
+                    <div class="qoe-card">
+                        <div class="qoe-card-title">Buffer level</div>
+                        <canvas id="buffer-level-chart"></canvas>
+                        <div class="chart-axis-label">Y: buffer level in ms · X: timestamp</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row g-3 mt-0">
+                <div class="col-12">
+                    <div class="qoe-card">
+                        <div class="qoe-card-title">Representation switches</div>
+                        <canvas id="representation-switch-chart"></canvas>
+                        <div class="chart-axis-label">Y: bandwidth in bit/s · X: timestamp</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row g-3 mt-0">
+                <div class="col-12">
+                    <div class="qoe-card">
+                        <div class="qoe-card-title">Average throughput</div>
+                        <canvas id="avg-throughput-chart"></canvas>
+                        <div class="chart-axis-label">Y: throughput in kbit/s · X: timestamp</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row g-3 mt-0">
+                <div class="col-md-6">
+                    <div class="qoe-card">
+                        <div class="qoe-card-title">Playout delays</div>
+                        <canvas id="playout-delay-chart"></canvas>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="qoe-card">
+                        <div class="qoe-card-title">Play list — segment durations</div>
+                        <canvas id="playlist-chart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- ── Consumption Reports tab ───────────────────────────────────── -->
+        <div class="tab-pane fade" id="panel-consumption">
+
+            <div class="row g-3 mt-0">
+                <div class="col-12">
+                    <div class="qoe-card">
+                        <div class="qoe-card-title">Consumption summary</div>
+                        <table class="qoe-table" id="consumption-summary-table">
+                            <thead>
+                                <tr>
+                                    <th>Client ID</th>
+                                    <th>Media consumed</th>
+                                    <th>Report count</th>
+                                    <th>Total duration (s)</th>
+                                    <th>First seen</th>
+                                    <th>Client IP</th>
+                                    <th>Server IP</th>
+                                </tr>
+                            </thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row g-3 mt-0">
+                <div class="col-12">
+                    <div class="qoe-card">
+                        <div class="qoe-card-title">Client locations</div>
+                        <div id="consumption-map" style="height:400px;border-radius:6px;background:#e8f0f7;">
+                            <div id="consumption-map-placeholder" style="height:100%;display:flex;align-items:center;justify-content:center;color:#aaa;font-size:13px;font-family:'Poppins',sans-serif;">
+                                No location data available yet. Locations will appear here when reports include GPS coordinates.
+                            </div>
+                        </div>
+                        <div class="chart-axis-label" style="margin-top:6px;">
+                            Locations from <code>TypedLocation</code> entries in consumption reports (GPS / geoArea type)
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+    </div><!-- /.tab-content -->
+
+</div><!-- /.qoe-body -->
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"
+        integrity="sha384-C6RzsynM9kWDrMNeT87bh95OGNyZPhcTNXj1NW7RuBCsyN/o0jlpcV8Qyq46cDfL"
+        crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/xml-js@1.6.11/dist/xml-js.min.js" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns"></script>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
+<script src="/src/monitor-app.js"></script>
+<script>
+    const app = new App();
+    app.init();
+</script>
+
+</body>
+</html>

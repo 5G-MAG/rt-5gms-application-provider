@@ -1,0 +1,100 @@
+/* Shared styles: nav switcher + app header — used by both portal and QoE monitor pages */
+
+/* ── Page switcher nav bar ────────────────────────────────────────────────── */
+.portal-switcher {
+  background: rgb(0, 160, 210);
+  display: flex;
+  align-items: stretch;
+  padding: 0 16px;
+  position: sticky;
+  top: 0;
+  z-index: 1010;
+  height: 44px;
+  box-sizing: border-box;
+  font-family: 'Poppins', sans-serif;
+}
+
+.switcher-tab,
+.switcher-tab:hover,
+.switcher-tab:visited,
+.switcher-tab:focus,
+.switcher-tab:active {
+  text-decoration: none !important;
+}
+
+.switcher-tab {
+  display: block;
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 41px; /* 44px container − 3px border-bottom = 41px content area */
+  padding: 0 18px;
+  border-bottom: 3px solid transparent;
+  box-sizing: border-box;
+  transition: color 0.15s, border-color 0.15s;
+  white-space: nowrap;
+}
+
+.switcher-tab:hover {
+  color: #fff;
+  border-bottom-color: rgba(255, 255, 255, 0.5);
+}
+
+.switcher-tab.active {
+  color: #fff;
+  border-bottom-color: #fff;
+}
+
+/* ── App header (shared dimensions and layout) ───────────────────────────── */
+.portal-main-header {
+  height: 76px;
+  box-sizing: border-box;
+  top: 44px !important;
+}
+
+.header-left {
+  flex: 0 0 auto;
+}
+
+.header-center {
+  flex: 1 1 auto;
+  text-align: center;
+}
+
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex: 0 0 auto;
+  justify-content: flex-end;
+}
+
+.header-logo {
+  height: 52px;
+  width: auto;
+  object-fit: contain;
+}
+
+/* ── Header buttons (shared — normalises <label> vs <button> alignment) ─── */
+.refresh-btn {
+  display: inline-flex;
+  align-items: center;
+  box-sizing: border-box;
+  line-height: 1;
+  margin: 0;
+  background: rgba(255, 255, 255, 0.18);
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  color: #fff;
+  padding: 7px 16px;
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 600;
+  font-family: 'Poppins', sans-serif;
+  cursor: pointer;
+  transition: background 0.15s, transform 0.18s;
+}
+
+.refresh-btn:hover {
+  background: rgba(255, 255, 255, 0.28);
+  transform: translateY(-1px);
+}

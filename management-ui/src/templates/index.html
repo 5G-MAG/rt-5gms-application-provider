@@ -1,10 +1,10 @@
-<!-- 
+<!--
 License: 5G-MAG Public License (v1.0)
-Author: Vuk Stojkovic, Erik Gaida
-Copyright: (C) Fraunhofer FOKUS
+Authors: Vuk Stojkovic, Erik Gaida (Fraunhofer FOKUS), Jordi Joan Gimenez (5G-MAG)
+Copyright: (C) Fraunhofer FOKUS, 5G-MAG Association
 For full license terms please see the LICENSE file distributed with this
 program. If this file is missing then the license can be retrieved from
-https://drive.google.com/file/d/1cinCiA778IErENZ3JN52VFW-1ffHpx7Z/view
+https://hub.5g-mag.com/Getting-Started/OFFICIAL_5G-MAG_Public_License_v1.0.pdf
 -->
 
 <!DOCTYPE html>
@@ -12,10 +12,11 @@ https://drive.google.com/file/d/1cinCiA778IErENZ3JN52VFW-1ffHpx7Z/view
 
 <head>
   <meta charset="UTF-8">
-  <title>5GMS Application Provider</title>
-  <link rel="shortcut icon" type="image/png" href="src/static/images/favico.png" />
+  <title>5G Media Streaming - Application Provider Portal</title>
+  <link rel="shortcut icon" type="image/png" href="src/static/images/favicon.png" />
   <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/css/bootstrap.min.css">
   <link rel="stylesheet" href="src/style.css">
+  <link rel="stylesheet" href="/src/shared.css">
   <link href="https://cdn.jsdelivr.net/npm/sweetalert2@11.7.22/dist/sweetalert2.min.css" rel="stylesheet">
   <script type="module" src="src/provisioning-interface.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11.7.22/dist/sweetalert2.all.min.js"></script>
@@ -26,71 +27,56 @@ https://drive.google.com/file/d/1cinCiA778IErENZ3JN52VFW-1ffHpx7Z/view
 
 <body>
 
-<header class="app-header">
+<nav class="portal-switcher">
+  <a href="/" class="switcher-tab active">Application Provider Portal</a>
+  <a href="/monitor/" class="switcher-tab">QoE Metrics and Consumption Reports</a>
+  <a href="/cmcd-reports/" class="switcher-tab">CMCD Reports</a>
+</nav>
+
+<header class="app-header portal-main-header">
   <div class="header-left">
     <img src="src/static/images/5gmag.png" alt="5G-MAG" class="header-logo">
   </div>
 
-  <div class="header-center text-center">
-    <h2>5GMS Application Provider</h2>
-    <div class="status-row">
-      <div id="af-status" class="af-badge af-ok" aria-live="polite">
-        <span class="af-dot"></span>
-        Application Function connected
-      </div>
+  <div class="header-center">
+    <h2 class="header-title">5G Media Streaming - Application Provider Portal</h2>
+  </div>
+
+  <div class="header-right">
+    <label id="maf-auto-discover-wrap" class="refresh-btn maf-sync-btn">
+      <input id="maf-auto-discover-toggle" type="checkbox" style="position:absolute;opacity:0;pointer-events:none;">
+      ↺ Sync AF
+    </label>
+  </div>
+</header>
+
+  <div class="mgmt-topbar">
+    <div id="session-count-badge" class="session-count-badge">
+      <span id="session-count">0</span> provisioning sessions
     </div>
-    <div class="header-actions">
-      <button onclick="exportPSConfiguration()" class="btn btn-success">
-        <span class="glyphicon glyphicon-cloud-download" aria-hidden="true"></span>
-        Export Provisioning Session Configurations
-      </button>
-       <button onclick="importPSConfiguration()" class="btn btn-danger">
-        <span class="glyphicon glyphicon-cloud-upload" aria-hidden="true"></span>
-        Import Provisioning Session Configurations
-      </button>
+    <div id="af-status" class="af-status-badge af-ok" aria-live="polite">
+      <span class="af-dot"></span>
+      <span id="af-status-text">Application Function connected</span>
     </div>
   </div>
 
-</header>
-
   <main class="container text-center">
-    <div class="button-group my-3">
+
+    <div class="button-group">
       <button onclick="createNewSession()" class="btn btn-primary">Create 5GMS Provisioning Session</button>
       <button onclick="openDetailsForSelected()" class="btn btn-primary">Details For Selected Sessions</button>
       <button onclick="deleteSelectedSessions()" class="btn btn-danger">Delete Selected</button>
+      <button id="toggle-select-btn" onclick="toggleSelectAll()" class="btn btn-secondary" disabled>Select all sessions</button>
       <button onclick="openM8()" class="btn btn-warning">Open M8 JSON</button>
-      <label id="maf-auto-discover-wrap" class="maf-toggle-wrap" style="display:none;">
-        <input id="maf-auto-discover-toggle" type="checkbox">
-        <span class="maf-toggle-slider" aria-hidden="true"></span>
-        <span class="maf-toggle-label">Sync AF-Sessions</span>
-      </label>
+      <button onclick="exportPSConfiguration()" class="btn btn-success">
+        <span class="glyphicon glyphicon-cloud-download" aria-hidden="true"></span>Export
+      </button>
+      <button onclick="importPSConfiguration()" class="btn btn-danger">
+        <span class="glyphicon glyphicon-cloud-upload" aria-hidden="true"></span>Import
+      </button>
     </div>
 
-    <div class="table-responsive table-scroll">
-      <table id="m1_table" class="table table-bordered">
-        <thead>
-          <tr>
-            <th>Provisioning Session ID</th>
-            <th>Content Hosting Configuration</th>
-            <th>Server Certificates</th>
-            <th>Content Protocols</th>
-            <th>Consumption Reporting Configuration</th>
-            <th>Policy Templates</th>
-            <th>Metrics Reporting</th>
-            <th>Session Details</th>
-            
-            <th>
-              <button id="toggle-select-btn"
-                      class="btn btn-primary fixed-toggle-btn"
-                      onclick="toggleSelectAll()">
-                Select all sessions
-              </button>
-            </th>
-          </tr>
-        </thead>
-        <tbody></tbody>
-      </table>
-    </div>
+    <div id="sessions-list"></div>
   </main>
 
   <button id="infoBtn" class="btn btn-info">i</button>
@@ -99,7 +85,7 @@ https://drive.google.com/file/d/1cinCiA778IErENZ3JN52VFW-1ffHpx7Z/view
     <div class="modal-content">
       <span class="close">&times;</span>
       <p> For full license terms, see the LICENSE file or <a
-          href="https://drive.google.com/file/d/1cinCiA778IErENZ3JN52VFW-1ffHpx7Z/view" target="_blank">click here</a>.
+          href="https://hub.5g-mag.com/Getting-Started/OFFICIAL_5G-MAG_Public_License_v1.0.pdf" target="_blank">click here</a>.
       </p>
     </div>
   </div>

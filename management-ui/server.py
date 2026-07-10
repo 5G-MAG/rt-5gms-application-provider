@@ -4,10 +4,11 @@ Author: Vuk Stojkovic, David Waring, Erik Gaida
 Copyright: (C) Fraunhofer FOKUS, British Broadcasting Corporation
 For full license terms please see the LICENSE file distributed with this
 program. If this file is missing then the license can be retrieved from
-https://drive.google.com/file/d/1cinCiA778IErENZ3JN52VFW-1ffHpx7Z/view
+https://hub.5g-mag.com/Getting-Started/OFFICIAL_5G-MAG_Public_License_v1.0.pdf
 '''
 
 import os
+import re
 import json
 import requests
 import asyncio
@@ -45,6 +46,28 @@ config = Configuration()
 
 OPTIONS_ENDPOINT = os.getenv("OPTIONS_ENDPOINT", "http://" + config.get('m1_address', 'localhost') + ":" + config.get('m1_port',7777) + "/3gpp-m1/v2/provisioning-sessions/")
 CORS_ORIGINS = os.getenv("CORS_ORIGINS", "http://0.0.0.0:8000,http://127.0.0.1:8000,http://localhost:8000").split(',')
+
+QOE_REPORTS_BASE = ''
+
+def _qoe_safe_resolve(root: str, *parts: str) -> Optional[str]:
+    resolved = os.path.realpath(os.path.join(root, *parts))
+    root_real = os.path.realpath(root)
+    return resolved if resolved.startswith(root_real + os.sep) or resolved == root_real else None
+
+def _qoe_extract_timestamp(filename: str) -> str:
+    base = filename.rsplit('.', 1)[0]
+    parts = base.split('_')
+    return parts[-1] if parts else filename
+
+def _qoe_extract_client_id(filename: str) -> str:
+    base = filename[:-4] if filename.endswith('.xml') else filename
+    m = re.match(r'^([0-9a-f\-]+)_([0-9a-f\-]+)_(.+)$', base, re.IGNORECASE)
+    return m.group(1) if m else base
+
+def _qoe_extract_client_id_from_json(filename: str) -> str:
+    base = filename[:-5] if filename.endswith('.json') else filename
+    idx = base.find('_')
+    return base[:idx] if idx != -1 else base
 
 app = FastAPI()
 _m1_session = None
@@ -99,9 +122,58 @@ app.add_middleware(
 # UI rendering
 app.mount("/src", StaticFiles(directory="src"), name="src")
 templates = Jinja2Templates(directory="src/templates")
+
 @app.get("/")
 def landing_page():
     return FileResponse("src/templates/index.html")
+
+@app.get("/monitor/")
+def monitor_page():
+    return FileResponse("src/templates/monitor.html")
+
+@app.get("/cmcd-reports/")
+def cmcd_reports_page():
+    return FileResponse("src/templates/cmcd-reports.html")
+
+_CMCD_INFLUXDB_URL = os.environ.get('CMCD_INFLUXDB_URL', 'http://localhost:8086')
+_CMCD_INFLUXDB_DB  = os.environ.get('CMCD_INFLUXDB_DB', 'analytics')
+
+@app.get("/cmcd/metrics")
+async def cmcd_metrics(range: str = "5m"):
+    interval = "10s" if range in ("1m", "5m") else "30s" if range in ("15m", "30m") else "1m"
+    queries = {
+        # cmcd_data is always present; sid/cid are tags so count() must use a field
+        "total_messages":   f"SELECT count(cmcd_data) AS count FROM cmcd_metrics WHERE time > now() - {range}",
+        "mean_dl_latency":  f"SELECT mean(cmcd_key_dl) AS latency FROM cmcd_metrics WHERE time > now() - {range}",
+        "unique_sessions":  f"SELECT count(cmcd_data) AS count FROM cmcd_metrics WHERE time > now() - {range} GROUP BY cmcd_key_sid::tag",
+        "bl_by_sid":        f"SELECT cmcd_key_bl FROM cmcd_metrics WHERE time > now() - {range} GROUP BY cmcd_key_sid::tag",
+        "br_by_sid":        f"SELECT cmcd_key_br FROM cmcd_metrics WHERE time > now() - {range} GROUP BY cmcd_key_sid::tag",
+        "tb_by_sid":        f"SELECT cmcd_key_tb FROM cmcd_metrics WHERE time > now() - {range} GROUP BY cmcd_key_sid::tag",
+        "mtp_by_sid":       f"SELECT cmcd_key_mtp FROM cmcd_metrics WHERE time > now() - {range} GROUP BY cmcd_key_sid::tag",
+        "mean_bl":          f"SELECT mean(cmcd_key_bl) AS bl FROM cmcd_metrics WHERE time > now() - {range} GROUP BY time({interval}) fill(none)",
+        "sessions_table":   f"SELECT count(cmcd_data) AS messages, last(cmcd_key_st) AS stream_type, last(cmcd_key_v) AS version FROM cmcd_metrics WHERE time > now() - {range} GROUP BY cmcd_key_sid::tag, request_user_agent::tag",
+        "content_table":    f"SELECT count(cmcd_data) AS messages FROM cmcd_metrics WHERE time > now() - {range} GROUP BY cmcd_key_cid::tag, cmcd_key_sid::tag",
+        "buffer_drain":     f"SELECT mean(cmcd_key_br) AS br, mean(cmcd_key_mtp) AS mtp FROM cmcd_metrics WHERE time > now() - {range} GROUP BY cmcd_key_sid::tag",
+        "messages_by_mode": f"SELECT count(cmcd_data) AS count FROM cmcd_metrics WHERE time > now() - {range} GROUP BY cmcd_mode::tag",
+    }
+
+    async def _fetch(client, key, q):
+        try:
+            resp = await client.get(
+                f"{_CMCD_INFLUXDB_URL}/query",
+                params={"db": _CMCD_INFLUXDB_DB, "q": q}
+            )
+            return key, resp.json()
+        except Exception as e:
+            return key, {"error": str(e)}
+
+    async with httpx.AsyncClient(timeout=10.0) as client:
+        pairs = await asyncio.gather(*(_fetch(client, k, q) for k, q in queries.items()))
+
+    result = dict(pairs)
+    if all(isinstance(v, dict) and "error" in v for v in result.values()):
+        return JSONResponse(result, status_code=503)
+    return JSONResponse(result)
 
 """
 Endpoint: Connection checker
@@ -140,14 +212,70 @@ async def resync():
     af_ids = list(await session.provisioningSessionIds() or [])
     return {"status": "ok", "session_ids": af_ids}
 
-def _build_session_ui_info(session: MediaSession) -> Dict[str, bool]:
+def _build_session_ui_info(session: MediaSession) -> Dict:
     reporting = session.reporting_configurations
+    me = session.media_entry
+    name = getattr(me, 'name', None) if me is not None else None
+
+    chc_detail = None
+    if me is not None:
+        dists = getattr(me, 'distributions', []) or []
+        app_dists = getattr(me, 'app_distributions', []) or []
+        stream_name, entry_path = None, None
+        if app_dists:
+            ad = app_dists[0]
+            stream_name = getattr(ad, 'name', None)
+            eps = getattr(ad, 'entry_points', []) or []
+            if eps:
+                entry_path = getattr(eps[0], 'relative_path', None)
+        domain = None
+        if dists:
+            domain = getattr(dists[0], 'domain_name_alias', None) or getattr(dists[0], 'canonical_domain_name', None)
+        is_pull = getattr(me, 'is_pull', True)
+        ingest_method = 'Pull' if is_pull else 'Push'
+        content_type = None
+        if app_dists:
+            eps = getattr(app_dists[0], 'entry_points', []) or []
+            if eps:
+                content_type = getattr(eps[0], 'content_type', None)
+        protocol_uri = getattr(me, 'protocol', None)
+        protocol_short = protocol_uri.rsplit(':', 1)[-1] if protocol_uri else None
+        chc_detail = {"ingestMethod": ingest_method, "contentType": content_type, "domain": domain, "protocol": protocol_short}
+
+    consumption_detail = None
+    if reporting is not None and reporting.consumption is not None:
+        c = reporting.consumption
+        consumption_detail = {
+            "interval": getattr(c, 'reporting_interval', None),
+            "samplePercentage": getattr(c, 'sample_percentage', None),
+            "locationReporting": getattr(c, 'location_reporting', False),
+            "accessReporting": getattr(c, 'access_reporting', False),
+        }
+
+    metrics_detail = None
+    if reporting is not None and reporting.metrics:
+        items = list(reporting.metrics.values()) if hasattr(reporting.metrics, 'values') else list(reporting.metrics)
+        if items:
+            mi = items[0]
+            metrics_detail = {
+                "count": len(items),
+                "interval": getattr(mi, 'reporting_interval', None),
+                "samplePercentage": getattr(mi, 'sample_percentage', None),
+                "samplingPeriod": getattr(mi, 'sampling_period', None),
+            }
+
     return {
-        "hasContentHostingConfiguration": session.media_entry is not None,
+        "name": name,
+        "hasContentHostingConfiguration": me is not None,
+        "chcDetail": chc_detail,
         "hasServerCertificates": bool(session.certificates),
+        "certificateCount": len(session.certificates) if session.certificates else 0,
         "hasConsumptionReportingConfiguration": reporting is not None and reporting.consumption is not None,
+        "consumptionDetail": consumption_detail,
         "hasPolicyTemplates": bool(session.dynamic_policies),
+        "policyTemplateCount": len(session.dynamic_policies) if session.dynamic_policies else 0,
         "hasMetricsReportingConfiguration": reporting is not None and bool(reporting.metrics),
+        "metricsDetail": metrics_detail,
     }
 
 @app.get("/provisioning_sessions/build_Informations_for_UI")
@@ -1041,3 +1169,97 @@ async def import_ps_configuration(request: Request):
     except Exception as e:
         traceback.print_exc()
         raise HTTPException(status_code=500, detail=str(e))
+
+# ======================
+# QoE monitor API routes
+# ======================
+
+@app.get("/qoe/config")
+async def qoe_get_config():
+    return {"basePath": QOE_REPORTS_BASE}
+
+@app.post("/qoe/config")
+async def qoe_post_config(request: Request):
+    global QOE_REPORTS_BASE
+    body = await request.json()
+    base_path = body.get("basePath")
+    if not base_path or not isinstance(base_path, str):
+        raise HTTPException(status_code=400, detail="basePath must be a non-empty string")
+    QOE_REPORTS_BASE = base_path
+    return {"basePath": QOE_REPORTS_BASE}
+
+@app.get("/qoe/sessions")
+async def qoe_sessions():
+    if not QOE_REPORTS_BASE:
+        raise HTTPException(status_code=503, detail="Reports path not configured. Enter the path to the af-reports directory in the Monitor UI and click Apply.")
+    if not os.path.isdir(QOE_REPORTS_BASE):
+        raise HTTPException(status_code=503, detail=f"Reports directory not found: {QOE_REPORTS_BASE}. Check the path in the Monitor UI.")
+    try:
+        entries = list(os.scandir(QOE_REPORTS_BASE))
+        return sorted([e.name for e in entries if e.is_dir()])
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Cannot read base path: {e}")
+
+@app.get("/qoe/sessions/{session_id}/clients")
+async def qoe_clients(session_id: str):
+    reports_dir = _qoe_safe_resolve(QOE_REPORTS_BASE, session_id, 'metrics_reports')
+    if not reports_dir:
+        raise HTTPException(status_code=400, detail="Invalid session ID")
+    try:
+        files = os.listdir(reports_dir)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Cannot read metrics_reports: {e}")
+    return sorted(set(_qoe_extract_client_id(f) for f in files if f.endswith('.xml')))
+
+@app.get("/qoe/sessions/{session_id}/consumption/file")
+async def qoe_consumption_file(session_id: str, name: str = Query(...)):
+    filename = name
+    if not filename or not filename.endswith('.json') or '/' in filename or '..' in filename:
+        raise HTTPException(status_code=400, detail="Invalid filename")
+    file_path = _qoe_safe_resolve(QOE_REPORTS_BASE, session_id, 'consumption_reports', filename)
+    if not file_path:
+        raise HTTPException(status_code=400, detail="Path traversal attempt detected")
+    if not os.path.isfile(file_path):
+        raise HTTPException(status_code=404, detail="File not found")
+    return FileResponse(file_path, media_type="application/json")
+
+@app.get("/qoe/sessions/{session_id}/consumption")
+async def qoe_consumption(session_id: str, clientId: Optional[str] = Query(None)):
+    reports_dir = _qoe_safe_resolve(QOE_REPORTS_BASE, session_id, 'consumption_reports')
+    if not reports_dir:
+        raise HTTPException(status_code=400, detail="Invalid session ID")
+    try:
+        files = os.listdir(reports_dir)
+    except FileNotFoundError:
+        return []
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Cannot read consumption_reports: {e}")
+    json_files = [f for f in files if f.endswith('.json')]
+    if clientId:
+        json_files = [f for f in json_files if _qoe_extract_client_id_from_json(f) == clientId]
+    return sorted(json_files, key=_qoe_extract_timestamp)
+
+@app.get("/qoe/sessions/{session_id}/reports/{filename}")
+async def qoe_report_file(session_id: str, filename: str):
+    if not filename.endswith('.xml') or '/' in filename or '..' in filename:
+        raise HTTPException(status_code=400, detail="Invalid filename")
+    file_path = _qoe_safe_resolve(QOE_REPORTS_BASE, session_id, 'metrics_reports', filename)
+    if not file_path:
+        raise HTTPException(status_code=400, detail="Path traversal attempt detected")
+    if not os.path.isfile(file_path):
+        raise HTTPException(status_code=404, detail="File not found")
+    return FileResponse(file_path, media_type="application/xml")
+
+@app.get("/qoe/sessions/{session_id}/reports")
+async def qoe_reports(session_id: str, clientId: Optional[str] = Query(None)):
+    reports_dir = _qoe_safe_resolve(QOE_REPORTS_BASE, session_id, 'metrics_reports')
+    if not reports_dir:
+        raise HTTPException(status_code=400, detail="Invalid session ID")
+    try:
+        files = os.listdir(reports_dir)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Cannot read metrics_reports: {e}")
+    xml_files = [f for f in files if f.endswith('.xml')]
+    if clientId:
+        xml_files = [f for f in xml_files if _qoe_extract_client_id(f) == clientId]
+    return sorted(xml_files, key=_qoe_extract_timestamp)
