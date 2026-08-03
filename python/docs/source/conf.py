@@ -9,7 +9,7 @@
 project = '5GMS Application Provider'
 copyright = '2024, British Broadcasting Corporation'
 author = 'David Waring'
-release = '1.2.0'
+release = '1.3.0'
 
 # -- General configuration ---------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration
