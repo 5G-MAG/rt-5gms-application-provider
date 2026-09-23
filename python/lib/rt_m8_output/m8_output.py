@@ -77,7 +77,7 @@ files for delivery via the interface at reference point M8.
         self.__log.error(*args,**kwargs)
 
     def log_crit(self,*args,**kwargs):
-        self.__log.crit(*args,**kwargs)
+        self.__log.critical(*args,**kwargs)
         sys.exit(1)
 
     async def addToMediaConfiguration(self, media_config: MediaConfiguration) -> bool:
